@@ -318,6 +318,143 @@
             font-weight: bold;
         }
         .btn-cancelar:hover { background-color: #ffebee; }
+
+        /* Week Grid Styles */
+        .week-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(6, 1fr); /* Time + 6 Days (Mon-Sat) */
+            gap: 1px;
+            background-color: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            min-width: 800px; /* Ensure horizontal scroll on small screens */
+        }
+
+        .week-cell, .week-header, .time-label {
+            background-color: white;
+            padding: 0.5rem;
+            min-height: 60px;
+            font-size: 0.9rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .week-header {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            color: var(--text);
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .time-label {
+            font-weight: bold;
+            color: #666;
+            background-color: #f9f9f9;
+        }
+
+        .cell-blocked {
+            background-color: #e0e0e0;
+            color: #9e9e9e;
+            font-size: 0.8rem;
+            font-style: italic;
+        }
+
+        .cell-booked {
+            background-color: #e8f5e9;
+            border: 1px solid var(--primary);
+            color: var(--text);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            border-radius: 4px;
+            margin: 2px;
+            width: calc(100% - 4px);
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .cell-booked:hover {
+            transform: scale(1.02);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+
+        .cell-booked .pet-mini {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 0.85rem;
+        }
+
+        .cell-booked .owner-mini {
+            font-size: 0.75rem;
+            color: #555;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+
+        /* Observations */
+        .obs-alert {
+            background-color: #fff9c4; /* Light Yellow */
+            border-left: 4px solid #fbc02d;
+            padding: 0.75rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #333;
+        }
+
+        .obs-edit-area {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: inherit;
+            margin-top: 0.5rem;
+        }
+
     </style>
 </head>
 <body>
@@ -327,6 +464,7 @@
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('agenda')">Agenda do Dia</button>
+        <button class="tab-btn" onclick="switchTab('semana')">Agenda da Semana</button>
         <button class="tab-btn" onclick="switchTab('historico')">Histórico</button>
         <button class="tab-btn" onclick="switchTab('config')">Configurações</button>
     </div>
@@ -342,6 +480,21 @@
 
         <div id="appointments-list">
             <p style="text-align: center; color: #666; grid-column: 1/-1;">Selecione uma data para ver os agendamentos.</p>
+        </div>
+    </div>
+
+    <!-- Semana Tab -->
+    <div id="tab-semana" class="tab-content">
+        <div class="controls" style="justify-content: center; gap: 1rem; flex-wrap: wrap;">
+             <button class="btn-save" style="width: auto; margin:0; padding: 0.5rem 1rem;" onclick="changeWeek(-1)">◀ Semana Anterior</button>
+             <span id="week-label" style="font-weight: bold; font-size: 1.1rem; text-align: center;">Semana XX</span>
+             <button class="btn-save" style="width: auto; margin:0; padding: 0.5rem 1rem;" onclick="changeWeek(1)">Próxima Semana ▶</button>
+        </div>
+        <div class="week-grid-container" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+            <div id="week-grid" class="week-grid">
+                <!-- Grid generated by JS -->
+                <p style="grid-column: 1/-1; padding: 2rem; text-align: center;">Carregando...</p>
+            </div>
         </div>
     </div>
 
@@ -390,6 +543,16 @@
     </div>
 </div>
 
+<!-- Modal -->
+<div id="appointment-modal" class="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeModal(null, true)">×</button>
+        <div id="modal-body">
+            <!-- Content loaded dynamically -->
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
@@ -417,8 +580,21 @@
     const slotsCheckboxesContainer = document.getElementById('slots-checkboxes');
     const configMessage = document.getElementById('config-message');
 
+    // Week Grid Elements
+    const weekGrid = document.getElementById('week-grid');
+    const weekLabel = document.getElementById('week-label');
+
     let unsubscribe = null; // Store listener for Agenda
     let historyUnsubscribe = null; // Store listener for History
+    let weekUnsubscribe = null; // Store listener for Week
+
+    // Week State
+    let currentWeekStart = new Date();
+    // Adjust to Monday of current week
+    const day = currentWeekStart.getDay();
+    const diff = currentWeekStart.getDate() - day + (day === 0 ? -6 : 1); // If sunday (-6), else (day-1)
+    currentWeekStart.setDate(diff);
+    currentWeekStart.setHours(0,0,0,0);
 
     // Time slots definition (08:00 to 17:00)
     const timeSlots = [
@@ -434,6 +610,16 @@
 
     // --- Functions ---
 
+    function escapeHtml(text) {
+        if (!text) return text;
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
     window.switchTab = (tabName) => {
         // Hide all contents
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -444,24 +630,30 @@
 
         // Update button state
         const buttons = document.querySelectorAll('.tab-btn');
-        // 0: Agenda, 1: History, 2: Config
+        // 0: Agenda, 1: Week, 2: History, 3: Config
         if (tabName === 'agenda') {
             buttons[0].classList.add('active');
-            // Stop history listener if running
             if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
+            if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
             loadAppointments();
         }
-        else if (tabName === 'historico') {
+        else if (tabName === 'semana') {
             buttons[1].classList.add('active');
-            // Stop agenda listener if running
             if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
+            loadWeekSchedule();
+        }
+        else if (tabName === 'historico') {
+            buttons[2].classList.add('active');
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
             loadHistory();
         }
         else if (tabName === 'config') {
-            buttons[2].classList.add('active');
-            // Stop both
+            buttons[3].classList.add('active');
             if (unsubscribe) { unsubscribe(); unsubscribe = null; }
             if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
+            if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
             loadConfiguration();
         }
     };
@@ -553,6 +745,175 @@
         });
     };
 
+    // --- Week Logic ---
+
+    window.changeWeek = (direction) => {
+        // direction: -1 or 1
+        currentWeekStart.setDate(currentWeekStart.getDate() + (direction * 7));
+        loadWeekSchedule();
+    };
+
+    window.loadWeekSchedule = async () => {
+        if (weekUnsubscribe) {
+            weekUnsubscribe();
+        }
+
+        // Calculate Range
+        const startOfWeek = new Date(currentWeekStart);
+        const endOfWeek = new Date(currentWeekStart);
+        endOfWeek.setDate(endOfWeek.getDate() + 6); // Sunday (which we ignore in grid but fetch for range safety)
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        // Update Label
+        const startStr = startOfWeek.toLocaleDateString('pt-BR', {day: 'numeric', month: 'numeric'});
+        const endStr = endOfWeek.toLocaleDateString('pt-BR', {day: 'numeric', month: 'numeric'});
+        // Get week number (rough estimate)
+        const oneJan = new Date(startOfWeek.getFullYear(), 0, 1);
+        const numberOfDays = Math.floor((startOfWeek - oneJan) / (24 * 60 * 60 * 1000));
+        const weekNum = Math.ceil((startOfWeek.getDay() + 1 + numberOfDays) / 7);
+
+        weekLabel.textContent = `Semana ${weekNum} (${startStr} a ${endStr})`;
+
+        weekGrid.innerHTML = '<p style="grid-column: 1/-1; padding: 2rem; text-align: center;">Carregando...</p>';
+
+        // 1. Fetch Configs for the week
+        // We need configs for Mon-Sat. Firestore doesn't support "IN" with dates easily if ID is date
+        // So we'll just fetch them in parallel.
+        const weekDates = [];
+        for (let i = 0; i < 6; i++) { // 0=Mon, 5=Sat
+            const d = new Date(startOfWeek);
+            d.setDate(d.getDate() + i);
+            weekDates.push(d.toISOString().split('T')[0]);
+        }
+
+        const configs = {};
+        try {
+            const configPromises = weekDates.map(dateStr => getDoc(doc(db, "configuracoes", dateStr)));
+            const configSnaps = await Promise.all(configPromises);
+            configSnaps.forEach((snap, idx) => {
+                if (snap.exists()) {
+                    configs[weekDates[idx]] = snap.data();
+                }
+            });
+        } catch (e) {
+            console.error("Error loading configs:", e);
+        }
+
+        // 2. Fetch Appointments
+        const rangeStart = startOfWeek.toISOString();
+        const rangeEnd = endOfWeek.toISOString();
+
+        const q = query(
+            collection(db, "appointments"),
+            where("appointmentTime", ">=", rangeStart),
+            where("appointmentTime", "<=", rangeEnd)
+        );
+
+        weekUnsubscribe = onSnapshot(q, (snapshot) => {
+            const appointments = [];
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.status !== 'Cancelado' && data.status !== 'Concluído') {
+                    appointments.push({id: doc.id, ...data});
+                }
+            });
+
+            renderWeekGrid(weekDates, configs, appointments);
+        });
+    };
+
+    function renderWeekGrid(weekDates, configs, appointments) {
+        weekGrid.innerHTML = '';
+
+        // Header Row
+        // Empty top-left
+        const emptyHeader = document.createElement('div');
+        emptyHeader.className = 'week-header';
+        weekGrid.appendChild(emptyHeader);
+
+        const daysOfWeek = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+
+        weekDates.forEach((dateStr, idx) => {
+            const [y, m, d] = dateStr.split('-');
+            const header = document.createElement('div');
+            header.className = 'week-header';
+            header.innerHTML = `${daysOfWeek[idx]}<br><span style="font-weight:normal">${d}/${m}</span>`;
+            weekGrid.appendChild(header);
+        });
+
+        // Time Rows
+        timeSlots.forEach(time => {
+            // Time Label
+            const label = document.createElement('div');
+            label.className = 'time-label';
+            label.textContent = time;
+            weekGrid.appendChild(label);
+
+            // Cells for each day
+            weekDates.forEach(dateStr => {
+                const cell = document.createElement('div');
+                cell.className = 'week-cell';
+
+                const fullIso = `${dateStr}T${time}`;
+
+                // Check Blocking
+                let isBlocked = false;
+                if (configs[dateStr]) {
+                    if (configs[dateStr].blockedAllDay) isBlocked = true;
+                    if (configs[dateStr].blockedSlots && configs[dateStr].blockedSlots.includes(time)) isBlocked = true;
+                }
+
+                if (isBlocked) {
+                    cell.classList.add('cell-blocked');
+                    cell.textContent = 'Bloqueado';
+                } else {
+                    // Check Appointment
+                    const appt = appointments.find(a => a.appointmentTime === fullIso);
+
+                    if (appt) {
+                        cell.classList.add('cell-booked');
+
+                        // Icon mapping
+                        let icon = '📅';
+                        const s = (appt.status || '').toLowerCase();
+                        if (s.includes('banho')) icon = '🚿';
+                        else if (s.includes('secando')) icon = '💨';
+                        else if (s.includes('pronto')) icon = '✅';
+                        else if (s.includes('fila')) icon = '⏳';
+
+                        cell.innerHTML = `
+                            <div class="pet-mini">${icon} ${escapeHtml(appt.petName)}</div>
+                            <div class="owner-mini">${escapeHtml(appt.ownerName || '')}</div>
+                        `;
+                        cell.onclick = () => openModal(appt);
+                    }
+                }
+                weekGrid.appendChild(cell);
+            });
+        });
+    }
+
+    // --- Modal Logic ---
+    window.openModal = (appt) => {
+        const modal = document.getElementById('appointment-modal');
+        const modalBody = document.getElementById('modal-body');
+
+        modalBody.innerHTML = '';
+        const card = createCard(appt.id, appt, false);
+        // Tweak card styles for modal if necessary
+        card.style.boxShadow = 'none';
+        card.style.padding = '0';
+
+        modalBody.appendChild(card);
+        modal.classList.add('active');
+    };
+
+    window.closeModal = (event, force) => {
+        if (force || event.target.classList.contains('modal-overlay')) {
+            document.getElementById('appointment-modal').classList.remove('active');
+        }
+    };
+
     function createCard(id, data, isHistory) {
         const card = document.createElement('div');
         card.className = 'card';
@@ -573,7 +934,27 @@
         const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
         // Owner Name Display
-        const ownerDisplay = data.ownerName ? ` (${data.ownerName})` : '';
+        const ownerName = data.ownerName ? ` (${data.ownerName})` : '';
+
+        // Observations Section
+        let obsHtml = '';
+        if (data.observations) {
+             obsHtml = `
+                <div class="obs-alert">
+                    <strong>⚠️ Observações:</strong>
+                    <div style="white-space: pre-wrap;">${escapeHtml(data.observations)}</div>
+                </div>
+             `;
+        }
+
+        // Edit Obs Section
+        const editObsHtml = `
+            <details style="margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                <summary style="cursor: pointer; color: var(--secondary); font-size: 0.9rem;">📝 Editar Observações</summary>
+                <textarea id="obs-input-${id}" class="obs-edit-area" rows="3" placeholder="Escreva aqui...">${escapeHtml(data.observations || '')}</textarea>
+                <button class="btn-save" style="margin-top: 0.5rem; padding: 0.5rem;" onclick="saveObservation('${id}')">Salvar Observação</button>
+            </details>
+        `;
 
         // WhatsApp Button Logic
         let whatsappHtml = '';
@@ -582,6 +963,7 @@
             if (phone.length <= 11) {
                 phone = '55' + phone;
             }
+            // Use escaped pet name for message if desired, but URL encoding handles safety there.
             const message = encodeURIComponent(`Olá! O banho do(a) ${data.petName} foi finalizado e ele(a) já está pronto(a) para ser buscado(a)! 🐶✨`);
             const link = `https://api.whatsapp.com/send?phone=${phone}&text=${message}`;
             whatsappHtml = `<a href="${link}" target="_blank" class="whatsapp-btn">📱 Avisar Dono (WhatsApp)</a>`;
@@ -612,10 +994,12 @@
         card.innerHTML = `
             <div class="card-header">
                 <span class="status-badge ${statusClass}">${data.status}</span>
-                <h3 class="pet-name">${data.petName}${ownerDisplay}</h3>
+                <h3 class="pet-name">${escapeHtml(data.petName)}${escapeHtml(ownerName)}</h3>
                 <div class="pet-info">📅 ${dateStr} - 🕒 ${timeStr}</div>
                 <div class="pet-info">📞 ${formatPhone(data.ownerPhone)}</div>
             </div>
+            ${obsHtml}
+            ${editObsHtml}
             ${buttonsHtml}
         `;
 
@@ -727,6 +1111,21 @@
     };
 
     // --- Global Actions (Status Update / Delete) ---
+    window.saveObservation = async (id) => {
+        const input = document.getElementById(`obs-input-${id}`);
+        const newText = input.value.trim();
+
+        try {
+             await updateDoc(doc(db, "appointments", id), {
+                observations: newText
+            });
+            alert("Observação salva com sucesso!");
+        } catch(e) {
+            console.error("Error saving obs:", e);
+            alert("Erro ao salvar observação.");
+        }
+    };
+
     window.updateStatus = async (id, newStatus) => {
         try {
             const docRef = doc(db, "appointments", id);
