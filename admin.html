@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - PetShop</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --secondary: #2196F3;
+            --background: #f4f4f9;
+            --surface: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+            --danger: #f44336;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text);
+            margin-bottom: 2rem;
+        }
+
+        #appointments-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 600px) {
+            #appointments-list {
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            }
+        }
+
+        .card {
+            background-color: var(--surface);
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .card-header {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .pet-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 0;
+        }
+
+        .pet-info {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Status Colors */
+        .status-fila { background-color: #ffe0b2; color: #e65100; }
+        .status-banho { background-color: #b3e5fc; color: #01579b; }
+        .status-secando { background-color: #e1bee7; color: #4a148c; }
+        .status-pronto { background-color: #c8e6c9; color: #1b5e20; }
+
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-status {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            background-color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .btn-status:hover {
+            background-color: #f0f0f0;
+        }
+
+        .btn-status.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .whatsapp-btn {
+            display: block;
+            width: 100%;
+            text-align: center;
+            background-color: #25D366;
+            color: white;
+            padding: 0.75rem;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 1rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .whatsapp-btn:hover {
+            background-color: #128C7E;
+        }
+
+        .delete-btn {
+            background-color: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            padding: 0.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 1rem;
+            width: 100%;
+            font-size: 0.8rem;
+        }
+
+        .delete-btn:hover {
+            background-color: #ffebee;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Painel Admin 🛁</h1>
+    <div id="appointments-list">
+        <p style="text-align: center; color: #666; grid-column: 1/-1;">Carregando agendamentos...</p>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
+        authDomain: "sistema-petshop-33f9d.firebaseapp.com",
+        projectId: "sistema-petshop-33f9d",
+        storageBucket: "sistema-petshop-33f9d.firebasestorage.app",
+        messagingSenderId: "628550103939",
+        appId: "1:628550103939:web:4a862eee914840d238fcb6"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const listContainer = document.getElementById('appointments-list');
+
+    // Real-time listener
+    const q = query(collection(db, "appointments"), orderBy("appointmentTime", "asc"));
+
+    onSnapshot(q, (snapshot) => {
+        listContainer.innerHTML = ''; // Clear list
+
+        if (snapshot.empty) {
+            listContainer.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Nenhum agendamento na fila.</p>';
+            return;
+        }
+
+        snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const id = docSnap.id;
+            createCard(id, data);
+        });
+    });
+
+    function createCard(id, data) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        // Determine status class
+        let statusClass = 'status-fila';
+        const s = data.status.toLowerCase();
+        if (s.includes('banho')) statusClass = 'status-banho';
+        if (s.includes('secando')) statusClass = 'status-secando';
+        if (s.includes('pronto')) statusClass = 'status-pronto';
+
+        // Format Date
+        const dateObj = new Date(data.appointmentTime);
+        const dateStr = dateObj.toLocaleDateString('pt-BR');
+        const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        // WhatsApp Button Logic
+        let whatsappHtml = '';
+        if (s.includes('pronto') && data.ownerPhone) {
+            // Ensure phone has 55 prefix if not present (assuming Brazilian numbers mostly)
+            // But we cleaned it to just digits. If it starts with 55, great. If it's 10 or 11 digits, we prepend 55.
+            let phone = data.ownerPhone;
+            if (phone.length <= 11) {
+                phone = '55' + phone;
+            }
+
+            const message = encodeURIComponent(`Olá! O banho do(a) ${data.petName} foi finalizado e ele(a) já está pronto(a) para ser buscado(a)! 🐶✨`);
+            const link = `https://api.whatsapp.com/send?phone=${phone}&text=${message}`;
+
+            whatsappHtml = `<a href="${link}" target="_blank" class="whatsapp-btn">📱 Avisar Dono (WhatsApp)</a>`;
+        }
+
+        card.innerHTML = `
+            <div class="card-header">
+                <span class="status-badge ${statusClass}">${data.status}</span>
+                <h3 class="pet-name">${data.petName}</h3>
+                <div class="pet-info">📅 ${dateStr} às ${timeStr}</div>
+                <div class="pet-info">📞 ${formatPhone(data.ownerPhone)}</div>
+            </div>
+
+            <div class="actions">
+                <button class="btn-status ${data.status === 'Na Fila' ? 'active' : ''}" onclick="updateStatus('${id}', 'Na Fila')">Fila</button>
+                <button class="btn-status ${data.status === 'No Banho' ? 'active' : ''}" onclick="updateStatus('${id}', 'No Banho')">Banho</button>
+                <button class="btn-status ${data.status === 'Secando' ? 'active' : ''}" onclick="updateStatus('${id}', 'Secando')">Secando</button>
+                <button class="btn-status ${data.status === 'Pronto' ? 'active' : ''}" onclick="updateStatus('${id}', 'Pronto')">Pronto</button>
+            </div>
+
+            ${whatsappHtml}
+
+            <button class="delete-btn" onclick="deleteAppointment('${id}')">Concluir / Remover</button>
+        `;
+
+        listContainer.appendChild(card);
+    }
+
+    // Helper for phone display
+    function formatPhone(phone) {
+        if (!phone) return '';
+        if (phone.length === 11) { // (11) 99999-9999
+            return `(${phone.substring(0,2)}) ${phone.substring(2,7)}-${phone.substring(7)}`;
+        }
+        return phone;
+    }
+
+    // Global Functions for buttons
+    window.updateStatus = async (id, newStatus) => {
+        try {
+            const docRef = doc(db, "appointments", id);
+            await updateDoc(docRef, {
+                status: newStatus
+            });
+        } catch (e) {
+            console.error("Error updating status: ", e);
+            alert("Erro ao atualizar status.");
+        }
+    };
+
+    window.deleteAppointment = async (id) => {
+        if (confirm("Tem certeza que deseja remover este agendamento?")) {
+            try {
+                await deleteDoc(doc(db, "appointments", id));
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+                alert("Erro ao remover.");
+            }
+        }
+    };
+</script>
+
+</body>
+</html>
