@@ -450,6 +450,14 @@
         const today = new Date();
         today.setHours(0,0,0,0);
 
+        // Check if Sunday (0)
+        if (selectedDate.getDay() === 0) {
+            alert("Não funcionamos aos domingos.");
+            e.target.value = '';
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+            return;
+        }
+
         if (selectedDate < today) {
             alert("Por favor, selecione uma data futura.");
             e.target.value = '';
@@ -463,6 +471,12 @@
     async function generateSlots(dateString) {
         slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Carregando horários...</p>';
         selectedSlot = null;
+
+        const dateObj = new Date(dateString + 'T00:00:00');
+        if (dateObj.getDay() === 0) {
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d32f2f; font-weight: bold;">Não funcionamos aos domingos</p>';
+            return;
+        }
 
         try {
             const configRef = doc(db, "configuracoes", dateString);
