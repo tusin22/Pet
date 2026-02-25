@@ -195,7 +195,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
@@ -268,6 +268,27 @@
         selectedSlot = null; // Reset selection
 
         try {
+            // 1. Check Config for this Date
+            const configRef = doc(db, "configuracoes", dateString);
+            const configSnap = await getDoc(configRef);
+            let blockedAllDay = false;
+            const blockedSlots = new Set();
+
+            if (configSnap.exists()) {
+                const configData = configSnap.data();
+                if (configData.blockedAllDay) {
+                    blockedAllDay = true;
+                }
+                if (configData.blockedSlots && Array.isArray(configData.blockedSlots)) {
+                    configData.blockedSlots.forEach(s => blockedSlots.add(s));
+                }
+            }
+
+            if (blockedAllDay) {
+                 slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d32f2f; font-weight: bold;">Fechado neste dia.</p>';
+                 return;
+            }
+
             // Define Range for Query
             const startOfDay = `${dateString}T00:00`;
             const endOfDay = `${dateString}T23:59`;
@@ -310,6 +331,7 @@
 
                 // Check availability
                 let isTaken = takenSlots.has(time);
+                let isBlocked = blockedSlots.has(time);
                 let isPast = false;
 
                 if (isToday) {
@@ -319,9 +341,11 @@
                     }
                 }
 
-                if (isTaken || isPast) {
+                if (isTaken || isPast || isBlocked) {
                     btn.disabled = true;
-                    btn.title = isTaken ? "Horário ocupado" : "Horário já passou";
+                    if (isBlocked) btn.title = "Horário indisponível (Admin)";
+                    else if (isTaken) btn.title = "Horário ocupado";
+                    else btn.title = "Horário já passou";
                 } else {
                     btn.onclick = () => selectSlot(btn, fullIso);
                 }
