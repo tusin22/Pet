@@ -221,6 +221,7 @@
         }
 
         /* Status Colors */
+        .status-agendado { background-color: #e0e0e0; color: #616161; }
         .status-fila { background-color: #ffe0b2; color: #e65100; }
         .status-banho { background-color: #b3e5fc; color: #01579b; }
         .status-secando { background-color: #e1bee7; color: #4a148c; }
@@ -453,6 +454,7 @@
         // Determine status class
         let statusClass = 'status-fila';
         const s = data.status.toLowerCase();
+        if (s.includes('agendado')) statusClass = 'status-agendado';
         if (s.includes('banho')) statusClass = 'status-banho';
         if (s.includes('secando')) statusClass = 'status-secando';
         if (s.includes('pronto')) statusClass = 'status-pronto';
@@ -485,6 +487,7 @@
             </div>
 
             <div class="actions">
+                <button class="btn-status ${data.status === 'Agendado' ? 'active' : ''}" onclick="updateStatus('${id}', 'Agendado')">Agendado</button>
                 <button class="btn-status ${data.status === 'Na Fila' ? 'active' : ''}" onclick="updateStatus('${id}', 'Na Fila')">Fila</button>
                 <button class="btn-status ${data.status === 'No Banho' ? 'active' : ''}" onclick="updateStatus('${id}', 'No Banho')">Banho</button>
                 <button class="btn-status ${data.status === 'Secando' ? 'active' : ''}" onclick="updateStatus('${id}', 'Secando')">Secando</button>
