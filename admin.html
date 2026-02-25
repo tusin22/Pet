@@ -338,7 +338,6 @@
                 <label for="agendaDate">Data:</label>
                 <input type="date" id="agendaDate">
             </div>
-            <button class="btn-save" style="width: auto; margin: 0; padding: 0.5rem 1rem;" onclick="loadAppointments()">Atualizar Lista</button>
         </div>
 
         <div id="appointments-list">
@@ -647,10 +646,6 @@
         });
     }
 
-    configDateInput.addEventListener('change', () => {
-        loadConfiguration();
-    });
-
     window.loadConfiguration = async () => {
         const dateVal = configDateInput.value;
         if (!dateVal) {
@@ -810,6 +805,24 @@
             alert("Erro ao apagar histórico.");
         }
     };
+
+    // --- Event Listeners ---
+
+    // Agenda Tab
+    agendaDateInput.addEventListener('change', () => {
+        loadAppointments();
+    });
+    agendaDateInput.addEventListener('input', () => {
+        loadAppointments();
+    });
+
+    // Configurações Tab
+    configDateInput.addEventListener('change', () => {
+        loadConfiguration();
+    });
+    configDateInput.addEventListener('input', () => {
+        loadConfiguration();
+    });
 
     // --- Execution ---
     generateSlotCheckboxes();
