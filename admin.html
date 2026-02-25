@@ -348,9 +348,12 @@
 
     <!-- Histórico Tab -->
     <div id="tab-historico" class="tab-content">
-        <div class="controls" style="justify-content: center;">
-            <p style="text-align: center; color: #666; margin: 0;">Mostrando os últimos 50 agendamentos concluídos ou cancelados.</p>
-            <button class="btn-save" style="width: auto; margin-left: 1rem; padding: 0.5rem 1rem;" onclick="loadHistory()">Atualizar</button>
+        <div class="controls" style="flex-direction: column; align-items: center; justify-content: center; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+                <p style="text-align: center; color: #666; margin: 0;">Mostrando os últimos 50 agendamentos concluídos ou cancelados.</p>
+                <button class="btn-save" style="width: auto; margin: 0; padding: 0.5rem 1rem;" onclick="loadHistory()">Atualizar</button>
+            </div>
+            <button class="btn-save" style="width: auto; padding: 0.5rem 1rem; background-color: var(--danger);" onclick="deleteAllHistory()">🗑️ Apagar Todo o Histórico</button>
         </div>
         <div id="history-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
             <!-- History items -->
@@ -390,7 +393,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
@@ -598,8 +601,12 @@
 
             ${whatsappHtml}
 
-            <button class="btn-concluir" onclick="updateStatus('${id}', 'Concluído')">✅ Concluir</button>
+            <button class="btn-concluir" onclick="confirmAndComplete('${id}')">✅ Concluir</button>
             <button class="btn-cancelar" onclick="cancelAppointment('${id}')">❌ Cancelar</button>
+            `;
+        } else {
+            buttonsHtml = `
+            <button class="delete-btn" onclick="deletePermanently('${id}')">🗑️ Apagar permanentemente</button>
             `;
         }
 
@@ -738,13 +745,69 @@
     };
 
     window.cancelAppointment = async (id) => {
-        if (confirm("Tem certeza que deseja CANCELAR este agendamento? O horário ficará disponível.")) {
+        if (confirm("Tem certeza que deseja CANCELAR este agendamento?")) {
             try {
                 await updateStatus(id, 'Cancelado');
             } catch (e) {
                 console.error("Error canceling document: ", e);
                 alert("Erro ao cancelar.");
             }
+        }
+    };
+
+    window.confirmAndComplete = async (id) => {
+        if (confirm("Tem certeza que deseja CONCLUIR este agendamento?")) {
+            await updateStatus(id, 'Concluído');
+        }
+    };
+
+    window.deletePermanently = async (id) => {
+        if (confirm("Tem certeza que deseja APAGAR este agendamento permanentemente?")) {
+            try {
+                await deleteDoc(doc(db, "appointments", id));
+                // If we are in history tab, the listener will update the list
+            } catch (e) {
+                console.error("Error deleting document: ", e);
+                alert("Erro ao apagar agendamento.");
+            }
+        }
+    };
+
+    window.deleteAllHistory = async () => {
+        if (!confirm("ESTA AÇÃO É IRREVERSÍVEL. Deseja apagar todo o histórico?")) {
+            return;
+        }
+
+        const sure = prompt("Para confirmar, digite 'APAGAR' (sem aspas):");
+        if (sure !== 'APAGAR') {
+            alert("Ação cancelada.");
+            return;
+        }
+
+        try {
+            // Get all Completed or Cancelled appointments
+            // Note: Firestore 'in' query supports up to 10 values
+            const q = query(
+                collection(db, "appointments"),
+                where("status", "in", ["Concluído", "Cancelado"])
+            );
+
+            const snapshot = await getDocs(q);
+            if (snapshot.empty) {
+                alert("Nenhum histórico para apagar.");
+                return;
+            }
+
+            const batch = writeBatch(db);
+            snapshot.forEach((doc) => {
+                batch.delete(doc.ref);
+            });
+
+            await batch.commit();
+            alert("Histórico apagado com sucesso!");
+        } catch (e) {
+            console.error("Error deleting history: ", e);
+            alert("Erro ao apagar histórico.");
         }
     };
 
