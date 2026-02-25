@@ -534,8 +534,18 @@
             return;
         }
 
+        const dateObj = new Date(dateVal + 'T00:00:00');
+        if (dateObj.getDay() === 0) {
+            configOptions.style.display = 'none';
+            configMessage.textContent = "Domingos são fechados por padrão e não podem ser modificados.";
+            configMessage.style.display = 'block';
+            configMessage.style.color = '#d32f2f'; // Red color for emphasis
+            return;
+        }
+
         configOptions.style.display = 'block';
         configMessage.style.display = 'none';
+        configMessage.style.color = '#666'; // Reset color
 
         // Reset form
         blockAllDayCheckbox.checked = false;
@@ -566,6 +576,12 @@
     window.saveConfiguration = async () => {
         const dateVal = configDateInput.value;
         if (!dateVal) return;
+
+        const dateObj = new Date(dateVal + 'T00:00:00');
+        if (dateObj.getDay() === 0) {
+            alert("Não é possível alterar configurações de domingos.");
+            return;
+        }
 
         const blockedAllDay = blockAllDayCheckbox.checked;
         const blockedSlots = [];
