@@ -204,6 +204,25 @@
             font-size: 0.95rem;
             color: #555;
         }
+
+        .history-section-title {
+            margin: 2rem 0 1rem 0;
+            font-size: 1.1rem;
+            color: #666;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+
+        .pet-card.history-item {
+            opacity: 0.8;
+            background-color: #f0f0f0;
+        }
+        .pet-card.history-item h3 {
+            color: #555;
+            font-size: 1rem;
+        }
+        .status-concluido { background-color: #4CAF50; color: white; }
+        .status-cancelado { background-color: #9e9e9e; color: white; }
     </style>
 </head>
 <body>
@@ -423,51 +442,104 @@
                 return;
             }
 
-            const appointments = [];
+            const activeAppts = [];
+            const historyAppts = [];
+            const now = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(now.getDate() - 30);
+
             snapshot.forEach(doc => {
-                appointments.push({ id: doc.id, ...doc.data() });
+                const data = doc.data();
+                const appt = { id: doc.id, ...data };
+                const s = (data.status || '').toLowerCase();
+                const isFinished = s === 'concluído' || s === 'cancelado';
+
+                if (isFinished) {
+                    // Check if within last 30 days
+                    const apptDate = new Date(data.appointmentTime);
+                    if (apptDate >= thirtyDaysAgo) {
+                        historyAppts.push(appt);
+                    }
+                } else {
+                    activeAppts.push(appt);
+                }
             });
 
-            // Client-side sort by time (Ascending)
-            appointments.sort((a, b) => {
-                return new Date(a.appointmentTime) - new Date(b.appointmentTime);
+            // Sort Active by Time (Ascending - Next upcoming first)
+            activeAppts.sort((a, b) => new Date(a.appointmentTime) - new Date(b.appointmentTime));
+
+            // Sort History by Time (Descending - Most recent first)
+            historyAppts.sort((a, b) => new Date(b.appointmentTime) - new Date(a.appointmentTime));
+
+            if (activeAppts.length === 0 && historyAppts.length === 0) {
+                 petsListContainer.innerHTML = '<p style="text-align: center; color: #666;">Nenhum agendamento encontrado.</p>';
+                 return;
+            }
+
+            // Render Active
+            activeAppts.forEach(appt => {
+                petsListContainer.appendChild(createPetCard(appt, false));
             });
 
-            appointments.forEach(appt => {
-                const card = document.createElement('div');
-                card.className = 'pet-card';
+            // Render History Section if exists
+            if (historyAppts.length > 0) {
+                const title = document.createElement('h3');
+                title.className = 'history-section-title';
+                title.textContent = 'Histórico Recente';
+                petsListContainer.appendChild(title);
 
-                const dateObj = new Date(appt.appointmentTime);
-                const dateStr = dateObj.toLocaleDateString('pt-BR');
-                const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-
-                let statusClass = '';
-                const lowerStatus = (appt.status || '').toLowerCase();
-                if (lowerStatus.includes('agendado')) statusClass = 'status-agendado';
-                else if (lowerStatus.includes('fila')) statusClass = 'status-fila';
-                else if (lowerStatus.includes('banho')) statusClass = 'status-banho';
-                else if (lowerStatus.includes('secando')) statusClass = 'status-secando';
-                else if (lowerStatus.includes('pronto')) statusClass = 'status-pronto';
-
-                card.innerHTML = `
-                    <h3>${appt.petName}</h3>
-                    <p><strong>Data:</strong> ${dateStr} às ${timeStr}</p>
-                    <div class="status-badge ${statusClass}">${appt.status}</div>
-                    <div class="card-actions">
-                        <button class="btn-small btn-edit" onclick="prepareEdit('${appt.id}', '${appt.petName}')">Alterar</button>
-                        <button class="btn-small btn-cancel" onclick="cancelAppointment('${appt.id}')">Cancelar</button>
-                    </div>
-                `;
-                petsListContainer.appendChild(card);
-            });
+                historyAppts.forEach(appt => {
+                    petsListContainer.appendChild(createPetCard(appt, true));
+                });
+            }
         });
     };
+
+    function createPetCard(appt, isHistory) {
+        const card = document.createElement('div');
+        card.className = `pet-card ${isHistory ? 'history-item' : ''}`;
+
+        const dateObj = new Date(appt.appointmentTime);
+        const dateStr = dateObj.toLocaleDateString('pt-BR');
+        const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+        let statusClass = '';
+        const lowerStatus = (appt.status || '').toLowerCase();
+        if (lowerStatus.includes('agendado')) statusClass = 'status-agendado';
+        else if (lowerStatus.includes('fila')) statusClass = 'status-fila';
+        else if (lowerStatus.includes('banho')) statusClass = 'status-banho';
+        else if (lowerStatus.includes('secando')) statusClass = 'status-secando';
+        else if (lowerStatus.includes('pronto')) statusClass = 'status-pronto';
+        else if (lowerStatus.includes('concluído')) statusClass = 'status-concluido';
+        else if (lowerStatus.includes('cancelado')) statusClass = 'status-cancelado';
+
+        let buttonsHtml = '';
+        if (!isHistory) {
+            buttonsHtml = `
+                <div class="card-actions">
+                    <button class="btn-small btn-edit" onclick="prepareEdit('${appt.id}', '${appt.petName}')">Alterar</button>
+                    <button class="btn-small btn-cancel" onclick="cancelAppointment('${appt.id}')">Cancelar</button>
+                </div>
+            `;
+        }
+
+        card.innerHTML = `
+            <h3>${appt.petName}</h3>
+            <p><strong>Data:</strong> ${dateStr} às ${timeStr}</p>
+            <div class="status-badge ${statusClass}">${appt.status}</div>
+            ${buttonsHtml}
+        `;
+        return card;
+    }
 
     window.cancelAppointment = async (id) => {
         if (!confirm("Tem certeza que deseja cancelar este agendamento?")) return;
         try {
-            await deleteDoc(doc(db, "appointments", id));
-            alert("Agendamento cancelado com sucesso.");
+            const docRef = doc(db, "appointments", id);
+            await updateDoc(docRef, {
+                status: 'Cancelado'
+            });
+            alert("Agendamento cancelado. O horário foi liberado.");
         } catch (e) {
             console.error("Error canceling: ", e);
             alert("Erro ao cancelar. Tente novamente.");
@@ -574,7 +646,8 @@
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                if (data.appointmentTime) {
+                // Ignore cancelled appointments for slot calculation
+                if (data.status !== 'Cancelado' && data.appointmentTime) {
                     const timePart = data.appointmentTime.split('T')[1];
                     takenSlots.add(timePart);
                 }
@@ -658,8 +731,11 @@
             if (!checkSnap.empty) {
                 let isConflict = false;
                 checkSnap.forEach(d => {
+                    const dData = d.data();
                     if (editingAppointmentId && d.id === editingAppointmentId) {
-                        // It's the same appointment (user selected same time), so no conflict
+                        // It's the same appointment
+                    } else if (dData.status === 'Cancelado') {
+                        // Ignore cancelled
                     } else {
                         isConflict = true;
                     }

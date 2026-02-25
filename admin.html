@@ -289,6 +289,35 @@
         .delete-btn:hover {
             background-color: #ffebee;
         }
+
+        .status-concluido { background-color: #4CAF50; color: white; }
+        .status-cancelado { background-color: #9e9e9e; color: white; }
+
+        .btn-concluir {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 1rem;
+            width: 100%;
+            font-weight: bold;
+        }
+        .btn-concluir:hover { background-color: #43A047; }
+
+        .btn-cancelar {
+            background-color: transparent;
+            color: #f44336;
+            border: 1px solid #f44336;
+            padding: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            width: 100%;
+            font-weight: bold;
+        }
+        .btn-cancelar:hover { background-color: #ffebee; }
     </style>
 </head>
 <body>
@@ -298,6 +327,7 @@
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('agenda')">Agenda do Dia</button>
+        <button class="tab-btn" onclick="switchTab('historico')">Histórico</button>
         <button class="tab-btn" onclick="switchTab('config')">Configurações</button>
     </div>
 
@@ -313,6 +343,17 @@
 
         <div id="appointments-list">
             <p style="text-align: center; color: #666; grid-column: 1/-1;">Selecione uma data para ver os agendamentos.</p>
+        </div>
+    </div>
+
+    <!-- Histórico Tab -->
+    <div id="tab-historico" class="tab-content">
+        <div class="controls" style="justify-content: center;">
+            <p style="text-align: center; color: #666; margin: 0;">Mostrando os últimos 50 agendamentos concluídos ou cancelados.</p>
+            <button class="btn-save" style="width: auto; margin-left: 1rem; padding: 0.5rem 1rem;" onclick="loadHistory()">Atualizar</button>
+        </div>
+        <div id="history-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+            <!-- History items -->
         </div>
     </div>
 
@@ -349,7 +390,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
@@ -366,6 +407,7 @@
     // --- State & Elements ---
     const agendaDateInput = document.getElementById('agendaDate');
     const listContainer = document.getElementById('appointments-list');
+    const historyContainer = document.getElementById('history-list');
 
     const configDateInput = document.getElementById('configDate');
     const configOptions = document.getElementById('config-options');
@@ -373,7 +415,8 @@
     const slotsCheckboxesContainer = document.getElementById('slots-checkboxes');
     const configMessage = document.getElementById('config-message');
 
-    let unsubscribe = null; // Store listener to detach later
+    let unsubscribe = null; // Store listener for Agenda
+    let historyUnsubscribe = null; // Store listener for History
 
     // Time slots definition (08:00 to 17:00)
     const timeSlots = [
@@ -396,13 +439,28 @@
 
         // Show selected
         document.getElementById(`tab-${tabName}`).classList.add('active');
-        // Find button (simple approach)
-        const buttons = document.querySelectorAll('.tab-btn');
-        if (tabName === 'agenda') buttons[0].classList.add('active');
-        else buttons[1].classList.add('active');
 
-        if (tabName === 'config') {
-            loadConfiguration(); // Load config for currently selected date
+        // Update button state
+        const buttons = document.querySelectorAll('.tab-btn');
+        // 0: Agenda, 1: History, 2: Config
+        if (tabName === 'agenda') {
+            buttons[0].classList.add('active');
+            // Stop history listener if running
+            if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
+            loadAppointments();
+        }
+        else if (tabName === 'historico') {
+            buttons[1].classList.add('active');
+            // Stop agenda listener if running
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            loadHistory();
+        }
+        else if (tabName === 'config') {
+            buttons[2].classList.add('active');
+            // Stop both
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
+            loadConfiguration();
         }
     };
 
@@ -431,15 +489,23 @@
         unsubscribe = onSnapshot(q, (snapshot) => {
             listContainer.innerHTML = ''; // Clear list
 
-            if (snapshot.empty) {
-                listContainer.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Nenhum agendamento para este dia.</p>';
+            const activeDocs = [];
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const s = (data.status || '').toLowerCase();
+                // Filter out finished/cancelled
+                if (s !== 'concluído' && s !== 'cancelado') {
+                    activeDocs.push({id: docSnap.id, ...data});
+                }
+            });
+
+            if (activeDocs.length === 0) {
+                listContainer.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Nenhum agendamento ativo para este dia.</p>';
                 return;
             }
 
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                const id = docSnap.id;
-                createCard(id, data);
+            activeDocs.forEach((item) => {
+                listContainer.appendChild(createCard(item.id, item, false));
             });
         }, (error) => {
             console.error("Error fetching appointments:", error);
@@ -447,20 +513,61 @@
         });
     };
 
-    function createCard(id, data) {
+    window.loadHistory = () => {
+        if (historyUnsubscribe) {
+            historyUnsubscribe();
+        }
+
+        // Load last 50 appointments
+        historyContainer.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Carregando histórico...</p>';
+
+        const q = query(
+            collection(db, "appointments"),
+            orderBy("appointmentTime", "desc"),
+            limit(100) // Fetch more to filter client side if needed
+        );
+
+        historyUnsubscribe = onSnapshot(q, (snapshot) => {
+            historyContainer.innerHTML = '';
+
+            const historyDocs = [];
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+                const s = (data.status || '').toLowerCase();
+                if (s === 'concluído' || s === 'cancelado') {
+                    historyDocs.push({id: docSnap.id, ...data});
+                }
+            });
+
+            if (historyDocs.length === 0) {
+                historyContainer.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Nenhum histórico recente encontrado.</p>';
+                return;
+            }
+
+            // Limit display to 50
+            historyDocs.slice(0, 50).forEach((item) => {
+                historyContainer.appendChild(createCard(item.id, item, true));
+            });
+        });
+    };
+
+    function createCard(id, data, isHistory) {
         const card = document.createElement('div');
         card.className = 'card';
 
         // Determine status class
         let statusClass = 'status-fila';
-        const s = data.status.toLowerCase();
+        const s = (data.status || '').toLowerCase();
         if (s.includes('agendado')) statusClass = 'status-agendado';
-        if (s.includes('banho')) statusClass = 'status-banho';
-        if (s.includes('secando')) statusClass = 'status-secando';
-        if (s.includes('pronto')) statusClass = 'status-pronto';
+        else if (s.includes('banho')) statusClass = 'status-banho';
+        else if (s.includes('secando')) statusClass = 'status-secando';
+        else if (s.includes('pronto')) statusClass = 'status-pronto';
+        else if (s.includes('concluído')) statusClass = 'status-concluido';
+        else if (s.includes('cancelado')) statusClass = 'status-cancelado';
 
         // Format Date
         const dateObj = new Date(data.appointmentTime);
+        const dateStr = dateObj.toLocaleDateString('pt-BR');
         const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
         // Owner Name Display
@@ -468,7 +575,7 @@
 
         // WhatsApp Button Logic
         let whatsappHtml = '';
-        if (s.includes('pronto') && data.ownerPhone) {
+        if (s.includes('pronto') && data.ownerPhone && !isHistory) {
             let phone = data.ownerPhone;
             if (phone.length <= 11) {
                 phone = '55' + phone;
@@ -478,14 +585,9 @@
             whatsappHtml = `<a href="${link}" target="_blank" class="whatsapp-btn">📱 Avisar Dono (WhatsApp)</a>`;
         }
 
-        card.innerHTML = `
-            <div class="card-header">
-                <span class="status-badge ${statusClass}">${data.status}</span>
-                <h3 class="pet-name">${data.petName}${ownerDisplay}</h3>
-                <div class="pet-info">🕒 ${timeStr}</div>
-                <div class="pet-info">📞 ${formatPhone(data.ownerPhone)}</div>
-            </div>
-
+        let buttonsHtml = '';
+        if (!isHistory) {
+            buttonsHtml = `
             <div class="actions">
                 <button class="btn-status ${data.status === 'Agendado' ? 'active' : ''}" onclick="updateStatus('${id}', 'Agendado')">Agendado</button>
                 <button class="btn-status ${data.status === 'Na Fila' ? 'active' : ''}" onclick="updateStatus('${id}', 'Na Fila')">Fila</button>
@@ -496,10 +598,22 @@
 
             ${whatsappHtml}
 
-            <button class="delete-btn" onclick="deleteAppointment('${id}')">Concluir / Remover</button>
+            <button class="btn-concluir" onclick="updateStatus('${id}', 'Concluído')">✅ Concluir</button>
+            <button class="btn-cancelar" onclick="cancelAppointment('${id}')">❌ Cancelar</button>
+            `;
+        }
+
+        card.innerHTML = `
+            <div class="card-header">
+                <span class="status-badge ${statusClass}">${data.status}</span>
+                <h3 class="pet-name">${data.petName}${ownerDisplay}</h3>
+                <div class="pet-info">📅 ${dateStr} - 🕒 ${timeStr}</div>
+                <div class="pet-info">📞 ${formatPhone(data.ownerPhone)}</div>
+            </div>
+            ${buttonsHtml}
         `;
 
-        listContainer.appendChild(card);
+        return card;
     }
 
     function formatPhone(phone) {
@@ -623,13 +737,13 @@
         }
     };
 
-    window.deleteAppointment = async (id) => {
-        if (confirm("Tem certeza que deseja remover este agendamento?")) {
+    window.cancelAppointment = async (id) => {
+        if (confirm("Tem certeza que deseja CANCELAR este agendamento? O horário ficará disponível.")) {
             try {
-                await deleteDoc(doc(db, "appointments", id));
+                await updateStatus(id, 'Cancelado');
             } catch (e) {
-                console.error("Error deleting document: ", e);
-                alert("Erro ao remover.");
+                console.error("Error canceling document: ", e);
+                alert("Erro ao cancelar.");
             }
         }
     };
