@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - PetShop</title>
+    <script>
+        const password = prompt("Digite a senha de administrador:");
+        if (password !== 'admin123') {
+            window.location.href = 'index.html';
+        }
+    </script>
     <style>
         :root {
             --primary: #4CAF50;
