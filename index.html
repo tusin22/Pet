@@ -120,10 +120,34 @@
             font-size: 0.9rem;
             margin-top: 5px;
         }
+        .status-agendado { background-color: #e0e0e0; color: #616161; }
         .status-fila { background-color: #ffe0b2; color: #e65100; }
         .status-banho { background-color: #b3e5fc; color: #01579b; }
         .status-secando { background-color: #e1bee7; color: #4a148c; }
         .status-pronto { background-color: #c8e6c9; color: #1b5e20; }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .btn-small {
+            padding: 0.5rem;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        .btn-cancel {
+            background-color: #f44336;
+        }
+        .btn-cancel:hover {
+            background-color: #d32f2f;
+        }
+        .btn-edit {
+            background-color: #2196F3;
+        }
+        .btn-edit:hover {
+            background-color: #1976D2;
+        }
 
         /* Time Slots Grid */
         #slots-container {
@@ -255,7 +279,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, query, where, getDocs, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, query, where, getDocs, getDoc, orderBy, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
@@ -345,6 +369,12 @@
 
     // 2. Menu Buttons
     document.getElementById('btn-agendar').addEventListener('click', () => {
+        editingAppointmentId = null;
+        document.getElementById('petName').value = '';
+        document.getElementById('appointmentDate').value = '';
+        document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+        selectedSlot = null;
+        document.querySelector('#schedule-form button[type="submit"]').textContent = 'Confirmar Agendamento';
         showScreen('schedule-screen');
     });
 
@@ -383,8 +413,6 @@
         const q = query(
             collection(db, "appointments"),
             where("ownerPhone", "==", ownerPhone)
-            // Note: index might be required for compound query if we added orderBy.
-            // For now, client-side sorting or default order is fine for MVP.
         );
 
         petsUnsubscribe = onSnapshot(q, (snapshot) => {
@@ -415,7 +443,8 @@
 
                 let statusClass = '';
                 const lowerStatus = (appt.status || '').toLowerCase();
-                if (lowerStatus.includes('fila')) statusClass = 'status-fila';
+                if (lowerStatus.includes('agendado')) statusClass = 'status-agendado';
+                else if (lowerStatus.includes('fila')) statusClass = 'status-fila';
                 else if (lowerStatus.includes('banho')) statusClass = 'status-banho';
                 else if (lowerStatus.includes('secando')) statusClass = 'status-secando';
                 else if (lowerStatus.includes('pronto')) statusClass = 'status-pronto';
@@ -424,10 +453,44 @@
                     <h3>${appt.petName}</h3>
                     <p><strong>Data:</strong> ${dateStr} às ${timeStr}</p>
                     <div class="status-badge ${statusClass}">${appt.status}</div>
+                    <div class="card-actions">
+                        <button class="btn-small btn-edit" onclick="prepareEdit('${appt.id}', '${appt.petName}')">Alterar</button>
+                        <button class="btn-small btn-cancel" onclick="cancelAppointment('${appt.id}')">Cancelar</button>
+                    </div>
                 `;
                 petsListContainer.appendChild(card);
             });
         });
+    };
+
+    window.cancelAppointment = async (id) => {
+        if (!confirm("Tem certeza que deseja cancelar este agendamento?")) return;
+        try {
+            await deleteDoc(doc(db, "appointments", id));
+            alert("Agendamento cancelado com sucesso.");
+        } catch (e) {
+            console.error("Error canceling: ", e);
+            alert("Erro ao cancelar. Tente novamente.");
+        }
+    };
+
+    // --- Schedule Logic ---
+
+    let editingAppointmentId = null;
+
+    window.prepareEdit = (id, petName) => {
+        editingAppointmentId = id;
+        document.getElementById('petName').value = petName;
+        // Reset date/slots because user needs to pick new ones
+        document.getElementById('appointmentDate').value = '';
+        document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma nova data para ver os horários.</p>';
+        selectedSlot = null;
+
+        // Update UI
+        const submitBtn = document.querySelector('#schedule-form button[type="submit"]');
+        submitBtn.textContent = 'Salvar Alteração';
+
+        showScreen('schedule-screen');
     };
 
     // --- Schedule Logic ---
@@ -593,22 +656,46 @@
             const checkSnap = await getDocs(qCheck);
 
             if (!checkSnap.empty) {
-                alert("Ops! Esse horário acabou de ser reservado por outra pessoa.");
-                const datePart = appointmentTime.split('T')[0];
-                generateSlots(datePart);
-                return;
+                let isConflict = false;
+                checkSnap.forEach(d => {
+                    if (editingAppointmentId && d.id === editingAppointmentId) {
+                        // It's the same appointment (user selected same time), so no conflict
+                    } else {
+                        isConflict = true;
+                    }
+                });
+
+                if (isConflict) {
+                    alert("Ops! Esse horário acabou de ser reservado por outra pessoa.");
+                    const datePart = appointmentTime.split('T')[0];
+                    generateSlots(datePart);
+                    return;
+                }
             }
 
-            await addDoc(collection(db, "appointments"), {
-                petName: petName,
-                ownerPhone: ownerPhone,
-                ownerName: ownerName || "Nome não informado",
-                appointmentTime: appointmentTime,
-                status: 'Na Fila',
-                createdAt: new Date().toISOString()
-            });
+            if (editingAppointmentId) {
+                 const docRef = doc(db, "appointments", editingAppointmentId);
+                 await updateDoc(docRef, {
+                    petName: petName,
+                    appointmentTime: appointmentTime,
+                    status: 'Agendado'
+                 });
+                 alert('Agendamento alterado com sucesso!');
+            } else {
+                await addDoc(collection(db, "appointments"), {
+                    petName: petName,
+                    ownerPhone: ownerPhone,
+                    ownerName: ownerName || "Nome não informado",
+                    appointmentTime: appointmentTime,
+                    status: 'Agendado',
+                    createdAt: new Date().toISOString()
+                });
+                alert('Agendamento realizado com sucesso!');
+            }
 
-            alert('Agendamento realizado com sucesso!');
+            // Cleanup
+            editingAppointmentId = null;
+            document.querySelector('#schedule-form button[type="submit"]').textContent = 'Confirmar Agendamento';
 
             // Clear form
             document.getElementById('petName').value = '';
@@ -621,8 +708,8 @@
             loadMyPets();
 
         } catch (e) {
-            console.error("Error adding document: ", e);
-            alert("Erro ao agendar. Tente novamente.");
+            console.error("Error saving document: ", e);
+            alert("Erro ao salvar. Tente novamente.");
         }
     });
 
