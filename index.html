@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agendar Banho - PetShop</title>
+    <title>PetShop - Agendamento e Status</title>
     <style>
         :root {
             --primary: #4CAF50;
@@ -32,9 +32,10 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 400px;
+            position: relative;
         }
 
-        h1 {
+        h1, h2 {
             text-align: center;
             color: var(--primary);
             margin-bottom: 1.5rem;
@@ -57,7 +58,7 @@
             border: 1px solid var(--border);
             border-radius: 6px;
             font-size: 1rem;
-            box-sizing: border-box; /* Garante que padding não aumente a largura total */
+            box-sizing: border-box;
         }
 
         input:focus {
@@ -77,41 +78,52 @@
             font-weight: bold;
             cursor: pointer;
             transition: background-color 0.2s;
+            margin-bottom: 0.5rem;
         }
 
         button:hover {
             background-color: #45a049;
         }
 
-        /* Status Section */
-        #status-container {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border);
-            text-align: center;
-            display: none; /* Hidden by default */
+        button.secondary {
+            background-color: #9e9e9e;
+        }
+        button.secondary:hover {
+            background-color: #757575;
         }
 
+        /* Screens */
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+
+        /* Menu Buttons */
+        .menu-btn {
+            display: block;
+            width: 100%;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        /* Status Badge */
         .status-badge {
             display: inline-block;
             padding: 0.5rem 1rem;
             background-color: #e0e0e0;
             border-radius: 20px;
             font-weight: bold;
-            margin-top: 0.5rem;
-            font-size: 1.1rem;
+            font-size: 0.9rem;
+            margin-top: 5px;
         }
-
         .status-fila { background-color: #ffe0b2; color: #e65100; }
         .status-banho { background-color: #b3e5fc; color: #01579b; }
         .status-secando { background-color: #e1bee7; color: #4a148c; }
         .status-pronto { background-color: #c8e6c9; color: #1b5e20; }
-
-        .loading {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-        }
 
         /* Time Slots Grid */
         #slots-container {
@@ -131,6 +143,7 @@
             text-align: center;
             font-size: 0.9rem;
             transition: all 0.2s;
+            margin-bottom: 0;
         }
 
         .slot-btn:hover:not(:disabled) {
@@ -149,23 +162,67 @@
             cursor: not-allowed;
             text-decoration: line-through;
         }
+
+        /* My Pets List */
+        .pet-card {
+            background: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .pet-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary);
+        }
+        .pet-card p {
+            margin: 0.25rem 0;
+            font-size: 0.95rem;
+            color: #555;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="form-section">
-        <h1>Agendar Banho 🐶</h1>
+
+    <!-- Tela Login -->
+    <div id="login-screen" class="screen">
+        <h1>Bem-vindo! 🐾</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 1.5rem;">Preencha seus dados para continuar.</p>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="loginName">Seu Nome</label>
+                <input type="text" id="loginName" required placeholder="Ex: Maria Silva">
+            </div>
+            <div class="form-group">
+                <label for="loginPhone">Seu WhatsApp</label>
+                <input type="tel" id="loginPhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15">
+            </div>
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+
+    <!-- Tela Menu -->
+    <div id="menu-screen" class="screen">
+        <h1 id="menu-greeting">Bem-vindo ao Petshop!</h1>
+        <button id="btn-agendar" class="menu-btn">Agendar Banho 🛁</button>
+        <button id="btn-meus-pets" class="menu-btn">Meus Pets 🐶</button>
+        <div style="margin-top: 2rem; text-align: center;">
+            <a href="#" id="logout-link" style="color: #999; text-decoration: none; font-size: 0.9rem;">Sair / Trocar Telefone</a>
+        </div>
+    </div>
+
+    <!-- Tela Agendar -->
+    <div id="schedule-screen" class="screen">
+        <h2>Agendar Banho</h2>
         <form id="schedule-form">
             <div class="form-group">
                 <label for="petName">Nome do Pet</label>
                 <input type="text" id="petName" required placeholder="Ex: Rex">
             </div>
 
-            <div class="form-group">
-                <label for="ownerPhone">WhatsApp do Dono</label>
-                <input type="tel" id="ownerPhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15">
-            </div>
+            <!-- Telefone is implicit from login, logic will handle it -->
 
             <div class="form-group">
                 <label for="appointmentDate">Data</label>
@@ -179,23 +236,26 @@
                 </div>
             </div>
 
-            <button type="submit">Agendar</button>
+            <button type="submit">Confirmar Agendamento</button>
+            <button type="button" class="secondary" onclick="showScreen('menu-screen')">Voltar ao Menu</button>
         </form>
     </div>
 
-    <div id="status-container">
-        <h2>Status do seu Pet</h2>
-        <p>Olá! O status atual de <strong id="displayPetName"></strong> é:</p>
-        <div id="currentStatus" class="status-badge">Carregando...</div>
-        <p style="margin-top: 1rem; color: #555;">Agendado para: <strong id="displayAppointmentTime">--/--/-- às --:--</strong></p>
-        <br><br>
-        <button onclick="cancelTracking()" style="background-color: #9e9e9e; font-size: 0.9rem;">Novo Agendamento</button>
+    <!-- Tela Meus Pets -->
+    <div id="my-pets-screen" class="screen">
+        <h2>Meus Pets</h2>
+        <div id="pets-list">
+            <p style="text-align: center; color: #666;">Carregando...</p>
+        </div>
+        <br>
+        <button type="button" class="secondary" onclick="showScreen('menu-screen')">Voltar ao Menu</button>
     </div>
+
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, query, where, getDocs, getDoc, orderBy } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
@@ -210,45 +270,182 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // DOM Elements
-    const formSection = document.getElementById('form-section');
-    const statusContainer = document.getElementById('status-container');
-    const scheduleForm = document.getElementById('schedule-form');
-    const ownerPhoneInput = document.getElementById('ownerPhone');
-    const displayPetName = document.getElementById('displayPetName');
-    const currentStatus = document.getElementById('currentStatus');
-    const displayAppointmentTime = document.getElementById('displayAppointmentTime');
-    const appointmentDateInput = document.getElementById('appointmentDate');
-    const slotsContainer = document.getElementById('slots-container');
+    // Navigation & State
+    window.showScreen = (screenId) => {
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    };
 
-    let selectedSlot = null; // Stores the full ISO string (YYYY-MM-DDTHH:mm)
+    const loginPhoneInput = document.getElementById('loginPhone');
+    const loginNameInput = document.getElementById('loginName');
 
-    // WhatsApp Input Mask
-    ownerPhoneInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
-        if (value.length > 11) value = value.slice(0, 11); // Limit to 11 digits
+    // Phone Mask Logic
+    const applyPhoneMask = (value) => {
+        value = value.replace(/\D/g, '');
+        if (value.length > 11) value = value.slice(0, 11);
+        if (value.length > 2) value = `(${value.substring(0, 2)}) ${value.substring(2)}`;
+        if (value.length > 9) value = `${value.substring(0, 10)}-${value.substring(10)}`;
+        return value;
+    };
 
-        if (value.length > 2) {
-            value = `(${value.substring(0, 2)}) ${value.substring(2)}`;
-        }
-        if (value.length > 9) { // (XX) XXXXX...
-            value = `${value.substring(0, 10)}-${value.substring(10)}`;
-        }
-        e.target.value = value;
+    loginPhoneInput.addEventListener('input', (e) => {
+        e.target.value = applyPhoneMask(e.target.value);
     });
 
-    // Time Slots Definition
+    // Check Login State
+    const checkLogin = () => {
+        const phone = localStorage.getItem('petshop_owner_phone');
+        const name = localStorage.getItem('petshop_owner_name');
+
+        if (phone && name) {
+            updateGreeting(name);
+            showScreen('menu-screen');
+        } else {
+            showScreen('login-screen');
+        }
+    };
+
+    // Initialize
+    checkLogin();
+
+    // Expose showScreen globally for inline onclicks
+    window.showScreen = showScreen;
+
+    function updateGreeting(name) {
+        const greetingEl = document.getElementById('menu-greeting');
+        if (greetingEl) {
+             greetingEl.textContent = `Olá, ${name}! Bem-vindo ao Petshop`;
+        }
+    }
+
+    // --- Event Listeners ---
+
+    // 1. Login Form
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const rawValue = loginPhoneInput.value.replace(/\D/g, '');
+        const nameValue = loginNameInput.value.trim();
+
+        if (rawValue.length < 10) {
+            alert("Por favor, digite um telefone válido com DDD.");
+            return;
+        }
+
+        if (nameValue.length < 2) {
+            alert("Por favor, digite seu nome.");
+            return;
+        }
+
+        localStorage.setItem('petshop_owner_phone', rawValue);
+        localStorage.setItem('petshop_owner_name', nameValue);
+
+        updateGreeting(nameValue);
+        showScreen('menu-screen');
+    });
+
+    // 2. Menu Buttons
+    document.getElementById('btn-agendar').addEventListener('click', () => {
+        showScreen('schedule-screen');
+    });
+
+    document.getElementById('btn-meus-pets').addEventListener('click', () => {
+        showScreen('my-pets-screen');
+        loadMyPets(); // We will implement this function later
+    });
+
+    document.getElementById('logout-link').addEventListener('click', (e) => {
+        e.preventDefault();
+        if(confirm("Deseja realmente sair?")) {
+            localStorage.removeItem('petshop_owner_phone');
+            localStorage.removeItem('petshop_appointment_id'); // Clear legacy item if exists
+            loginPhoneInput.value = '';
+            showScreen('login-screen');
+        }
+    });
+
+    // --- My Pets Logic ---
+
+    let petsUnsubscribe = null;
+    const petsListContainer = document.getElementById('pets-list');
+
+    window.loadMyPets = () => {
+        const ownerPhone = localStorage.getItem('petshop_owner_phone');
+        if (!ownerPhone) return;
+
+        // Unsubscribe previous listener if exists
+        if (petsUnsubscribe) {
+            petsUnsubscribe();
+            petsUnsubscribe = null;
+        }
+
+        petsListContainer.innerHTML = '<p style="text-align: center; color: #666;">Carregando...</p>';
+
+        const q = query(
+            collection(db, "appointments"),
+            where("ownerPhone", "==", ownerPhone)
+            // Note: index might be required for compound query if we added orderBy.
+            // For now, client-side sorting or default order is fine for MVP.
+        );
+
+        petsUnsubscribe = onSnapshot(q, (snapshot) => {
+            petsListContainer.innerHTML = '';
+
+            if (snapshot.empty) {
+                petsListContainer.innerHTML = '<p style="text-align: center; color: #666;">Você ainda não tem agendamentos.</p>';
+                return;
+            }
+
+            const appointments = [];
+            snapshot.forEach(doc => {
+                appointments.push({ id: doc.id, ...doc.data() });
+            });
+
+            // Client-side sort by time (Ascending)
+            appointments.sort((a, b) => {
+                return new Date(a.appointmentTime) - new Date(b.appointmentTime);
+            });
+
+            appointments.forEach(appt => {
+                const card = document.createElement('div');
+                card.className = 'pet-card';
+
+                const dateObj = new Date(appt.appointmentTime);
+                const dateStr = dateObj.toLocaleDateString('pt-BR');
+                const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+                let statusClass = '';
+                const lowerStatus = (appt.status || '').toLowerCase();
+                if (lowerStatus.includes('fila')) statusClass = 'status-fila';
+                else if (lowerStatus.includes('banho')) statusClass = 'status-banho';
+                else if (lowerStatus.includes('secando')) statusClass = 'status-secando';
+                else if (lowerStatus.includes('pronto')) statusClass = 'status-pronto';
+
+                card.innerHTML = `
+                    <h3>${appt.petName}</h3>
+                    <p><strong>Data:</strong> ${dateStr} às ${timeStr}</p>
+                    <div class="status-badge ${statusClass}">${appt.status}</div>
+                `;
+                petsListContainer.appendChild(card);
+            });
+        });
+    };
+
+    // --- Schedule Logic ---
+
+    const scheduleForm = document.getElementById('schedule-form');
+    const appointmentDateInput = document.getElementById('appointmentDate');
+    const slotsContainer = document.getElementById('slots-container');
+    let selectedSlot = null;
+
     const timeSlots = [
         "08:00", "09:00", "10:00", "11:00", "12:00",
         "13:00", "14:00", "15:00", "16:00", "17:00"
     ];
 
-    // Listen for Date Change
     appointmentDateInput.addEventListener('change', async (e) => {
         const dateVal = e.target.value;
         if (!dateVal) return;
 
-        // Prevent past dates
         const selectedDate = new Date(dateVal + 'T00:00:00');
         const today = new Date();
         today.setHours(0,0,0,0);
@@ -265,10 +462,9 @@
 
     async function generateSlots(dateString) {
         slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Carregando horários...</p>';
-        selectedSlot = null; // Reset selection
+        selectedSlot = null;
 
         try {
-            // 1. Check Config for this Date
             const configRef = doc(db, "configuracoes", dateString);
             const configSnap = await getDoc(configRef);
             let blockedAllDay = false;
@@ -276,9 +472,7 @@
 
             if (configSnap.exists()) {
                 const configData = configSnap.data();
-                if (configData.blockedAllDay) {
-                    blockedAllDay = true;
-                }
+                if (configData.blockedAllDay) blockedAllDay = true;
                 if (configData.blockedSlots && Array.isArray(configData.blockedSlots)) {
                     configData.blockedSlots.forEach(s => blockedSlots.add(s));
                 }
@@ -289,11 +483,9 @@
                  return;
             }
 
-            // Define Range for Query
             const startOfDay = `${dateString}T00:00`;
             const endOfDay = `${dateString}T23:59`;
 
-            // Query Firestore
             const q = query(
                 collection(db, "appointments"),
                 where("appointmentTime", ">=", startOfDay),
@@ -305,31 +497,26 @@
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                // data.appointmentTime looks like "2023-10-27T14:00"
                 if (data.appointmentTime) {
                     const timePart = data.appointmentTime.split('T')[1];
                     takenSlots.add(timePart);
                 }
             });
 
-            // Check if today to block past hours
             const now = new Date();
             const isToday = (new Date(dateString + 'T00:00:00').toDateString() === now.toDateString());
             const currentHour = now.getHours();
             const currentMinute = now.getMinutes();
 
-            slotsContainer.innerHTML = ''; // Clear loading
+            slotsContainer.innerHTML = '';
 
             timeSlots.forEach(time => {
                 const btn = document.createElement('button');
-                btn.type = 'button'; // Prevent form submit
+                btn.type = 'button';
                 btn.className = 'slot-btn';
                 btn.textContent = time;
 
-                // Construct full ISO string for this slot
                 const fullIso = `${dateString}T${time}`;
-
-                // Check availability
                 let isTaken = takenSlots.has(time);
                 let isBlocked = blockedSlots.has(time);
                 let isPast = false;
@@ -359,48 +546,32 @@
     }
 
     function selectSlot(btn, fullIso) {
-        // Deselect previous
         const prev = slotsContainer.querySelector('.selected');
         if (prev) prev.classList.remove('selected');
-
-        // Select new
         btn.classList.add('selected');
         selectedSlot = fullIso;
     }
 
-    // Check localStorage for existing appointment
-    const storedAppointmentId = localStorage.getItem('petshop_appointment_id');
-
-    if (storedAppointmentId) {
-        showStatusView(storedAppointmentId);
-    }
-
-    // Handle Form Submission
     scheduleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const petName = document.getElementById('petName').value;
-        const ownerPhone = document.getElementById('ownerPhone').value;
+        const ownerPhone = localStorage.getItem('petshop_owner_phone'); // Get from storage
+        const ownerName = localStorage.getItem('petshop_owner_name');
 
-        // Validation
         if (!selectedSlot) {
             alert("Por favor, selecione um horário.");
+            return;
+        }
+        if (!ownerPhone) {
+            alert("Erro: Telefone não encontrado. Faça login novamente.");
+            showScreen('login-screen');
             return;
         }
 
         const appointmentTime = selectedSlot;
 
-        // Clean phone for database storage
-        const cleanPhone = ownerPhone.replace(/\D/g, '');
-
-        if (cleanPhone.length < 10) {
-            alert("Por favor, insira um número de telefone válido com DDD.");
-            return;
-        }
-
-        // Concurrency Check
         try {
-            // Check if slot was taken in the last few seconds
             const qCheck = query(
                 collection(db, "appointments"),
                 where("appointmentTime", "==", appointmentTime)
@@ -410,23 +581,30 @@
             if (!checkSnap.empty) {
                 alert("Ops! Esse horário acabou de ser reservado por outra pessoa.");
                 const datePart = appointmentTime.split('T')[0];
-                generateSlots(datePart); // Refresh slots
+                generateSlots(datePart);
                 return;
             }
 
-            const docRef = await addDoc(collection(db, "appointments"), {
+            await addDoc(collection(db, "appointments"), {
                 petName: petName,
-                ownerPhone: cleanPhone,
+                ownerPhone: ownerPhone,
+                ownerName: ownerName || "Nome não informado",
                 appointmentTime: appointmentTime,
-                status: 'Na Fila', // Initial status
+                status: 'Na Fila',
                 createdAt: new Date().toISOString()
             });
 
-            // Save ID to localStorage
-            localStorage.setItem('petshop_appointment_id', docRef.id);
+            alert('Agendamento realizado com sucesso!');
 
-            // Switch view
-            showStatusView(docRef.id);
+            // Clear form
+            document.getElementById('petName').value = '';
+            appointmentDateInput.value = '';
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+            selectedSlot = null;
+
+            // Redirect
+            showScreen('my-pets-screen');
+            loadMyPets();
 
         } catch (e) {
             console.error("Error adding document: ", e);
@@ -434,50 +612,6 @@
         }
     });
 
-    function showStatusView(docId) {
-        formSection.style.display = 'none';
-        statusContainer.style.display = 'block';
-
-        // Listen for updates
-        const unsub = onSnapshot(doc(db, "appointments", docId), (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
-                displayPetName.textContent = data.petName;
-
-                // Format and display time
-                if (data.appointmentTime) {
-                    const dateObj = new Date(data.appointmentTime);
-                    const dateStr = dateObj.toLocaleDateString('pt-BR');
-                    const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-                    displayAppointmentTime.textContent = `${dateStr} às ${timeStr}`;
-                }
-
-                // Update status badge
-                updateStatusBadge(data.status);
-            } else {
-                // Document might have been deleted (e.g., cleaned up by admin)
-                alert("Agendamento não encontrado ou finalizado.");
-                cancelTracking();
-            }
-        });
-    }
-
-    function updateStatusBadge(status) {
-        currentStatus.textContent = status;
-        currentStatus.className = 'status-badge'; // Reset classes
-
-        const lowerStatus = status.toLowerCase();
-        if (lowerStatus.includes('fila')) currentStatus.classList.add('status-fila');
-        else if (lowerStatus.includes('banho')) currentStatus.classList.add('status-banho');
-        else if (lowerStatus.includes('secando')) currentStatus.classList.add('status-secando');
-        else if (lowerStatus.includes('pronto')) currentStatus.classList.add('status-pronto');
-    }
-
-    // Expose to window for the button onclick
-    window.cancelTracking = () => {
-        localStorage.removeItem('petshop_appointment_id');
-        location.reload(); // Simple reload to reset state
-    };
 </script>
 
 </body>
