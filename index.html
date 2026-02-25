@@ -189,8 +189,12 @@
     <!-- Tela Login -->
     <div id="login-screen" class="screen">
         <h1>Bem-vindo! 🐾</h1>
-        <p style="text-align: center; color: #666; margin-bottom: 1.5rem;">Digite seu WhatsApp para continuar.</p>
+        <p style="text-align: center; color: #666; margin-bottom: 1.5rem;">Preencha seus dados para continuar.</p>
         <form id="login-form">
+            <div class="form-group">
+                <label for="loginName">Seu Nome</label>
+                <input type="text" id="loginName" required placeholder="Ex: Maria Silva">
+            </div>
             <div class="form-group">
                 <label for="loginPhone">Seu WhatsApp</label>
                 <input type="tel" id="loginPhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15">
@@ -201,7 +205,7 @@
 
     <!-- Tela Menu -->
     <div id="menu-screen" class="screen">
-        <h1>Bem-vindo ao Petshop!</h1>
+        <h1 id="menu-greeting">Bem-vindo ao Petshop!</h1>
         <button id="btn-agendar" class="menu-btn">Agendar Banho 🛁</button>
         <button id="btn-meus-pets" class="menu-btn">Meus Pets 🐶</button>
         <div style="margin-top: 2rem; text-align: center;">
@@ -273,6 +277,7 @@
     };
 
     const loginPhoneInput = document.getElementById('loginPhone');
+    const loginNameInput = document.getElementById('loginName');
 
     // Phone Mask Logic
     const applyPhoneMask = (value) => {
@@ -290,7 +295,10 @@
     // Check Login State
     const checkLogin = () => {
         const phone = localStorage.getItem('petshop_owner_phone');
-        if (phone) {
+        const name = localStorage.getItem('petshop_owner_name');
+
+        if (phone && name) {
+            updateGreeting(name);
             showScreen('menu-screen');
         } else {
             showScreen('login-screen');
@@ -303,19 +311,35 @@
     // Expose showScreen globally for inline onclicks
     window.showScreen = showScreen;
 
+    function updateGreeting(name) {
+        const greetingEl = document.getElementById('menu-greeting');
+        if (greetingEl) {
+             greetingEl.textContent = `Olá, ${name}! Bem-vindo ao Petshop`;
+        }
+    }
+
     // --- Event Listeners ---
 
     // 1. Login Form
     document.getElementById('login-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const rawValue = loginPhoneInput.value.replace(/\D/g, '');
+        const nameValue = loginNameInput.value.trim();
 
         if (rawValue.length < 10) {
             alert("Por favor, digite um telefone válido com DDD.");
             return;
         }
 
+        if (nameValue.length < 2) {
+            alert("Por favor, digite seu nome.");
+            return;
+        }
+
         localStorage.setItem('petshop_owner_phone', rawValue);
+        localStorage.setItem('petshop_owner_name', nameValue);
+
+        updateGreeting(nameValue);
         showScreen('menu-screen');
     });
 
@@ -533,6 +557,7 @@
 
         const petName = document.getElementById('petName').value;
         const ownerPhone = localStorage.getItem('petshop_owner_phone'); // Get from storage
+        const ownerName = localStorage.getItem('petshop_owner_name');
 
         if (!selectedSlot) {
             alert("Por favor, selecione um horário.");
@@ -563,6 +588,7 @@
             await addDoc(collection(db, "appointments"), {
                 petName: petName,
                 ownerPhone: ownerPhone,
+                ownerName: ownerName || "Nome não informado",
                 appointmentTime: appointmentTime,
                 status: 'Na Fila',
                 createdAt: new Date().toISOString()

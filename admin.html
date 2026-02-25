@@ -461,6 +461,9 @@
         const dateObj = new Date(data.appointmentTime);
         const timeStr = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 
+        // Owner Name Display
+        const ownerDisplay = data.ownerName ? ` (${data.ownerName})` : '';
+
         // WhatsApp Button Logic
         let whatsappHtml = '';
         if (s.includes('pronto') && data.ownerPhone) {
@@ -476,7 +479,7 @@
         card.innerHTML = `
             <div class="card-header">
                 <span class="status-badge ${statusClass}">${data.status}</span>
-                <h3 class="pet-name">${data.petName}</h3>
+                <h3 class="pet-name">${data.petName}${ownerDisplay}</h3>
                 <div class="pet-info">🕒 ${timeStr}</div>
                 <div class="pet-info">📞 ${formatPhone(data.ownerPhone)}</div>
             </div>
