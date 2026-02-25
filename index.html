@@ -112,6 +112,43 @@
             color: #666;
             font-style: italic;
         }
+
+        /* Time Slots Grid */
+        #slots-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .slot-btn {
+            padding: 10px;
+            border: 1px solid var(--primary);
+            background-color: white;
+            color: var(--primary);
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .slot-btn:hover:not(:disabled) {
+            background-color: #e8f5e9;
+        }
+
+        .slot-btn.selected {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .slot-btn:disabled {
+            background-color: #e0e0e0;
+            color: #9e9e9e;
+            border-color: #bdbdbd;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
     </style>
 </head>
 <body>
@@ -131,8 +168,15 @@
             </div>
 
             <div class="form-group">
-                <label for="appointmentTime">Data e Horário</label>
-                <input type="datetime-local" id="appointmentTime" required>
+                <label for="appointmentDate">Data</label>
+                <input type="date" id="appointmentDate" required>
+            </div>
+
+            <div class="form-group">
+                <label>Horário</label>
+                <div id="slots-container">
+                    <p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>
+                </div>
             </div>
 
             <button type="submit">Agendar</button>
@@ -151,7 +195,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
@@ -174,6 +218,10 @@
     const displayPetName = document.getElementById('displayPetName');
     const currentStatus = document.getElementById('currentStatus');
     const displayAppointmentTime = document.getElementById('displayAppointmentTime');
+    const appointmentDateInput = document.getElementById('appointmentDate');
+    const slotsContainer = document.getElementById('slots-container');
+
+    let selectedSlot = null; // Stores the full ISO string (YYYY-MM-DDTHH:mm)
 
     // WhatsApp Input Mask
     ownerPhoneInput.addEventListener('input', (e) => {
@@ -189,6 +237,113 @@
         e.target.value = value;
     });
 
+    // Time Slots Definition
+    const timeSlots = [
+        "08:00", "09:00", "10:00", "11:00", "12:00",
+        "13:00", "14:00", "15:00", "16:00", "17:00"
+    ];
+
+    // Listen for Date Change
+    appointmentDateInput.addEventListener('change', async (e) => {
+        const dateVal = e.target.value;
+        if (!dateVal) return;
+
+        // Prevent past dates
+        const selectedDate = new Date(dateVal + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0,0,0,0);
+
+        if (selectedDate < today) {
+            alert("Por favor, selecione uma data futura.");
+            e.target.value = '';
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+            return;
+        }
+
+        await generateSlots(dateVal);
+    });
+
+    async function generateSlots(dateString) {
+        slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Carregando horários...</p>';
+        selectedSlot = null; // Reset selection
+
+        try {
+            // Define Range for Query
+            const startOfDay = `${dateString}T00:00`;
+            const endOfDay = `${dateString}T23:59`;
+
+            // Query Firestore
+            const q = query(
+                collection(db, "appointments"),
+                where("appointmentTime", ">=", startOfDay),
+                where("appointmentTime", "<=", endOfDay)
+            );
+
+            const querySnapshot = await getDocs(q);
+            const takenSlots = new Set();
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                // data.appointmentTime looks like "2023-10-27T14:00"
+                if (data.appointmentTime) {
+                    const timePart = data.appointmentTime.split('T')[1];
+                    takenSlots.add(timePart);
+                }
+            });
+
+            // Check if today to block past hours
+            const now = new Date();
+            const isToday = (new Date(dateString + 'T00:00:00').toDateString() === now.toDateString());
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+
+            slotsContainer.innerHTML = ''; // Clear loading
+
+            timeSlots.forEach(time => {
+                const btn = document.createElement('button');
+                btn.type = 'button'; // Prevent form submit
+                btn.className = 'slot-btn';
+                btn.textContent = time;
+
+                // Construct full ISO string for this slot
+                const fullIso = `${dateString}T${time}`;
+
+                // Check availability
+                let isTaken = takenSlots.has(time);
+                let isPast = false;
+
+                if (isToday) {
+                    const [h, m] = time.split(':').map(Number);
+                    if (h < currentHour || (h === currentHour && m < currentMinute)) {
+                        isPast = true;
+                    }
+                }
+
+                if (isTaken || isPast) {
+                    btn.disabled = true;
+                    btn.title = isTaken ? "Horário ocupado" : "Horário já passou";
+                } else {
+                    btn.onclick = () => selectSlot(btn, fullIso);
+                }
+
+                slotsContainer.appendChild(btn);
+            });
+        } catch (error) {
+            console.error("Erro ao carregar horários:", error);
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Erro ao carregar horários. Tente novamente.</p>';
+        }
+    }
+
+    function selectSlot(btn, fullIso) {
+        // Deselect previous
+        const prev = slotsContainer.querySelector('.selected');
+        if (prev) prev.classList.remove('selected');
+
+        // Select new
+        btn.classList.add('selected');
+        selectedSlot = fullIso;
+    }
+
     // Check localStorage for existing appointment
     const storedAppointmentId = localStorage.getItem('petshop_appointment_id');
 
@@ -201,12 +356,17 @@
         e.preventDefault();
 
         const petName = document.getElementById('petName').value;
-        const ownerPhone = document.getElementById('ownerPhone').value; // Keep formatted for display, clean for DB? Or clean later? Clean later is safer for display consistency.
-        const appointmentTime = document.getElementById('appointmentTime').value;
+        const ownerPhone = document.getElementById('ownerPhone').value;
 
-        // Clean phone for database storage (optional, but good practice. I'll store both or just clean)
-        // Let's store the raw digits for backend processing if needed, but display formatted is fine.
-        // Actually for the WhatsApp link we need clean numbers. I'll clean it when saving.
+        // Validation
+        if (!selectedSlot) {
+            alert("Por favor, selecione um horário.");
+            return;
+        }
+
+        const appointmentTime = selectedSlot;
+
+        // Clean phone for database storage
         const cleanPhone = ownerPhone.replace(/\D/g, '');
 
         if (cleanPhone.length < 10) {
@@ -214,7 +374,22 @@
             return;
         }
 
+        // Concurrency Check
         try {
+            // Check if slot was taken in the last few seconds
+            const qCheck = query(
+                collection(db, "appointments"),
+                where("appointmentTime", "==", appointmentTime)
+            );
+            const checkSnap = await getDocs(qCheck);
+
+            if (!checkSnap.empty) {
+                alert("Ops! Esse horário acabou de ser reservado por outra pessoa.");
+                const datePart = appointmentTime.split('T')[0];
+                generateSlots(datePart); // Refresh slots
+                return;
+            }
+
             const docRef = await addDoc(collection(db, "appointments"), {
                 petName: petName,
                 ownerPhone: cleanPhone,
