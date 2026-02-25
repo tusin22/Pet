@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agendar Banho - PetShop</title>
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --background: #f4f4f9;
+            --surface: #ffffff;
+            --text: #333333;
+            --border: #ddd;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: var(--surface);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Garante que padding não aumente a largura total */
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Status Section */
+        #status-container {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #e0e0e0;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .status-fila { background-color: #ffe0b2; color: #e65100; }
+        .status-banho { background-color: #b3e5fc; color: #01579b; }
+        .status-secando { background-color: #e1bee7; color: #4a148c; }
+        .status-pronto { background-color: #c8e6c9; color: #1b5e20; }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="form-section">
+        <h1>Agendar Banho 🐶</h1>
+        <form id="schedule-form">
+            <div class="form-group">
+                <label for="petName">Nome do Pet</label>
+                <input type="text" id="petName" required placeholder="Ex: Rex">
+            </div>
+
+            <div class="form-group">
+                <label for="ownerPhone">WhatsApp do Dono</label>
+                <input type="tel" id="ownerPhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15">
+            </div>
+
+            <div class="form-group">
+                <label for="appointmentTime">Data e Horário</label>
+                <input type="datetime-local" id="appointmentTime" required>
+            </div>
+
+            <button type="submit">Agendar</button>
+        </form>
+    </div>
+
+    <div id="status-container">
+        <h2>Status do seu Pet</h2>
+        <p>Olá! O status atual de <strong id="displayPetName"></strong> é:</p>
+        <div id="currentStatus" class="status-badge">Carregando...</div>
+        <br><br>
+        <button onclick="cancelTracking()" style="background-color: #9e9e9e; font-size: 0.9rem;">Novo Agendamento</button>
+    </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, doc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
+        authDomain: "sistema-petshop-33f9d.firebaseapp.com",
+        projectId: "sistema-petshop-33f9d",
+        storageBucket: "sistema-petshop-33f9d.firebasestorage.app",
+        messagingSenderId: "628550103939",
+        appId: "1:628550103939:web:4a862eee914840d238fcb6"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // DOM Elements
+    const formSection = document.getElementById('form-section');
+    const statusContainer = document.getElementById('status-container');
+    const scheduleForm = document.getElementById('schedule-form');
+    const ownerPhoneInput = document.getElementById('ownerPhone');
+    const displayPetName = document.getElementById('displayPetName');
+    const currentStatus = document.getElementById('currentStatus');
+
+    // WhatsApp Input Mask
+    ownerPhoneInput.addEventListener('input', (e) => {
+        let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+        if (value.length > 11) value = value.slice(0, 11); // Limit to 11 digits
+
+        if (value.length > 2) {
+            value = `(${value.substring(0, 2)}) ${value.substring(2)}`;
+        }
+        if (value.length > 9) { // (XX) XXXXX...
+            value = `${value.substring(0, 10)}-${value.substring(10)}`;
+        }
+        e.target.value = value;
+    });
+
+    // Check localStorage for existing appointment
+    const storedAppointmentId = localStorage.getItem('petshop_appointment_id');
+
+    if (storedAppointmentId) {
+        showStatusView(storedAppointmentId);
+    }
+
+    // Handle Form Submission
+    scheduleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const petName = document.getElementById('petName').value;
+        const ownerPhone = document.getElementById('ownerPhone').value; // Keep formatted for display, clean for DB? Or clean later? Clean later is safer for display consistency.
+        const appointmentTime = document.getElementById('appointmentTime').value;
+
+        // Clean phone for database storage (optional, but good practice. I'll store both or just clean)
+        // Let's store the raw digits for backend processing if needed, but display formatted is fine.
+        // Actually for the WhatsApp link we need clean numbers. I'll clean it when saving.
+        const cleanPhone = ownerPhone.replace(/\D/g, '');
+
+        if (cleanPhone.length < 10) {
+            alert("Por favor, insira um número de telefone válido com DDD.");
+            return;
+        }
+
+        try {
+            const docRef = await addDoc(collection(db, "appointments"), {
+                petName: petName,
+                ownerPhone: cleanPhone,
+                appointmentTime: appointmentTime,
+                status: 'Na Fila', // Initial status
+                createdAt: new Date().toISOString()
+            });
+
+            // Save ID to localStorage
+            localStorage.setItem('petshop_appointment_id', docRef.id);
+
+            // Switch view
+            showStatusView(docRef.id);
+
+        } catch (e) {
+            console.error("Error adding document: ", e);
+            alert("Erro ao agendar. Tente novamente.");
+        }
+    });
+
+    function showStatusView(docId) {
+        formSection.style.display = 'none';
+        statusContainer.style.display = 'block';
+
+        // Listen for updates
+        const unsub = onSnapshot(doc(db, "appointments", docId), (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                displayPetName.textContent = data.petName;
+
+                // Update status badge
+                updateStatusBadge(data.status);
+            } else {
+                // Document might have been deleted (e.g., cleaned up by admin)
+                alert("Agendamento não encontrado ou finalizado.");
+                cancelTracking();
+            }
+        });
+    }
+
+    function updateStatusBadge(status) {
+        currentStatus.textContent = status;
+        currentStatus.className = 'status-badge'; // Reset classes
+
+        const lowerStatus = status.toLowerCase();
+        if (lowerStatus.includes('fila')) currentStatus.classList.add('status-fila');
+        else if (lowerStatus.includes('banho')) currentStatus.classList.add('status-banho');
+        else if (lowerStatus.includes('secando')) currentStatus.classList.add('status-secando');
+        else if (lowerStatus.includes('pronto')) currentStatus.classList.add('status-pronto');
+    }
+
+    // Expose to window for the button onclick
+    window.cancelTracking = () => {
+        localStorage.removeItem('petshop_appointment_id');
+        location.reload(); // Simple reload to reset state
+    };
+</script>
+
+</body>
+</html>
