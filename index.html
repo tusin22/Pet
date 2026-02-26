@@ -359,6 +359,16 @@
     // Expose showScreen globally for inline onclicks
     window.showScreen = showScreen;
 
+    function toLocalISOString(date) {
+        const pad = (n) => n < 10 ? '0' + n : n;
+        return date.getFullYear() + '-' +
+            pad(date.getMonth() + 1) + '-' +
+            pad(date.getDate()) + 'T' +
+            pad(date.getHours()) + ':' +
+            pad(date.getMinutes()) + ':' +
+            pad(date.getSeconds());
+    }
+
     function escapeHtml(text) {
         if (!text) return text;
         return text
@@ -798,7 +808,7 @@
                     ownerName: ownerName || "Nome não informado",
                     appointmentTime: appointmentTime,
                     status: 'Agendado',
-                    createdAt: new Date().toISOString()
+                    createdAt: toLocalISOString(new Date())
                 });
                 alert('Agendamento realizado com sucesso!');
             }

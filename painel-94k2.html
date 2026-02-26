@@ -626,11 +626,27 @@
 
     // --- Initialization ---
     // Set default date to today for both inputs
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateString(new Date());
     agendaDateInput.value = today;
     configDateInput.value = today;
 
     // --- Functions ---
+
+    function toLocalDateString(date) {
+        const pad = (n) => n < 10 ? '0' + n : n;
+        return date.getFullYear() + '-' +
+            pad(date.getMonth() + 1) + '-' +
+            pad(date.getDate());
+    }
+
+    function toLocalISOString(date) {
+        const pad = (n) => n < 10 ? '0' + n : n;
+        return date.getFullYear() + '-' +
+            pad(date.getMonth() + 1) + '-' +
+            pad(date.getDate()) + 'T' +
+            pad(date.getHours()) + ':' +
+            pad(date.getMinutes());
+    }
 
     function escapeHtml(text) {
         if (!text) return text;
@@ -805,7 +821,7 @@
         for (let i = 0; i < 6; i++) { // 0=Mon, 5=Sat
             const d = new Date(startOfWeek);
             d.setDate(d.getDate() + i);
-            weekDates.push(d.toISOString().split('T')[0]);
+            weekDates.push(toLocalDateString(d));
         }
 
         const configs = {};
@@ -822,8 +838,8 @@
         }
 
         // 2. Fetch Appointments
-        const rangeStart = startOfWeek.toISOString();
-        const rangeEnd = endOfWeek.toISOString();
+        const rangeStart = toLocalISOString(startOfWeek);
+        const rangeEnd = toLocalISOString(endOfWeek);
 
         const q = query(
             collection(db, "appointments"),
