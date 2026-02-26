@@ -117,9 +117,53 @@
         /* Settings Form */
         .settings-card {
             background-color: var(--surface);
-            padding: 2rem;
             border-radius: 12px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            /* Modified for Accordion */
+            padding: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .settings-header {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: transparent;
+            user-select: none;
+        }
+
+        .settings-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: var(--text);
+        }
+
+        .arrow-icon {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+            display: inline-block;
+        }
+
+        .settings-body {
+            padding: 0 1.5rem 1.5rem 1.5rem;
+            max-height: 2000px; /* Large enough to fit content */
+            opacity: 1;
+            transition: all 0.5s ease-in-out;
+            overflow: hidden;
+        }
+
+        /* Collapsed State */
+        .settings-card.collapsed .settings-body {
+            max-height: 0;
+            padding: 0 1.5rem;
+            opacity: 0;
+        }
+
+        .settings-card.collapsed .arrow-icon {
+            transform: rotate(-90deg);
         }
 
         .form-group {
@@ -646,91 +690,106 @@
 
     <!-- Configurações Tab -->
     <div id="tab-config" class="tab-content">
-        <div class="settings-card" style="margin-bottom: 1.5rem;">
-            <h2>Configurações Globais</h2>
-            <div class="form-group">
-                <label for="globalCapacity" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Capacidade Global de Atendimentos por Horário:</label>
-                <input type="number" id="globalCapacity" min="1" value="1" style="width: 100%; max-width: 150px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
-                <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Define quantos pets podem ser agendados no mesmo horário.</p>
-                <button class="btn-save" style="margin-top: 0.5rem; width: auto;" onclick="saveGlobalSettings()">Salvar Capacidade Global</button>
+        <!-- Global Settings -->
+        <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
+            <div class="settings-header" onclick="toggleCard(this)">
+                <h2>Configurações Globais</h2>
+                <span class="arrow-icon">▼</span>
+            </div>
+            <div class="settings-body">
+                <div class="form-group">
+                    <label for="globalCapacity" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Capacidade Global de Atendimentos por Horário:</label>
+                    <input type="number" id="globalCapacity" min="1" value="1" style="width: 100%; max-width: 150px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Define quantos pets podem ser agendados no mesmo horário.</p>
+                    <button class="btn-save" style="margin-top: 0.5rem; width: auto;" onclick="saveGlobalSettings()">Salvar Capacidade Global</button>
+                </div>
             </div>
         </div>
 
         <!-- Tempos e Duração -->
-        <div class="settings-card" style="margin-bottom: 1.5rem;">
-            <h2>Tempos e Duração</h2>
-
-            <div class="form-group">
-                <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Intervalo da Agenda (minutos):</label>
-                <input type="number" id="agendaInterval" min="10" value="30" step="5" style="width: 100%; max-width: 150px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+        <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
+            <div class="settings-header" onclick="toggleCard(this)">
+                <h2>Tempos e Duração</h2>
+                <span class="arrow-icon">▼</span>
             </div>
+            <div class="settings-body">
+                <div class="form-group">
+                    <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Intervalo da Agenda (minutos):</label>
+                    <input type="number" id="agendaInterval" min="10" value="30" step="5" style="width: 100%; max-width: 150px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+                </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
-                <div>
-                    <h3 style="font-size: 1rem; color: #666;">Duração por Serviço (min)</h3>
-                    <div class="form-group">
-                        <label>Banho</label>
-                        <input type="number" id="timeBanho" class="time-input" value="30">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <h3 style="font-size: 1rem; color: #666;">Duração por Serviço (min)</h3>
+                        <div class="form-group">
+                            <label>Banho</label>
+                            <input type="number" id="timeBanho" class="time-input" value="30">
+                        </div>
+                        <div class="form-group">
+                            <label>Tosa</label>
+                            <input type="number" id="timeTosa" class="time-input" value="45">
+                        </div>
+                        <div class="form-group">
+                            <label>Banho e Tosa</label>
+                            <input type="number" id="timeBanhoTosa" class="time-input" value="90">
+                        </div>
+                         <div class="form-group">
+                            <label>Outros</label>
+                            <input type="number" id="timeOutros" class="time-input" value="30">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>Tosa</label>
-                        <input type="number" id="timeTosa" class="time-input" value="45">
-                    </div>
-                    <div class="form-group">
-                        <label>Banho e Tosa</label>
-                        <input type="number" id="timeBanhoTosa" class="time-input" value="90">
-                    </div>
-                     <div class="form-group">
-                        <label>Outros</label>
-                        <input type="number" id="timeOutros" class="time-input" value="30">
+
+                    <div>
+                        <h3 style="font-size: 1rem; color: #666;">Tempo Extra por Porte (min)</h3>
+                        <div class="form-group">
+                            <label>Pequeno (P)</label>
+                            <input type="number" id="extraP" class="time-input" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Médio (M)</label>
+                            <input type="number" id="extraM" class="time-input" value="15">
+                        </div>
+                        <div class="form-group">
+                            <label>Grande (G)</label>
+                            <input type="number" id="extraG" class="time-input" value="30">
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <h3 style="font-size: 1rem; color: #666;">Tempo Extra por Porte (min)</h3>
-                    <div class="form-group">
-                        <label>Pequeno (P)</label>
-                        <input type="number" id="extraP" class="time-input" value="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Médio (M)</label>
-                        <input type="number" id="extraM" class="time-input" value="15">
-                    </div>
-                    <div class="form-group">
-                        <label>Grande (G)</label>
-                        <input type="number" id="extraG" class="time-input" value="30">
-                    </div>
-                </div>
+                <button class="btn-save" onclick="saveTimeSettings()">Salvar Configurações de Tempo</button>
             </div>
-
-            <button class="btn-save" onclick="saveTimeSettings()">Salvar Configurações de Tempo</button>
         </div>
 
-        <div class="settings-card">
-            <h2>Gerenciar Disponibilidade (Por Dia)</h2>
-            <div class="form-group">
-                <label for="configDate">Selecione a Data:</label>
-                <input type="date" id="configDate" style="width: 100%; max-width: 300px; margin-top: 0.5rem;">
+        <div class="settings-card collapsed">
+            <div class="settings-header" onclick="toggleCard(this)">
+                <h2>Gerenciar Disponibilidade (Por Dia)</h2>
+                <span class="arrow-icon">▼</span>
             </div>
-
-            <div id="config-options" style="display: none;">
+            <div class="settings-body">
                 <div class="form-group">
-                    <label class="checkbox-item" style="border: none; padding: 0;">
-                        <input type="checkbox" id="blockAllDay">
-                        <span style="font-size: 1.1rem; font-weight: bold;">Bloquear Dia Inteiro (Fechado)</span>
-                    </label>
+                    <label for="configDate">Selecione a Data:</label>
+                    <input type="date" id="configDate" style="width: 100%; max-width: 300px; margin-top: 0.5rem;">
                 </div>
 
-                <div class="form-group" id="slots-group">
-                    <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Bloquear Horários Específicos:</label>
-                    <div class="checkbox-group" id="slots-checkboxes">
-                        <!-- Checkboxes generated by JS -->
+                <div id="config-options" style="display: none;">
+                    <div class="form-group">
+                        <label class="checkbox-item" style="border: none; padding: 0;">
+                            <input type="checkbox" id="blockAllDay">
+                            <span style="font-size: 1.1rem; font-weight: bold;">Bloquear Dia Inteiro (Fechado)</span>
+                        </label>
                     </div>
-                </div>
 
-                <button class="btn-save" onclick="saveConfiguration()">Salvar Configurações</button>
+                    <div class="form-group" id="slots-group">
+                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Bloquear Horários Específicos:</label>
+                        <div class="checkbox-group" id="slots-checkboxes">
+                            <!-- Checkboxes generated by JS -->
+                        </div>
+                    </div>
+
+                    <button class="btn-save" onclick="saveConfiguration()">Salvar Configurações</button>
+                </div>
+                 <p id="config-message" style="text-align: center; color: #666; margin-top: 1rem; display: none;"></p>
             </div>
-             <p id="config-message" style="text-align: center; color: #666; margin-top: 1rem; display: none;"></p>
         </div>
     </div>
 </div>
@@ -828,6 +887,11 @@
             .replace(/"/g, "&quot;")
             .replace(/'/g, "&#039;");
     }
+
+    window.toggleCard = (header) => {
+        const card = header.parentElement;
+        card.classList.toggle('collapsed');
+    };
 
     window.switchTab = (tabName) => {
         // Hide all contents
