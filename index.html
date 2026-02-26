@@ -749,6 +749,9 @@
                 const data = doc.data();
                 // Ignore cancelled appointments for slot calculation
                 if (data.status !== 'Cancelado' && data.appointmentTime) {
+                    // NEW: Ignore self if editing
+                    if (editingAppointmentId && doc.id === editingAppointmentId) return;
+
                     const timePart = data.appointmentTime.split('T')[1];
                     takenCount[timePart] = (takenCount[timePart] || 0) + 1;
                 }
