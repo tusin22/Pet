@@ -477,6 +477,43 @@
             margin-top: 0.5rem;
         }
 
+        /* Filters */
+        .controls-agenda {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .filters-row {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        @media(min-width: 600px) {
+            .filters-row {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+
+        .search-input {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            flex: 2;
+        }
+
+        .status-select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            flex: 1;
+        }
+
     </style>
 </head>
 <body>
@@ -493,10 +530,22 @@
 
     <!-- Agenda Tab -->
     <div id="tab-agenda" class="tab-content active">
-        <div class="controls">
+        <div class="controls controls-agenda">
             <div class="date-control">
                 <label for="agendaDate">Data:</label>
                 <input type="date" id="agendaDate">
+            </div>
+
+            <div class="filters-row">
+                <input type="text" id="searchInput" class="search-input" placeholder="Buscar pet ou telefone...">
+                <select id="statusFilter" class="status-select">
+                    <option value="Todos">Todos</option>
+                    <option value="Agendado">Agendado</option>
+                    <option value="Na Fila">Na Fila</option>
+                    <option value="No Banho">No Banho</option>
+                    <option value="Secando">Secando</option>
+                    <option value="Pronto">Pronto</option>
+                </select>
             </div>
         </div>
 
@@ -750,9 +799,51 @@
             activeDocs.forEach((item) => {
                 listContainer.appendChild(createCard(item.id, item, false));
             });
+            // Re-apply filters after loading
+            filterAppointments();
         }, (error) => {
             console.error("Error fetching appointments:", error);
             listContainer.innerHTML = '<p style="text-align: center; color: red; grid-column: 1/-1;">Erro ao carregar agendamentos.</p>';
+        });
+    };
+
+    window.filterAppointments = () => {
+        const searchInput = document.getElementById('searchInput');
+        const statusFilter = document.getElementById('statusFilter');
+        if (!searchInput || !statusFilter) return;
+
+        const filterText = searchInput.value.toLowerCase();
+        const filterPhone = filterText.replace(/\D/g, ''); // Extract digits
+        const filterStatus = statusFilter.value;
+
+        const cards = document.querySelectorAll('#appointments-list .card');
+
+        cards.forEach(card => {
+            const petName = (card.getAttribute('data-pet-name') || '').toLowerCase();
+            const ownerPhone = (card.getAttribute('data-owner-phone') || '');
+            const status = card.getAttribute('data-status') || '';
+
+            let show = true;
+
+            // Status Filter
+            if (filterStatus !== 'Todos' && status !== filterStatus) {
+                show = false;
+            }
+
+            // Search Filter
+            if (show && filterText.trim() !== '') {
+                const nameMatch = petName.includes(filterText);
+                let phoneMatch = false;
+                if (filterPhone.length > 0) {
+                    phoneMatch = ownerPhone.includes(filterPhone);
+                }
+
+                if (!nameMatch && !phoneMatch) {
+                    show = false;
+                }
+            }
+
+            card.style.display = show ? 'flex' : 'none';
         });
     };
 
@@ -966,6 +1057,11 @@
     function createCard(id, data, isHistory) {
         const card = document.createElement('div');
         card.className = 'card';
+
+        // Data Attributes for Filtering
+        card.setAttribute('data-pet-name', (data.petName || '').toLowerCase());
+        card.setAttribute('data-owner-phone', (data.ownerPhone || '').replace(/\D/g, ''));
+        card.setAttribute('data-status', data.status || '');
 
         // Determine status class
         let statusClass = 'status-fila';
@@ -1372,6 +1468,17 @@
     agendaDateInput.addEventListener('input', () => {
         loadAppointments();
     });
+
+    // Filters
+    const searchInput = document.getElementById('searchInput');
+    const statusFilter = document.getElementById('statusFilter');
+
+    if (searchInput) {
+        searchInput.addEventListener('input', filterAppointments);
+    }
+    if (statusFilter) {
+        statusFilter.addEventListener('change', filterAppointments);
+    }
 
     // Configurações Tab
     configDateInput.addEventListener('change', () => {
