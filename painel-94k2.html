@@ -1497,6 +1497,7 @@
 
             snapshot.forEach(doc => {
                 // Count active appointments at this time, excluding the one we are editing
+                // Note: Ignoring self (doc.id !== id) ensures we can save changes even if slot is full (by us)
                 if (doc.id !== id && doc.data().status !== 'Cancelado' && doc.data().status !== 'Concluído') {
                     activeCount++;
                 }
