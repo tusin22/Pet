@@ -268,18 +268,6 @@
             <!-- Telefone is implicit from login, logic will handle it -->
 
             <div class="form-group">
-                <label for="appointmentDate">Data</label>
-                <input type="date" id="appointmentDate" required>
-            </div>
-
-            <div class="form-group">
-                <label>Horário</label>
-                <div id="slots-container">
-                    <p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>
-                </div>
-            </div>
-
-            <div class="form-group">
                 <label for="serviceType">Serviço (Obrigatório)</label>
                 <select id="serviceType" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background-color: white;">
                     <option value="" disabled selected>Selecione um serviço...</option>
@@ -298,6 +286,18 @@
                     <option value="M">M</option>
                     <option value="G">G</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="appointmentDate">Data</label>
+                <input type="date" id="appointmentDate" required>
+            </div>
+
+            <div class="form-group">
+                <label>Horário</label>
+                <div id="slots-container">
+                    <p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>
+                </div>
             </div>
 
             <div class="form-group">
@@ -451,7 +451,7 @@
         document.getElementById('petSize').value = '';
         document.getElementById('paymentMethod').value = '';
         document.getElementById('appointmentDate').value = '';
-        document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+        document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
         selectedSlot = null;
         document.querySelector('#schedule-form button[type="submit"]').textContent = 'Confirmar Agendamento';
         showScreen('schedule-screen');
@@ -643,9 +643,12 @@
         }
 
         // Reset date/slots because user needs to pick new ones
-        document.getElementById('appointmentDate').value = '';
-        document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma nova data para ver os horários.</p>';
+        // document.getElementById('appointmentDate').value = ''; // Don't clear date, just refresh logic
+        document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
         selectedSlot = null;
+
+        // Trigger logic if fields are already filled (e.g. from existing data)
+        checkAndGenerateSlots();
 
         // Update UI
         const submitBtn = document.querySelector('#schedule-form button[type="submit"]');
@@ -659,16 +662,25 @@
     const scheduleForm = document.getElementById('schedule-form');
     const appointmentDateInput = document.getElementById('appointmentDate');
     const slotsContainer = document.getElementById('slots-container');
+    const serviceTypeInput = document.getElementById('serviceType');
+    const petSizeInput = document.getElementById('petSize');
+
     let selectedSlot = null;
 
-    const timeSlots = [
-        "08:00", "09:00", "10:00", "11:00", "12:00",
-        "13:00", "14:00", "15:00", "16:00", "17:00"
-    ];
+    // Listen to changes
+    serviceTypeInput.addEventListener('change', checkAndGenerateSlots);
+    petSizeInput.addEventListener('change', checkAndGenerateSlots);
+    appointmentDateInput.addEventListener('change', checkAndGenerateSlots);
 
-    appointmentDateInput.addEventListener('change', async (e) => {
-        const dateVal = e.target.value;
-        if (!dateVal) return;
+    async function checkAndGenerateSlots() {
+        const dateVal = appointmentDateInput.value;
+        const service = serviceTypeInput.value;
+        const size = petSizeInput.value;
+
+        if (!dateVal || !service || !size) {
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
+            return;
+        }
 
         const selectedDate = new Date(dateVal + 'T00:00:00');
         const today = new Date();
@@ -677,44 +689,54 @@
         // Check if Sunday (0)
         if (selectedDate.getDay() === 0) {
             alert("Não funcionamos aos domingos.");
-            e.target.value = '';
-            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+            appointmentDateInput.value = '';
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
             return;
         }
 
         if (selectedDate < today) {
             alert("Por favor, selecione uma data futura.");
-            e.target.value = '';
-            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+            appointmentDateInput.value = '';
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
             return;
         }
 
-        await generateSlots(dateVal);
-    });
+        await generateSlots(dateVal, service, size);
+    }
 
-    async function generateSlots(dateString) {
-        slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Carregando horários...</p>';
+    async function generateSlots(dateString, service, size) {
+        slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Calculando disponibilidade...</p>';
         selectedSlot = null;
 
-        const dateObj = new Date(dateString + 'T00:00:00');
-        if (dateObj.getDay() === 0) {
-            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d32f2f; font-weight: bold;">Não funcionamos aos domingos</p>';
-            return;
-        }
-
         try {
-            // Fetch Global Capacity
+            // 1. Fetch Configuration (Capacity & Times)
             let capacity = 1;
-            try {
-                const globalConfigRef = doc(db, "configuracoes", "geral");
-                const globalConfigSnap = await getDoc(globalConfigRef);
-                if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
-                    capacity = globalConfigSnap.data().capacityPerSlot;
-                }
-            } catch (e) {
-                console.error("Error fetching global capacity:", e);
+            let agendaInterval = 30; // Default
+            let serviceTime = 30;
+            let sizeExtra = 0;
+
+            // Fetch global settings and times in parallel
+            const [globalConfigSnap, timeConfigSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "geral")),
+                getDoc(doc(db, "configuracoes", "tempos"))
+            ]);
+
+            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                capacity = globalConfigSnap.data().capacityPerSlot;
             }
 
+            if (timeConfigSnap.exists()) {
+                const tData = timeConfigSnap.data();
+                if (tData.agendaInterval) agendaInterval = parseInt(tData.agendaInterval);
+                if (tData.services && tData.services[service]) serviceTime = parseInt(tData.services[service]);
+                if (tData.sizes && tData.sizes[size]) sizeExtra = parseInt(tData.sizes[size]);
+            }
+
+            const totalDuration = serviceTime + sizeExtra;
+            // Round up slots needed
+            const slotsNeeded = Math.ceil(totalDuration / agendaInterval);
+
+            // 2. Fetch Day Configuration (Blocked Slots)
             const configRef = doc(db, "configuracoes", dateString);
             const configSnap = await getDoc(configRef);
             let blockedAllDay = false;
@@ -733,6 +755,7 @@
                  return;
             }
 
+            // 3. Fetch Appointments
             const startOfDay = `${dateString}T00:00`;
             const endOfDay = `${dateString}T23:59`;
 
@@ -743,20 +766,50 @@
             );
 
             const querySnapshot = await getDocs(q);
-            const takenCount = {}; // Map time -> count
+
+            // Generate All Time Slots (08:00 to 18:00)
+            const allSlots = [];
+            const startHour = 8;
+            const endHour = 18; // Work until 18:00
+
+            let currentTime = new Date(`${dateString}T08:00:00`);
+            const endTimeDate = new Date(`${dateString}T18:00:00`);
+
+            while (currentTime < endTimeDate) {
+                const hours = currentTime.getHours().toString().padStart(2, '0');
+                const minutes = currentTime.getMinutes().toString().padStart(2, '0');
+                allSlots.push(`${hours}:${minutes}`);
+                currentTime.setMinutes(currentTime.getMinutes() + agendaInterval);
+            }
+
+            // Map Occupancy
+            // map[timeSlot] = count
+            const occupancy = {};
+            allSlots.forEach(s => occupancy[s] = 0);
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
-                // Ignore cancelled appointments for slot calculation
                 if (data.status !== 'Cancelado' && data.appointmentTime) {
-                    // NEW: Ignore self if editing
                     if (editingAppointmentId && doc.id === editingAppointmentId) return;
 
                     const timePart = data.appointmentTime.split('T')[1];
-                    takenCount[timePart] = (takenCount[timePart] || 0) + 1;
+                    // If old appointment has no slotsNeeded, assume 1
+                    const apptSlotsNeeded = data.slotsNeeded || 1;
+
+                    // Mark slots as occupied
+                    const startIndex = allSlots.indexOf(timePart);
+                    if (startIndex !== -1) {
+                        for (let i = 0; i < apptSlotsNeeded; i++) {
+                            const slotTime = allSlots[startIndex + i];
+                            if (slotTime) {
+                                occupancy[slotTime] = (occupancy[slotTime] || 0) + 1;
+                            }
+                        }
+                    }
                 }
             });
 
+            // 4. Render Buttons
             const now = new Date();
             const isToday = (new Date(dateString + 'T00:00:00').toDateString() === now.toDateString());
             const currentHour = now.getHours();
@@ -764,47 +817,97 @@
 
             slotsContainer.innerHTML = '';
 
-            timeSlots.forEach(time => {
+            if (allSlots.length === 0) {
+                 slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Não há horários configurados.</p>';
+                 return;
+            }
+
+            allSlots.forEach((time, index) => {
+                // Determine availability for THIS starting slot
+                // To start at 'time', we need 'slotsNeeded' consecutive slots to be available
+                // AND not go beyond end of day (18:00)
+
+                let canBook = true;
+                let failureReason = ''; // 'full', 'past', 'blocked', 'eod'
+
+                // Check Past
+                if (isToday) {
+                    const [h, m] = time.split(':').map(Number);
+                    if (h < currentHour || (h === currentHour && m < currentMinute)) {
+                        canBook = false;
+                        failureReason = 'past';
+                    }
+                }
+
+                // Check End of Day
+                if (canBook) {
+                    if (index + slotsNeeded > allSlots.length) {
+                        canBook = false;
+                        failureReason = 'eod'; // Not enough time left in day
+                    }
+                }
+
+                // Check Consecutive Slots Availability
+                if (canBook) {
+                    for (let i = 0; i < slotsNeeded; i++) {
+                        const checkTime = allSlots[index + i];
+
+                        // Check Blocked
+                        if (blockedSlots.has(checkTime)) {
+                            canBook = false;
+                            failureReason = 'blocked';
+                            break;
+                        }
+
+                        // Check Capacity
+                        if ((occupancy[checkTime] || 0) >= capacity) {
+                            canBook = false;
+                            failureReason = 'full';
+                            break;
+                        }
+                    }
+                }
+
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'slot-btn';
                 btn.textContent = time;
-
                 const fullIso = `${dateString}T${time}`;
-                let count = takenCount[time] || 0;
-                let isFull = count >= capacity;
-                let isBlocked = blockedSlots.has(time);
-                let isPast = false;
 
-                if (isToday) {
-                    const [h, m] = time.split(':').map(Number);
-                    if (h < currentHour || (h === currentHour && m < currentMinute)) {
-                        isPast = true;
-                    }
-                }
-
-                if (isFull || isPast || isBlocked) {
+                if (!canBook) {
                     btn.disabled = true;
-                    if (isBlocked) btn.title = "Horário indisponível (Admin)";
-                    else if (isFull) btn.title = "Horário esgotado";
-                    else btn.title = "Horário já passou";
+                    if (failureReason === 'eod') btn.style.display = 'none'; // Don't show slots that can't fit the service at end of day
+                    else if (failureReason === 'blocked') btn.title = "Horário indisponível (Admin)";
+                    else if (failureReason === 'full') btn.title = "Horário esgotado";
+                    else if (failureReason === 'past') btn.title = "Horário já passou";
+
+                    // Allow showing past/full slots disabled, but EOD usually hidden or disabled
+                    if (failureReason === 'eod') {
+                        // Optional: you might want to show them disabled instead of hiding
+                        btn.style.display = 'inline-block';
+                        btn.title = "Não há tempo suficiente antes de fechar";
+                    }
                 } else {
-                    btn.onclick = () => selectSlot(btn, fullIso);
+                    btn.onclick = () => selectSlot(btn, fullIso, totalDuration, slotsNeeded);
                 }
 
                 slotsContainer.appendChild(btn);
             });
+
         } catch (error) {
             console.error("Erro ao carregar horários:", error);
             slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Erro ao carregar horários. Tente novamente.</p>';
         }
     }
 
-    function selectSlot(btn, fullIso) {
+    let currentSelectionData = {};
+
+    function selectSlot(btn, fullIso, duration, slotsNeeded) {
         const prev = slotsContainer.querySelector('.selected');
         if (prev) prev.classList.remove('selected');
         btn.classList.add('selected');
         selectedSlot = fullIso;
+        currentSelectionData = { duration, slotsNeeded };
     }
 
     scheduleForm.addEventListener('submit', async (e) => {
@@ -836,44 +939,98 @@
             }
 
             const appointmentTime = selectedSlot;
+            // Get duration/slots data from current selection
+            const { duration, slotsNeeded } = currentSelectionData;
 
             try {
-                // Fetch Global Capacity (again to be safe)
+                // We should re-verify capacity here properly, but for now we rely on the generateSlots check + Firestore concurrency would be better handled with transactions.
+                // Given the requirement to check capacity "immediately before write", let's do a simple check.
+
+                // Fetch Appointments to check collision
+                const datePart = appointmentTime.split('T')[0];
+                const startOfDay = `${datePart}T00:00`;
+                const endOfDay = `${datePart}T23:59`;
+
+                // Note: Ideally we repeat the logic from generateSlots here to be 100% sure.
+                // For this implementation, we will trust the UI state but do a quick check on the starting slot
+                // To be robust, we really should fetch the whole day again or use a transaction.
+                // Let's implement a robust check.
+
+                // 1. Fetch Config
                 let capacity = 1;
-                try {
-                    const globalConfigRef = doc(db, "configuracoes", "geral");
-                    const globalConfigSnap = await getDoc(globalConfigRef);
-                    if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
-                        capacity = globalConfigSnap.data().capacityPerSlot;
-                    }
-                } catch (e) {
-                    console.error("Error fetching global capacity:", e);
+                const globalConfigRef = doc(db, "configuracoes", "geral");
+                const globalConfigSnap = await getDoc(globalConfigRef);
+                if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                    capacity = globalConfigSnap.data().capacityPerSlot;
                 }
 
+                // 2. Fetch Existing Appointments
                 const qCheck = query(
                     collection(db, "appointments"),
-                    where("appointmentTime", "==", appointmentTime)
+                    where("appointmentTime", ">=", startOfDay),
+                    where("appointmentTime", "<=", endOfDay)
                 );
                 const checkSnap = await getDocs(qCheck);
 
-                let activeCount = 0;
-                if (!checkSnap.empty) {
-                    checkSnap.forEach(d => {
-                        const dData = d.data();
-                        if (editingAppointmentId && d.id === editingAppointmentId) {
-                            // It's the same appointment
-                        } else if (dData.status === 'Cancelado') {
-                            // Ignore cancelled
-                        } else {
-                            activeCount++;
-                        }
-                    });
+                // Build Occupancy Map
+                // We need to know intervals. Assuming we can get interval from Config again or pass it.
+                // Let's fetch interval again to be safe.
+                let agendaInterval = 30;
+                const timeConfigSnap = await getDoc(doc(db, "configuracoes", "tempos"));
+                if (timeConfigSnap.exists() && timeConfigSnap.data().agendaInterval) {
+                    agendaInterval = parseInt(timeConfigSnap.data().agendaInterval);
                 }
 
-                if (activeCount >= capacity) {
-                    alert("Ops! Esse horário acabou de ser reservado e esgotou a capacidade.");
-                    const datePart = appointmentTime.split('T')[0];
-                    generateSlots(datePart);
+                const allSlots = [];
+                let t = new Date(`${datePart}T08:00:00`);
+                const eTime = new Date(`${datePart}T18:00:00`);
+                while (t < eTime) {
+                    const h = t.getHours().toString().padStart(2,'0');
+                    const m = t.getMinutes().toString().padStart(2,'0');
+                    allSlots.push(`${h}:${m}`);
+                    t.setMinutes(t.getMinutes() + agendaInterval);
+                }
+
+                const occupancy = {};
+                allSlots.forEach(s => occupancy[s] = 0);
+
+                checkSnap.forEach(d => {
+                    const data = d.data();
+                    if (data.status !== 'Cancelado' && data.appointmentTime) {
+                        if (editingAppointmentId && d.id === editingAppointmentId) return; // Ignore self
+
+                        const timePart = data.appointmentTime.split('T')[1];
+                        const apptSlots = data.slotsNeeded || 1;
+                        const idx = allSlots.indexOf(timePart);
+                        if (idx !== -1) {
+                            for(let i=0; i<apptSlots; i++) {
+                                const st = allSlots[idx+i];
+                                if(st) occupancy[st] = (occupancy[st] || 0) + 1;
+                            }
+                        }
+                    }
+                });
+
+                // Check requested slots
+                const reqTimePart = appointmentTime.split('T')[1];
+                const startIdx = allSlots.indexOf(reqTimePart);
+
+                let isBlocked = false;
+                if (startIdx === -1) isBlocked = true; // Invalid time
+                else {
+                    for(let i=0; i<slotsNeeded; i++) {
+                        const checkTime = allSlots[startIdx + i];
+                        if (!checkTime || (occupancy[checkTime] || 0) >= capacity) {
+                            isBlocked = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (isBlocked) {
+                    alert("Ops! Esse horário acabou de ser reservado ou não há vagas suficientes para a duração do serviço.");
+                    // Refresh slots
+                    checkAndGenerateSlots();
                     return;
                 }
 
@@ -886,7 +1043,9 @@
                         petSize: petSize,
                         paymentMethod: paymentMethod,
                         appointmentTime: appointmentTime,
-                        status: 'Agendado'
+                        status: 'Agendado',
+                        durationMinutes: duration,
+                        slotsNeeded: slotsNeeded
                      });
                      alert('Agendamento alterado com sucesso!');
                 } else {
@@ -900,7 +1059,9 @@
                         ownerName: ownerName || "Nome não informado",
                         appointmentTime: appointmentTime,
                         status: 'Agendado',
-                        createdAt: toLocalISOString(new Date())
+                        createdAt: toLocalISOString(new Date()),
+                        durationMinutes: duration,
+                        slotsNeeded: slotsNeeded
                     });
                     alert('Agendamento realizado com sucesso!');
                 }
