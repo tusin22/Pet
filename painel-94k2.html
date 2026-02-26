@@ -974,6 +974,11 @@
         // Owner Name Display
         const ownerName = data.ownerName ? ` (${data.ownerName})` : '';
 
+        // Extra Fields
+        const serviceType = data.serviceType || 'Não informado';
+        const petSize = data.petSize || 'Não informado';
+        const paymentMethod = data.paymentMethod || 'Não informado';
+
         // Observations Section
         let obsHtml = '';
         if (data.observations) {
@@ -1054,7 +1059,13 @@
             <div class="card-header">
                 <span class="status-badge ${statusClass}">${data.status}</span>
                 <h3 class="pet-name">${escapeHtml(data.petName)}${escapeHtml(ownerName)}</h3>
-                <div class="pet-info">📅 ${dateStr} - 🕒 ${timeStr}</div>
+                <div class="pet-info" style="margin-top: 0.5rem; color: #333;">
+                     <strong>Serviço:</strong> ${escapeHtml(serviceType)} | <strong>Porte:</strong> ${escapeHtml(petSize)}
+                </div>
+                <div class="pet-info" style="color: #333;">
+                     <strong>Pagamento:</strong> ${escapeHtml(paymentMethod)}
+                </div>
+                <div class="pet-info" style="margin-top: 0.5rem;">📅 ${dateStr} - 🕒 ${timeStr}</div>
                 <div class="pet-info">📞 ${formatPhone(data.ownerPhone)}</div>
             </div>
             ${obsHtml}

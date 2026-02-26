@@ -280,6 +280,37 @@
             </div>
 
             <div class="form-group">
+                <label for="serviceType">Serviço (Obrigatório)</label>
+                <select id="serviceType" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background-color: white;">
+                    <option value="" disabled selected>Selecione um serviço...</option>
+                    <option value="Banho">Banho</option>
+                    <option value="Banho e Tosa">Banho e Tosa</option>
+                    <option value="Tosa">Tosa</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="petSize">Porte do Pet (Obrigatório)</label>
+                <select id="petSize" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background-color: white;">
+                    <option value="" disabled selected>Selecione o porte...</option>
+                    <option value="P">P</option>
+                    <option value="M">M</option>
+                    <option value="G">G</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="paymentMethod">Forma de Pagamento (Opcional)</label>
+                <select id="paymentMethod" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background-color: white;">
+                    <option value="" selected>Selecione (opcional)...</option>
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão">Cartão</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label for="observations">Observações / Alertas (Opcional)</label>
                 <textarea id="observations" rows="3" placeholder="Ex: Alergia a perfume, Cuidado ao cortar unhas, etc." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 1rem; box-sizing: border-box; resize: vertical;"></textarea>
             </div>
@@ -416,6 +447,9 @@
         editingAppointmentId = null;
         document.getElementById('petName').value = '';
         document.getElementById('observations').value = '';
+        document.getElementById('serviceType').value = '';
+        document.getElementById('petSize').value = '';
+        document.getElementById('paymentMethod').value = '';
         document.getElementById('appointmentDate').value = '';
         document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
         selectedSlot = null;
@@ -589,10 +623,24 @@
 
     let editingAppointmentId = null;
 
-    window.prepareEdit = (id, petName, observations) => {
+    window.prepareEdit = async (id, petName, observations) => {
         editingAppointmentId = id;
         document.getElementById('petName').value = petName;
         document.getElementById('observations').value = observations || '';
+
+        // Fetch full document to get extra fields not passed in arguments
+        try {
+            const docRef = doc(db, "appointments", id);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('serviceType').value = data.serviceType || '';
+                document.getElementById('petSize').value = data.petSize || '';
+                document.getElementById('paymentMethod').value = data.paymentMethod || '';
+            }
+        } catch (e) {
+            console.error("Error fetching appointment for edit:", e);
+        }
 
         // Reset date/slots because user needs to pick new ones
         document.getElementById('appointmentDate').value = '';
@@ -755,6 +803,9 @@
         try {
             const petName = document.getElementById('petName').value;
             const observations = document.getElementById('observations').value;
+            const serviceType = document.getElementById('serviceType').value;
+            const petSize = document.getElementById('petSize').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
             const ownerPhone = localStorage.getItem('petshop_owner_phone'); // Get from storage
             const ownerName = localStorage.getItem('petshop_owner_name');
 
@@ -803,6 +854,9 @@
                      await updateDoc(docRef, {
                         petName: petName,
                         observations: observations,
+                        serviceType: serviceType,
+                        petSize: petSize,
+                        paymentMethod: paymentMethod,
                         appointmentTime: appointmentTime,
                         status: 'Agendado'
                      });
@@ -811,6 +865,9 @@
                     await addDoc(collection(db, "appointments"), {
                         petName: petName,
                         observations: observations,
+                        serviceType: serviceType,
+                        petSize: petSize,
+                        paymentMethod: paymentMethod,
                         ownerPhone: ownerPhone,
                         ownerName: ownerName || "Nome não informado",
                         appointmentTime: appointmentTime,
@@ -827,6 +884,9 @@
                 // Clear form
                 document.getElementById('petName').value = '';
                 document.getElementById('observations').value = '';
+                document.getElementById('serviceType').value = '';
+                document.getElementById('petSize').value = '';
+                document.getElementById('paymentMethod').value = '';
                 appointmentDateInput.value = '';
                 slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
                 selectedSlot = null;
