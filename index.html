@@ -746,91 +746,102 @@
     scheduleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const petName = document.getElementById('petName').value;
-        const observations = document.getElementById('observations').value;
-        const ownerPhone = localStorage.getItem('petshop_owner_phone'); // Get from storage
-        const ownerName = localStorage.getItem('petshop_owner_name');
+        const submitBtn = scheduleForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
 
-        if (!selectedSlot) {
-            alert("Por favor, selecione um horário.");
-            return;
-        }
-        if (!ownerPhone) {
-            alert("Erro: Telefone não encontrado. Faça login novamente.");
-            showScreen('login-screen');
-            return;
-        }
-
-        const appointmentTime = selectedSlot;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Aguardando...';
 
         try {
-            const qCheck = query(
-                collection(db, "appointments"),
-                where("appointmentTime", "==", appointmentTime)
-            );
-            const checkSnap = await getDocs(qCheck);
+            const petName = document.getElementById('petName').value;
+            const observations = document.getElementById('observations').value;
+            const ownerPhone = localStorage.getItem('petshop_owner_phone'); // Get from storage
+            const ownerName = localStorage.getItem('petshop_owner_name');
 
-            if (!checkSnap.empty) {
-                let isConflict = false;
-                checkSnap.forEach(d => {
-                    const dData = d.data();
-                    if (editingAppointmentId && d.id === editingAppointmentId) {
-                        // It's the same appointment
-                    } else if (dData.status === 'Cancelado') {
-                        // Ignore cancelled
-                    } else {
-                        isConflict = true;
+            if (!selectedSlot) {
+                alert("Por favor, selecione um horário.");
+                return;
+            }
+            if (!ownerPhone) {
+                alert("Erro: Telefone não encontrado. Faça login novamente.");
+                showScreen('login-screen');
+                return;
+            }
+
+            const appointmentTime = selectedSlot;
+
+            try {
+                const qCheck = query(
+                    collection(db, "appointments"),
+                    where("appointmentTime", "==", appointmentTime)
+                );
+                const checkSnap = await getDocs(qCheck);
+
+                if (!checkSnap.empty) {
+                    let isConflict = false;
+                    checkSnap.forEach(d => {
+                        const dData = d.data();
+                        if (editingAppointmentId && d.id === editingAppointmentId) {
+                            // It's the same appointment
+                        } else if (dData.status === 'Cancelado') {
+                            // Ignore cancelled
+                        } else {
+                            isConflict = true;
+                        }
+                    });
+
+                    if (isConflict) {
+                        alert("Ops! Esse horário acabou de ser reservado por outra pessoa.");
+                        const datePart = appointmentTime.split('T')[0];
+                        generateSlots(datePart);
+                        return;
                     }
-                });
-
-                if (isConflict) {
-                    alert("Ops! Esse horário acabou de ser reservado por outra pessoa.");
-                    const datePart = appointmentTime.split('T')[0];
-                    generateSlots(datePart);
-                    return;
                 }
+
+                if (editingAppointmentId) {
+                     const docRef = doc(db, "appointments", editingAppointmentId);
+                     await updateDoc(docRef, {
+                        petName: petName,
+                        observations: observations,
+                        appointmentTime: appointmentTime,
+                        status: 'Agendado'
+                     });
+                     alert('Agendamento alterado com sucesso!');
+                } else {
+                    await addDoc(collection(db, "appointments"), {
+                        petName: petName,
+                        observations: observations,
+                        ownerPhone: ownerPhone,
+                        ownerName: ownerName || "Nome não informado",
+                        appointmentTime: appointmentTime,
+                        status: 'Agendado',
+                        createdAt: toLocalISOString(new Date())
+                    });
+                    alert('Agendamento realizado com sucesso!');
+                }
+
+                // Cleanup
+                editingAppointmentId = null;
+                document.querySelector('#schedule-form button[type="submit"]').textContent = 'Confirmar Agendamento';
+
+                // Clear form
+                document.getElementById('petName').value = '';
+                document.getElementById('observations').value = '';
+                appointmentDateInput.value = '';
+                slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+                selectedSlot = null;
+
+                // Redirect
+                showScreen('my-pets-screen');
+                loadMyPets();
+
+            } catch (e) {
+                console.error("Error saving document: ", e);
+                alert("Erro ao salvar. Tente novamente.");
             }
-
-            if (editingAppointmentId) {
-                 const docRef = doc(db, "appointments", editingAppointmentId);
-                 await updateDoc(docRef, {
-                    petName: petName,
-                    observations: observations,
-                    appointmentTime: appointmentTime,
-                    status: 'Agendado'
-                 });
-                 alert('Agendamento alterado com sucesso!');
-            } else {
-                await addDoc(collection(db, "appointments"), {
-                    petName: petName,
-                    observations: observations,
-                    ownerPhone: ownerPhone,
-                    ownerName: ownerName || "Nome não informado",
-                    appointmentTime: appointmentTime,
-                    status: 'Agendado',
-                    createdAt: toLocalISOString(new Date())
-                });
-                alert('Agendamento realizado com sucesso!');
-            }
-
-            // Cleanup
-            editingAppointmentId = null;
-            document.querySelector('#schedule-form button[type="submit"]').textContent = 'Confirmar Agendamento';
-
-            // Clear form
-            document.getElementById('petName').value = '';
-            document.getElementById('observations').value = '';
-            appointmentDateInput.value = '';
-            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
-            selectedSlot = null;
-
-            // Redirect
-            showScreen('my-pets-screen');
-            loadMyPets();
-
-        } catch (e) {
-            console.error("Error saving document: ", e);
-            alert("Erro ao salvar. Tente novamente.");
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
         }
     });
 
