@@ -319,6 +319,28 @@
         }
         .btn-cancelar:hover { background-color: #ffebee; }
 
+        .btn-reschedule {
+            background-color: transparent;
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+            padding: 0.75rem;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            width: 100%;
+            font-weight: bold;
+        }
+        .btn-reschedule:hover { background-color: #e3f2fd; }
+
+        .reschedule-area {
+            margin-top: 1rem;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background-color: #fafafa;
+            display: none;
+        }
+
         /* Week Grid Styles */
         .week-grid {
             display: grid;
@@ -971,6 +993,11 @@
 
         let buttonsHtml = '';
         if (!isHistory) {
+            const currentIsoDate = data.appointmentTime.split('T')[0];
+            const currentTime = data.appointmentTime.split('T')[1];
+
+            const options = timeSlots.map(t => `<option value="${t}" ${t === currentTime ? 'selected' : ''}>${t}</option>`).join('');
+
             buttonsHtml = `
             <div class="actions">
                 <button class="btn-status ${data.status === 'Agendado' ? 'active' : ''}" onclick="updateStatus('${id}', 'Agendado')">Agendado</button>
@@ -982,8 +1009,24 @@
 
             ${whatsappHtml}
 
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-cancelar" onclick="cancelAppointment('${id}')">❌ Cancelar</button>
+                <button class="btn-reschedule" onclick="toggleReschedule('${id}')">🗓️ Remarcar</button>
+            </div>
+
+            <div id="reschedule-area-${id}" class="reschedule-area">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:bold;">Nova Data:</label>
+                <input type="date" id="reschedule-date-${id}" value="${currentIsoDate}" style="width:100%; padding:0.5rem; margin-bottom:1rem; border:1px solid #ddd; border-radius:6px;">
+
+                <label style="display:block; margin-bottom:0.5rem; font-weight:bold;">Novo Horário:</label>
+                <select id="reschedule-time-${id}" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:6px; margin-bottom:1rem;">
+                    ${options}
+                </select>
+
+                <button class="btn-save" style="margin-top:0;" onclick="saveReschedule('${id}')">Salvar Novo Horário</button>
+            </div>
+
             <button class="btn-concluir" onclick="confirmAndComplete('${id}')">✅ Concluir</button>
-            <button class="btn-cancelar" onclick="cancelAppointment('${id}')">❌ Cancelar</button>
             `;
         } else {
             buttonsHtml = `
@@ -1202,6 +1245,80 @@
         } catch (e) {
             console.error("Error deleting history: ", e);
             alert("Erro ao apagar histórico.");
+        }
+    };
+
+    window.toggleReschedule = (id) => {
+        const area = document.getElementById(`reschedule-area-${id}`);
+        if (area.style.display === 'block') {
+            area.style.display = 'none';
+        } else {
+            area.style.display = 'block';
+        }
+    };
+
+    window.saveReschedule = async (id) => {
+        const dateInput = document.getElementById(`reschedule-date-${id}`);
+        const timeInput = document.getElementById(`reschedule-time-${id}`);
+
+        const newDate = dateInput.value;
+        const newTime = timeInput.value;
+
+        if (!newDate || !newTime) {
+            alert("Selecione data e horário.");
+            return;
+        }
+
+        // Sunday Check
+        const dateObj = new Date(newDate + 'T00:00:00');
+        if (dateObj.getDay() === 0) {
+            alert("Não é possível agendar ou remarcar para Domingos.");
+            return;
+        }
+
+        const newAppointmentTime = `${newDate}T${newTime}`;
+
+        // Conflict Check
+        try {
+            const q = query(
+                collection(db, "appointments"),
+                where("appointmentTime", "==", newAppointmentTime)
+            );
+
+            const snapshot = await getDocs(q);
+            let conflict = false;
+
+            snapshot.forEach(doc => {
+                // If there is a doc with this time AND it's not the current doc (though Firestore usually filters this out if we query by exact match, wait no)
+                // If we are updating *this* doc, checking against all docs will include this one IF the time hasn't changed yet.
+                // But here we are checking a NEW time. So if any doc has this NEW time, it's a conflict.
+                // UNLESS the new time is the same as the old time? That would be silly but possible.
+                // Let's assume user picked a different time.
+                if (doc.id !== id && doc.data().status !== 'Cancelado' && doc.data().status !== 'Concluído') {
+                    conflict = true;
+                }
+            });
+
+            if (conflict) {
+                if (!confirm("Este horário já possui um agendamento. Deseja fazer um encaixe mesmo assim?")) {
+                    return; // Cancel action
+                }
+            }
+
+            // Update
+            await updateDoc(doc(db, "appointments", id), {
+                appointmentTime: newAppointmentTime,
+                status: 'Agendado'
+            });
+
+            alert("Agendamento remarcado com sucesso!");
+            // Hide area
+            toggleReschedule(id);
+            // The onSnapshot listener will update the UI automatically.
+
+        } catch(e) {
+            console.error("Error rescheduling:", e);
+            alert("Erro ao remarcar agendamento.");
         }
     };
 
