@@ -566,6 +566,15 @@
             flex: 1;
         }
 
+        .time-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            margin-top: 0.25rem;
+        }
+
     </style>
 </head>
 <body>
@@ -645,6 +654,56 @@
                 <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Define quantos pets podem ser agendados no mesmo horário.</p>
                 <button class="btn-save" style="margin-top: 0.5rem; width: auto;" onclick="saveGlobalSettings()">Salvar Capacidade Global</button>
             </div>
+        </div>
+
+        <!-- Tempos e Duração -->
+        <div class="settings-card" style="margin-bottom: 1.5rem;">
+            <h2>Tempos e Duração</h2>
+
+            <div class="form-group">
+                <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Intervalo da Agenda (minutos):</label>
+                <input type="number" id="agendaInterval" min="10" value="30" step="5" style="width: 100%; max-width: 150px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="font-size: 1rem; color: #666;">Duração por Serviço (min)</h3>
+                    <div class="form-group">
+                        <label>Banho</label>
+                        <input type="number" id="timeBanho" class="time-input" value="30">
+                    </div>
+                    <div class="form-group">
+                        <label>Tosa</label>
+                        <input type="number" id="timeTosa" class="time-input" value="45">
+                    </div>
+                    <div class="form-group">
+                        <label>Banho e Tosa</label>
+                        <input type="number" id="timeBanhoTosa" class="time-input" value="90">
+                    </div>
+                     <div class="form-group">
+                        <label>Outros</label>
+                        <input type="number" id="timeOutros" class="time-input" value="30">
+                    </div>
+                </div>
+
+                <div>
+                    <h3 style="font-size: 1rem; color: #666;">Tempo Extra por Porte (min)</h3>
+                    <div class="form-group">
+                        <label>Pequeno (P)</label>
+                        <input type="number" id="extraP" class="time-input" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Médio (M)</label>
+                        <input type="number" id="extraM" class="time-input" value="15">
+                    </div>
+                    <div class="form-group">
+                        <label>Grande (G)</label>
+                        <input type="number" id="extraG" class="time-input" value="30">
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-save" onclick="saveTimeSettings()">Salvar Configurações de Tempo</button>
         </div>
 
         <div class="settings-card">
@@ -1566,6 +1625,7 @@
     generateSlotCheckboxes();
     loadAppointments();
     loadGlobalSettings();
+    loadTimeSettings();
 
     // --- Global Settings Logic ---
     async function loadGlobalSettings() {
@@ -1597,6 +1657,62 @@
         } catch (e) {
             console.error("Error saving global settings:", e);
             alert("Erro ao salvar configuração global.");
+        }
+    };
+
+    // --- Time & Duration Settings Logic ---
+    async function loadTimeSettings() {
+        try {
+            const docRef = doc(db, "configuracoes", "tempos");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.agendaInterval) document.getElementById('agendaInterval').value = data.agendaInterval;
+
+                if (data.services) {
+                    if (data.services['Banho']) document.getElementById('timeBanho').value = data.services['Banho'];
+                    if (data.services['Tosa']) document.getElementById('timeTosa').value = data.services['Tosa'];
+                    if (data.services['Banho e Tosa']) document.getElementById('timeBanhoTosa').value = data.services['Banho e Tosa'];
+                    if (data.services['Outros']) document.getElementById('timeOutros').value = data.services['Outros'];
+                }
+
+                if (data.sizes) {
+                    if (data.sizes['P']) document.getElementById('extraP').value = data.sizes['P'];
+                    if (data.sizes['M']) document.getElementById('extraM').value = data.sizes['M'];
+                    if (data.sizes['G']) document.getElementById('extraG').value = data.sizes['G'];
+                }
+            }
+        } catch (e) {
+            console.error("Error loading time settings:", e);
+        }
+    }
+
+    window.saveTimeSettings = async () => {
+        const agendaInterval = parseInt(document.getElementById('agendaInterval').value) || 30;
+
+        const services = {
+            'Banho': parseInt(document.getElementById('timeBanho').value) || 30,
+            'Tosa': parseInt(document.getElementById('timeTosa').value) || 45,
+            'Banho e Tosa': parseInt(document.getElementById('timeBanhoTosa').value) || 90,
+            'Outros': parseInt(document.getElementById('timeOutros').value) || 30
+        };
+
+        const sizes = {
+            'P': parseInt(document.getElementById('extraP').value) || 0,
+            'M': parseInt(document.getElementById('extraM').value) || 15,
+            'G': parseInt(document.getElementById('extraG').value) || 30
+        };
+
+        try {
+            await setDoc(doc(db, "configuracoes", "tempos"), {
+                agendaInterval: agendaInterval,
+                services: services,
+                sizes: sizes
+            });
+            alert("Configurações de tempo salvas com sucesso!");
+        } catch (e) {
+            console.error("Error saving time settings:", e);
+            alert("Erro ao salvar configurações de tempo.");
         }
     };
 
