@@ -703,6 +703,18 @@
         }
 
         try {
+            // Fetch Global Capacity
+            let capacity = 1;
+            try {
+                const globalConfigRef = doc(db, "configuracoes", "geral");
+                const globalConfigSnap = await getDoc(globalConfigRef);
+                if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                    capacity = globalConfigSnap.data().capacityPerSlot;
+                }
+            } catch (e) {
+                console.error("Error fetching global capacity:", e);
+            }
+
             const configRef = doc(db, "configuracoes", dateString);
             const configSnap = await getDoc(configRef);
             let blockedAllDay = false;
@@ -731,14 +743,14 @@
             );
 
             const querySnapshot = await getDocs(q);
-            const takenSlots = new Set();
+            const takenCount = {}; // Map time -> count
 
             querySnapshot.forEach((doc) => {
                 const data = doc.data();
                 // Ignore cancelled appointments for slot calculation
                 if (data.status !== 'Cancelado' && data.appointmentTime) {
                     const timePart = data.appointmentTime.split('T')[1];
-                    takenSlots.add(timePart);
+                    takenCount[timePart] = (takenCount[timePart] || 0) + 1;
                 }
             });
 
@@ -756,7 +768,8 @@
                 btn.textContent = time;
 
                 const fullIso = `${dateString}T${time}`;
-                let isTaken = takenSlots.has(time);
+                let count = takenCount[time] || 0;
+                let isFull = count >= capacity;
                 let isBlocked = blockedSlots.has(time);
                 let isPast = false;
 
@@ -767,10 +780,10 @@
                     }
                 }
 
-                if (isTaken || isPast || isBlocked) {
+                if (isFull || isPast || isBlocked) {
                     btn.disabled = true;
                     if (isBlocked) btn.title = "Horário indisponível (Admin)";
-                    else if (isTaken) btn.title = "Horário ocupado";
+                    else if (isFull) btn.title = "Horário esgotado";
                     else btn.title = "Horário já passou";
                 } else {
                     btn.onclick = () => selectSlot(btn, fullIso);
@@ -822,14 +835,26 @@
             const appointmentTime = selectedSlot;
 
             try {
+                // Fetch Global Capacity (again to be safe)
+                let capacity = 1;
+                try {
+                    const globalConfigRef = doc(db, "configuracoes", "geral");
+                    const globalConfigSnap = await getDoc(globalConfigRef);
+                    if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                        capacity = globalConfigSnap.data().capacityPerSlot;
+                    }
+                } catch (e) {
+                    console.error("Error fetching global capacity:", e);
+                }
+
                 const qCheck = query(
                     collection(db, "appointments"),
                     where("appointmentTime", "==", appointmentTime)
                 );
                 const checkSnap = await getDocs(qCheck);
 
+                let activeCount = 0;
                 if (!checkSnap.empty) {
-                    let isConflict = false;
                     checkSnap.forEach(d => {
                         const dData = d.data();
                         if (editingAppointmentId && d.id === editingAppointmentId) {
@@ -837,16 +862,16 @@
                         } else if (dData.status === 'Cancelado') {
                             // Ignore cancelled
                         } else {
-                            isConflict = true;
+                            activeCount++;
                         }
                     });
+                }
 
-                    if (isConflict) {
-                        alert("Ops! Esse horário acabou de ser reservado por outra pessoa.");
-                        const datePart = appointmentTime.split('T')[0];
-                        generateSlots(datePart);
-                        return;
-                    }
+                if (activeCount >= capacity) {
+                    alert("Ops! Esse horário acabou de ser reservado e esgotou a capacidade.");
+                    const datePart = appointmentTime.split('T')[0];
+                    generateSlots(datePart);
+                    return;
                 }
 
                 if (editingAppointmentId) {

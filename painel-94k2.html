@@ -536,8 +536,18 @@
 
     <!-- Configurações Tab -->
     <div id="tab-config" class="tab-content">
+        <div class="settings-card" style="margin-bottom: 1.5rem;">
+            <h2>Configurações Globais</h2>
+            <div class="form-group">
+                <label for="globalCapacity" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Capacidade Global de Atendimentos por Horário:</label>
+                <input type="number" id="globalCapacity" min="1" value="1" style="width: 100%; max-width: 150px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+                <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Define quantos pets podem ser agendados no mesmo horário.</p>
+                <button class="btn-save" style="margin-top: 0.5rem; width: auto;" onclick="saveGlobalSettings()">Salvar Capacidade Global</button>
+            </div>
+        </div>
+
         <div class="settings-card">
-            <h2>Gerenciar Disponibilidade</h2>
+            <h2>Gerenciar Disponibilidade (Por Dia)</h2>
             <div class="form-group">
                 <label for="configDate">Selecione a Data:</label>
                 <input type="date" id="configDate" style="width: 100%; max-width: 300px; margin-top: 0.5rem;">
@@ -601,6 +611,7 @@
     const blockAllDayCheckbox = document.getElementById('blockAllDay');
     const slotsCheckboxesContainer = document.getElementById('slots-checkboxes');
     const configMessage = document.getElementById('config-message');
+    const globalCapacityInput = document.getElementById('globalCapacity');
 
     // Week Grid Elements
     const weekGrid = document.getElementById('week-grid');
@@ -1313,21 +1324,24 @@
             );
 
             const snapshot = await getDocs(q);
-            let conflict = false;
+            let activeCount = 0;
 
             snapshot.forEach(doc => {
-                // If there is a doc with this time AND it's not the current doc (though Firestore usually filters this out if we query by exact match, wait no)
-                // If we are updating *this* doc, checking against all docs will include this one IF the time hasn't changed yet.
-                // But here we are checking a NEW time. So if any doc has this NEW time, it's a conflict.
-                // UNLESS the new time is the same as the old time? That would be silly but possible.
-                // Let's assume user picked a different time.
+                // Count active appointments at this time, excluding the one we are editing
                 if (doc.id !== id && doc.data().status !== 'Cancelado' && doc.data().status !== 'Concluído') {
-                    conflict = true;
+                    activeCount++;
                 }
             });
 
-            if (conflict) {
-                if (!confirm("Este horário já possui um agendamento. Deseja fazer um encaixe mesmo assim?")) {
+            // Get Global Capacity
+            let capacity = 1;
+            const capInput = document.getElementById('globalCapacity');
+            if (capInput && capInput.value) {
+                capacity = parseInt(capInput.value);
+            }
+
+            if (activeCount >= capacity) {
+                if (!confirm(`Este horário já atingiu a capacidade máxima (${capacity}). Deseja fazer um encaixe mesmo assim?`)) {
                     return; // Cancel action
                 }
             }
@@ -1370,6 +1384,40 @@
     // --- Execution ---
     generateSlotCheckboxes();
     loadAppointments();
+    loadGlobalSettings();
+
+    // --- Global Settings Logic ---
+    async function loadGlobalSettings() {
+        try {
+            const docRef = doc(db, "configuracoes", "geral");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.capacityPerSlot) {
+                    globalCapacityInput.value = data.capacityPerSlot;
+                }
+            }
+        } catch (e) {
+            console.error("Error loading global settings:", e);
+        }
+    }
+
+    window.saveGlobalSettings = async () => {
+        const val = parseInt(globalCapacityInput.value);
+        if (val < 1) {
+            alert("A capacidade deve ser pelo menos 1.");
+            return;
+        }
+
+        try {
+            const docRef = doc(db, "configuracoes", "geral");
+            await setDoc(docRef, { capacityPerSlot: val }, { merge: true });
+            alert("Capacidade global salva com sucesso!");
+        } catch (e) {
+            console.error("Error saving global settings:", e);
+            alert("Erro ao salvar configuração global.");
+        }
+    };
 
 </script>
 
