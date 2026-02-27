@@ -717,6 +717,23 @@
                 <div id="price-table-container">
                     <!-- Gerado via JS -->
                 </div>
+
+                <h3 style="font-size: 1rem; color: #666; margin-top: 2rem;">Acréscimo de Preço por Porte (R$)</h3>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Pequeno (P)</label>
+                        <input type="number" id="price-size-P" class="price-input" value="0" min="0" step="0.01">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Médio (M)</label>
+                        <input type="number" id="price-size-M" class="price-input" value="0" min="0" step="0.01">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Grande (G)</label>
+                        <input type="number" id="price-size-G" class="price-input" value="0" min="0" step="0.01">
+                    </div>
+                </div>
+
                 <button class="btn-save" onclick="savePriceSettings()">Salvar Preços</button>
             </div>
         </div>
@@ -1722,6 +1739,11 @@
                 newDuration += parseInt(sizeExtras[petSize]);
             }
 
+            // Size Extra Price
+            if (priceData.sizes && priceData.sizes[petSize]) {
+                newTotalValue += parseFloat(priceData.sizes[petSize]);
+            }
+
             newSlotsNeeded = Math.ceil(newDuration / agendaInterval);
 
             // --- Check Capacity ---
@@ -1932,14 +1954,21 @@
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
+
+                // Services
                 servicesList.forEach((service, index) => {
-                    const key = service.replace(/\./g, '_'); // sanitize potential dots for storage if needed, but we use map here
-                    // Actually, let's store as a map where key is service name
                     if (data[service]) {
                         document.getElementById(`price-base-${index}`).value = data[service].base || 0;
                         document.getElementById(`price-disc-${index}`).value = data[service].discount || 0;
                     }
                 });
+
+                // Sizes
+                if (data.sizes) {
+                    if (data.sizes['P']) document.getElementById('price-size-P').value = data.sizes['P'];
+                    if (data.sizes['M']) document.getElementById('price-size-M').value = data.sizes['M'];
+                    if (data.sizes['G']) document.getElementById('price-size-G').value = data.sizes['G'];
+                }
             }
         } catch (e) {
             console.error("Error loading prices:", e);
@@ -1948,11 +1977,20 @@
 
     window.savePriceSettings = async () => {
         const prices = {};
+
+        // Services
         servicesList.forEach((service, index) => {
             const base = parseFloat(document.getElementById(`price-base-${index}`).value) || 0;
             const discount = parseFloat(document.getElementById(`price-disc-${index}`).value) || 0;
             prices[service] = { base, discount };
         });
+
+        // Sizes
+        prices.sizes = {
+            'P': parseFloat(document.getElementById('price-size-P').value) || 0,
+            'M': parseFloat(document.getElementById('price-size-M').value) || 0,
+            'G': parseFloat(document.getElementById('price-size-G').value) || 0
+        };
 
         try {
             await setDoc(doc(db, "configuracoes", "precos"), prices);
