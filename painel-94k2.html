@@ -1301,8 +1301,21 @@
             hasDesembolo = true;
         }
 
-        if (hasDesembolo) {
+        const valorDesembolo = data.valorDesembolo ? parseFloat(data.valorDesembolo) : 0;
+
+        if (hasDesembolo && valorDesembolo === 0) {
             totalValue += ' + Avaliação';
+        }
+
+        let desemboloInputHtml = '';
+        if (hasDesembolo && !isHistory) {
+             desemboloInputHtml = `
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                    <label style="font-size: 0.9rem; color: #333;">Valor Desembolo:</label>
+                    <input type="number" id="desembolo-${id}" value="${valorDesembolo > 0 ? valorDesembolo : ''}" step="0.01" placeholder="0,00" style="width: 80px; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <button onclick="saveDesembolo('${id}')" style="background-color: var(--primary); color: white; border: none; border-radius: 4px; padding: 0.25rem 0.5rem; cursor: pointer;" title="Salvar Valor">💾</button>
+                </div>
+             `;
         }
 
         // Observations Section
@@ -1396,6 +1409,7 @@
                 <div class="pet-info" style="color: #333;">
                      <strong>Porte:</strong> ${escapeHtml(petSize)} | <strong>Total:</strong> ${escapeHtml(totalValue)}
                 </div>
+                ${desemboloInputHtml}
                 <div class="pet-info" style="color: #333;">
                      <strong>Pagamento:</strong> ${escapeHtml(paymentMethod)}
                 </div>
@@ -1527,6 +1541,43 @@
         } catch(e) {
             console.error("Error saving obs:", e);
             alert("Erro ao salvar observação.");
+        }
+    };
+
+    window.saveDesembolo = async (id) => {
+        const input = document.getElementById(`desembolo-${id}`);
+        const newValue = parseFloat(input.value);
+
+        if (isNaN(newValue) || newValue < 0) {
+            alert("Por favor, insira um valor válido.");
+            return;
+        }
+
+        try {
+            const docRef = doc(db, "appointments", id);
+            const docSnap = await getDoc(docRef);
+
+            if (!docSnap.exists()) {
+                alert("Agendamento não encontrado.");
+                return;
+            }
+
+            const data = docSnap.data();
+            const currentTotal = parseFloat(data.totalValue) || 0;
+            const currentDesembolo = parseFloat(data.valorDesembolo) || 0;
+
+            // Calculate new total: remove old desembolo, add new desembolo
+            const newTotal = (currentTotal - currentDesembolo) + newValue;
+
+            await updateDoc(docRef, {
+                valorDesembolo: newValue,
+                totalValue: newTotal
+            });
+
+            alert("Valor do desembolo salvo e total atualizado!");
+        } catch (e) {
+            console.error("Error saving desembolo:", e);
+            alert("Erro ao salvar valor do desembolo.");
         }
     };
 
