@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PetShop - Agendamento e Status</title>
+    <title>MelluPet - Agendamentos e Status</title>
     <style>
         :root {
             --primary: #4CAF50;
@@ -231,7 +231,7 @@
 
     <!-- Tela Login -->
     <div id="login-screen" class="screen">
-        <h1>Bem-vindo! 🐾</h1>
+        <h1>Bem-vindo a MelluPet Agendamentos! 🐾</h1>
         <p style="text-align: center; color: #666; margin-bottom: 1.5rem;">Preencha seus dados para continuar.</p>
         <form id="login-form">
             <div class="form-group">
@@ -248,9 +248,9 @@
 
     <!-- Tela Menu -->
     <div id="menu-screen" class="screen">
-        <h1 id="menu-greeting">Bem-vindo ao Petshop!</h1>
+        <h1 id="menu-greeting">Bem-vindo ao MelluPet!</h1>
         <button id="btn-agendar" class="menu-btn">Agendar Banho 🛁</button>
-        <button id="btn-meus-pets" class="menu-btn">Meus Pets 🐶</button>
+        <button id="btn-meus-pets" class="menu-btn">Meus Agendamentos 🐶</button>
         <div style="margin-top: 2rem; text-align: center;">
             <a href="#" id="logout-link" style="color: #999; text-decoration: none; font-size: 0.9rem;">Sair / Trocar Telefone</a>
         </div>
@@ -319,9 +319,9 @@
         </form>
     </div>
 
-    <!-- Tela Meus Pets -->
+    <!-- Tela Meus Agendamentos -->
     <div id="my-pets-screen" class="screen">
-        <h2>Meus Pets</h2>
+        <h2>Meus Agendamentos</h2>
         <div id="pets-list">
             <p style="text-align: center; color: #666;">Carregando...</p>
         </div>
@@ -427,7 +427,7 @@
     function updateGreeting(name) {
         const greetingEl = document.getElementById('menu-greeting');
         if (greetingEl) {
-             greetingEl.textContent = `Olá, ${name}! Bem-vindo ao Petshop`;
+             greetingEl.textContent = `Olá, ${name}! Bem-vindo ao MelluPet`;
         }
     }
 
