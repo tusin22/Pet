@@ -764,7 +764,11 @@
 
                 // Price Logic
                 if (priceData[serviceName]) {
-                    const base = parseFloat(priceData[serviceName].base) || 0;
+                    let base = 0;
+                    if (size === 'P') base = parseFloat(priceData[serviceName].priceP) || 0;
+                    else if (size === 'M') base = parseFloat(priceData[serviceName].priceM) || 0;
+                    else if (size === 'G') base = parseFloat(priceData[serviceName].priceG) || 0;
+
                     const discount = parseFloat(priceData[serviceName].discount) || 0;
 
                     if (count >= 2) {
@@ -789,10 +793,7 @@
                 totalDuration += parseInt(sizeExtras[size]);
             }
 
-            // Add Size Extra Price
-            if (size && priceData.sizes && priceData.sizes[size]) {
-                totalPrice += parseFloat(priceData.sizes[size]);
-            }
+            // Note: Size Extra Price is now built into per-service prices, so we don't add it globally anymore.
 
             currentTotalValue = totalPrice;
             currentTotalDuration = totalDuration;
