@@ -706,6 +706,38 @@
             </div>
         </div>
 
+        <!-- Tabela de Preços -->
+        <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
+            <div class="settings-header" onclick="toggleCard(this)">
+                <h2>Tabela de Preços</h2>
+                <span class="arrow-icon">▼</span>
+            </div>
+            <div class="settings-body">
+                <p style="color: #666; font-size: 0.9rem;">Preço Base é cobrado se apenas 1 serviço for selecionado. O desconto só se aplica se o cliente formar um Combo (2+ serviços).</p>
+                <div id="price-table-container">
+                    <!-- Gerado via JS -->
+                </div>
+
+                <h3 style="font-size: 1rem; color: #666; margin-top: 2rem;">Acréscimo de Preço por Porte (R$)</h3>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Pequeno (P)</label>
+                        <input type="number" id="price-size-P" class="price-input" value="0" min="0" step="0.01">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Médio (M)</label>
+                        <input type="number" id="price-size-M" class="price-input" value="0" min="0" step="0.01">
+                    </div>
+                    <div class="form-group" style="flex: 1; min-width: 100px;">
+                        <label>Grande (G)</label>
+                        <input type="number" id="price-size-G" class="price-input" value="0" min="0" step="0.01">
+                    </div>
+                </div>
+
+                <button class="btn-save" onclick="savePriceSettings()">Salvar Preços</button>
+            </div>
+        </div>
+
         <!-- Tempos e Duração -->
         <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
             <div class="settings-header" onclick="toggleCard(this)">
@@ -721,21 +753,8 @@
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
                     <div>
                         <h3 style="font-size: 1rem; color: #666;">Duração por Serviço (min)</h3>
-                        <div class="form-group">
-                            <label>Banho</label>
-                            <input type="number" id="timeBanho" class="time-input" value="30">
-                        </div>
-                        <div class="form-group">
-                            <label>Tosa</label>
-                            <input type="number" id="timeTosa" class="time-input" value="45">
-                        </div>
-                        <div class="form-group">
-                            <label>Banho e Tosa</label>
-                            <input type="number" id="timeBanhoTosa" class="time-input" value="90">
-                        </div>
-                         <div class="form-group">
-                            <label>Outros</label>
-                            <input type="number" id="timeOutros" class="time-input" value="30">
+                        <div id="time-services-container">
+                            <!-- Gerado via JS -->
                         </div>
                     </div>
 
@@ -1278,9 +1297,16 @@
         const ownerName = data.ownerName ? ` (${data.ownerName})` : '';
 
         // Extra Fields
-        const serviceType = data.serviceType || 'Não informado';
+        let serviceType = data.serviceType || 'Não informado';
+        if (data.services && Array.isArray(data.services)) {
+            serviceType = data.services.join(', ');
+        }
+
         const petSize = data.petSize || 'Não informado';
         const paymentMethod = data.paymentMethod || 'Não informado';
+        const totalValue = data.totalValue
+            ? data.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+            : '';
 
         // Observations Section
         let obsHtml = '';
@@ -1339,6 +1365,11 @@
             </div>
 
             <div id="reschedule-area-${id}" class="reschedule-area">
+                <label style="display:block; margin-bottom:0.5rem; font-weight:bold;">Alterar Serviços:</label>
+                <div id="edit-services-${id}" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
+                    <!-- JS will populate -->
+                </div>
+
                 <label style="display:block; margin-bottom:0.5rem; font-weight:bold;">Nova Data:</label>
                 <input type="date" id="reschedule-date-${id}" value="${currentIsoDate}" style="width:100%; padding:0.5rem; margin-bottom:1rem; border:1px solid #ddd; border-radius:6px;">
 
@@ -1347,7 +1378,7 @@
                     ${options}
                 </select>
 
-                <button class="btn-save" style="margin-top:0;" onclick="saveReschedule('${id}')">Salvar Novo Horário</button>
+                <button class="btn-save" style="margin-top:0;" onclick="saveReschedule('${id}')">Salvar Alterações</button>
             </div>
 
             <button class="btn-concluir" onclick="confirmAndComplete('${id}')">✅ Concluir</button>
@@ -1363,7 +1394,10 @@
                 <span class="status-badge ${statusClass}">${data.status}</span>
                 <h3 class="pet-name">${escapeHtml(data.petName)}${escapeHtml(ownerName)}</h3>
                 <div class="pet-info" style="margin-top: 0.5rem; color: #333;">
-                     <strong>Serviço:</strong> ${escapeHtml(serviceType)} | <strong>Porte:</strong> ${escapeHtml(petSize)}
+                     <strong>Serviços:</strong> ${escapeHtml(serviceType)}
+                </div>
+                <div class="pet-info" style="color: #333;">
+                     <strong>Porte:</strong> ${escapeHtml(petSize)} | <strong>Total:</strong> ${escapeHtml(totalValue)}
                 </div>
                 <div class="pet-info" style="color: #333;">
                      <strong>Pagamento:</strong> ${escapeHtml(paymentMethod)}
@@ -1578,21 +1612,75 @@
         }
     };
 
-    window.toggleReschedule = (id) => {
+    window.toggleReschedule = async (id) => {
         const area = document.getElementById(`reschedule-area-${id}`);
         if (area.style.display === 'block') {
             area.style.display = 'none';
-        } else {
+            return;
+        }
+
+        // Populate Services for this card
+        const servicesDiv = document.getElementById(`edit-services-${id}`);
+        servicesDiv.innerHTML = 'Carregando serviços...';
+
+        try {
+            // Get Current Appointment Data to check boxes
+            const apptRef = doc(db, "appointments", id);
+            const apptSnap = await getDoc(apptRef);
+            let currentServices = [];
+            let currentSize = 'M'; // default fallback
+
+            if (apptSnap.exists()) {
+                const d = apptSnap.data();
+                if (d.services && Array.isArray(d.services)) {
+                    currentServices = d.services;
+                } else if (d.serviceType) {
+                    currentServices = [d.serviceType];
+                }
+                if (d.petSize) currentSize = d.petSize;
+
+                // Also store petSize on the area for calc reference
+                area.setAttribute('data-size', currentSize);
+            }
+
+            // Render Checkboxes
+            servicesDiv.innerHTML = '';
+            servicesList.forEach(srv => {
+                const checked = currentServices.includes(srv) ? 'checked' : '';
+                const html = `
+                    <div style="display:flex; align-items:center; gap:0.25rem;">
+                        <input type="checkbox" id="edit-srv-${id}-${srv.replace(/\s+/g, '')}" value="${srv}" ${checked} class="edit-service-cb-${id}">
+                        <label for="edit-srv-${id}-${srv.replace(/\s+/g, '')}" style="font-size:0.85rem;">${srv}</label>
+                    </div>
+                `;
+                servicesDiv.innerHTML += html;
+            });
+
             area.style.display = 'block';
+
+        } catch(e) {
+            console.error("Error preparing edit:", e);
+            servicesDiv.innerHTML = "Erro ao carregar.";
         }
     };
 
     window.saveReschedule = async (id) => {
         const dateInput = document.getElementById(`reschedule-date-${id}`);
         const timeInput = document.getElementById(`reschedule-time-${id}`);
+        const area = document.getElementById(`reschedule-area-${id}`);
+        const petSize = area.getAttribute('data-size') || 'M';
 
         const newDate = dateInput.value;
         const newTime = timeInput.value;
+
+        // Get selected services
+        const selectedServices = [];
+        document.querySelectorAll(`.edit-service-cb-${id}:checked`).forEach(cb => selectedServices.push(cb.value));
+
+        if (selectedServices.length === 0) {
+            alert("Selecione pelo menos um serviço.");
+            return;
+        }
 
         if (!newDate || !newTime) {
             alert("Selecione data e horário.");
@@ -1608,51 +1696,142 @@
 
         const newAppointmentTime = `${newDate}T${newTime}`;
 
-        // Conflict Check
+        // --- Recalculate Price & Duration ---
+        let newTotalValue = 0;
+        let newDuration = 0;
+        let newSlotsNeeded = 1;
+
         try {
-            const q = query(
-                collection(db, "appointments"),
-                where("appointmentTime", "==", newAppointmentTime)
-            );
+            const [priceSnap, timeSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "precos")),
+                getDoc(doc(db, "configuracoes", "tempos"))
+            ]);
 
-            const snapshot = await getDocs(q);
-            let activeCount = 0;
+            const priceData = priceSnap.exists() ? priceSnap.data() : {};
+            const timeData = timeSnap.exists() ? timeSnap.data() : {};
+            const serviceTimes = timeData.services || {};
+            const sizeExtras = timeData.sizes || {};
+            let agendaInterval = parseInt(timeData.agendaInterval) || 30;
 
-            snapshot.forEach(doc => {
-                // Count active appointments at this time, excluding the one we are editing
-                // Note: Ignoring self (doc.id !== id) ensures we can save changes even if slot is full (by us)
-                if (doc.id !== id && doc.data().status !== 'Cancelado' && doc.data().status !== 'Concluído') {
-                    activeCount++;
+            const count = selectedServices.length;
+
+            selectedServices.forEach(srv => {
+                // Price
+                if (priceData[srv]) {
+                    const base = parseFloat(priceData[srv].base) || 0;
+                    const discount = parseFloat(priceData[srv].discount) || 0;
+                    if (count >= 2) {
+                        newTotalValue += base * (1 - (discount/100));
+                    } else {
+                        newTotalValue += base;
+                    }
+                }
+                // Duration
+                if (serviceTimes[srv]) {
+                    newDuration += parseInt(serviceTimes[srv]);
+                } else {
+                    newDuration += 30;
                 }
             });
 
-            // Get Global Capacity
-            let capacity = 1;
-            const capInput = document.getElementById('globalCapacity');
-            if (capInput && capInput.value) {
-                capacity = parseInt(capInput.value);
+            // Size Extra
+            if (sizeExtras[petSize]) {
+                newDuration += parseInt(sizeExtras[petSize]);
             }
 
-            if (activeCount >= capacity) {
-                if (!confirm(`Este horário já atingiu a capacidade máxima (${capacity}). Deseja fazer um encaixe mesmo assim?`)) {
-                    return; // Cancel action
+            // Size Extra Price
+            if (priceData.sizes && priceData.sizes[petSize]) {
+                newTotalValue += parseFloat(priceData.sizes[petSize]);
+            }
+
+            newSlotsNeeded = Math.ceil(newDuration / agendaInterval);
+
+            // --- Check Capacity ---
+            // Fetch appointments for the target day to check occupancy
+            const startOfDay = `${newDate}T00:00`;
+            const endOfDay = `${newDate}T23:59`;
+
+            const q = query(
+                collection(db, "appointments"),
+                where("appointmentTime", ">=", startOfDay),
+                where("appointmentTime", "<=", endOfDay)
+            );
+            const snapshot = await getDocs(q);
+
+            // Build all slots for the day
+            const allSlots = [];
+            let t = new Date(`${newDate}T08:00:00`);
+            const eTime = new Date(`${newDate}T18:00:00`);
+            while (t < eTime) {
+                const h = t.getHours().toString().padStart(2,'0');
+                const m = t.getMinutes().toString().padStart(2,'0');
+                allSlots.push(`${h}:${m}`);
+                t.setMinutes(t.getMinutes() + agendaInterval);
+            }
+
+            const occupancy = {};
+            allSlots.forEach(s => occupancy[s] = 0);
+
+            snapshot.forEach(doc => {
+                if (doc.id !== id && doc.data().status !== 'Cancelado' && doc.data().status !== 'Concluído') {
+                    const data = doc.data();
+                    const timePart = data.appointmentTime.split('T')[1];
+                    const slots = data.slotsNeeded || 1;
+                    const idx = allSlots.indexOf(timePart);
+                    if (idx !== -1) {
+                        for(let i=0; i<slots; i++) {
+                            const st = allSlots[idx+i];
+                            if(st) occupancy[st] = (occupancy[st] || 0) + 1;
+                        }
+                    }
+                }
+            });
+
+            // Check requested slots
+            const startIdx = allSlots.indexOf(newTime);
+            let capacity = 1;
+            const capInput = document.getElementById('globalCapacity');
+            if (capInput && capInput.value) capacity = parseInt(capInput.value);
+
+            let isFull = false;
+
+            if (startIdx === -1) {
+                alert("Horário inválido (fora do expediente).");
+                return;
+            }
+
+            for(let i=0; i<newSlotsNeeded; i++) {
+                const checkTime = allSlots[startIdx+i];
+                if (!checkTime || (occupancy[checkTime] || 0) >= capacity) {
+                    isFull = true;
+                    break;
+                }
+            }
+
+            if (isFull) {
+                if (!confirm(`Atenção: A nova duração (${newDuration}min) requer ${newSlotsNeeded} horários, mas não há vagas suficientes. Deseja forçar o encaixe?`)) {
+                    return;
                 }
             }
 
             // Update
             await updateDoc(doc(db, "appointments", id), {
                 appointmentTime: newAppointmentTime,
-                status: 'Agendado'
+                status: 'Agendado',
+                services: selectedServices,
+                // Update legacy field for compatibility if needed, or keep it as first service
+                serviceType: selectedServices.join(', '),
+                totalValue: newTotalValue,
+                durationMinutes: newDuration,
+                slotsNeeded: newSlotsNeeded
             });
 
-            alert("Agendamento remarcado com sucesso!");
-            // Hide area
-            toggleReschedule(id);
-            // The onSnapshot listener will update the UI automatically.
+            alert("Agendamento alterado com sucesso!");
+            toggleReschedule(id); // close
 
         } catch(e) {
             console.error("Error rescheduling:", e);
-            alert("Erro ao remarcar agendamento.");
+            alert("Erro ao salvar alterações.");
         }
     };
 
@@ -1685,10 +1864,24 @@
         loadConfiguration();
     });
 
+    const servicesList = [
+        "Banho Master",
+        "Hidratação Vanilla",
+        "Hidratação Ouro 24K",
+        "SPA Premium",
+        "Corte das unhas",
+        "Escov. dos dentes",
+        "Carding",
+        "Desembolo de nós"
+    ];
+
     // --- Execution ---
     generateSlotCheckboxes();
     loadAppointments();
     loadGlobalSettings();
+    renderPriceTable(); // Initial Render
+    renderTimeTable();  // Initial Render
+    loadPriceSettings();
     loadTimeSettings();
 
     // --- Global Settings Logic ---
@@ -1724,7 +1917,107 @@
         }
     };
 
+    // --- Pricing Logic ---
+
+    function renderPriceTable() {
+        const container = document.getElementById('price-table-container');
+        container.innerHTML = '';
+
+        servicesList.forEach((service, index) => {
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '1rem';
+            row.style.alignItems = 'center';
+            row.style.marginBottom = '1rem';
+            row.style.flexWrap = 'wrap';
+
+            row.innerHTML = `
+                <div style="flex: 2; min-width: 150px;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 0.25rem;">${service}</label>
+                </div>
+                <div style="flex: 1; min-width: 120px;">
+                    <label style="font-size: 0.8rem; color: #666;">Preço Base (R$)</label>
+                    <input type="number" id="price-base-${index}" class="price-input" min="0" step="0.01" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+                <div style="flex: 1; min-width: 120px;">
+                    <label style="font-size: 0.8rem; color: #666;">% Desc. Combo</label>
+                    <input type="number" id="price-disc-${index}" class="price-input" min="0" max="100" step="1" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    async function loadPriceSettings() {
+        try {
+            const docRef = doc(db, "configuracoes", "precos");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+
+                // Services
+                servicesList.forEach((service, index) => {
+                    if (data[service]) {
+                        document.getElementById(`price-base-${index}`).value = data[service].base || 0;
+                        document.getElementById(`price-disc-${index}`).value = data[service].discount || 0;
+                    }
+                });
+
+                // Sizes
+                if (data.sizes) {
+                    if (data.sizes['P']) document.getElementById('price-size-P').value = data.sizes['P'];
+                    if (data.sizes['M']) document.getElementById('price-size-M').value = data.sizes['M'];
+                    if (data.sizes['G']) document.getElementById('price-size-G').value = data.sizes['G'];
+                }
+            }
+        } catch (e) {
+            console.error("Error loading prices:", e);
+        }
+    }
+
+    window.savePriceSettings = async () => {
+        const prices = {};
+
+        // Services
+        servicesList.forEach((service, index) => {
+            const base = parseFloat(document.getElementById(`price-base-${index}`).value) || 0;
+            const discount = parseFloat(document.getElementById(`price-disc-${index}`).value) || 0;
+            prices[service] = { base, discount };
+        });
+
+        // Sizes
+        prices.sizes = {
+            'P': parseFloat(document.getElementById('price-size-P').value) || 0,
+            'M': parseFloat(document.getElementById('price-size-M').value) || 0,
+            'G': parseFloat(document.getElementById('price-size-G').value) || 0
+        };
+
+        try {
+            await setDoc(doc(db, "configuracoes", "precos"), prices);
+            alert("Tabela de preços salva com sucesso!");
+        } catch (e) {
+            console.error("Error saving prices:", e);
+            alert("Erro ao salvar preços.");
+        }
+    };
+
     // --- Time & Duration Settings Logic ---
+
+    function renderTimeTable() {
+        const container = document.getElementById('time-services-container');
+        container.innerHTML = '';
+
+        servicesList.forEach((service, index) => {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.innerHTML = `
+                <label>${service}</label>
+                <input type="number" id="time-dur-${index}" class="time-input" value="30">
+            `;
+            container.appendChild(div);
+        });
+    }
+
     async function loadTimeSettings() {
         try {
             const docRef = doc(db, "configuracoes", "tempos");
@@ -1734,10 +2027,11 @@
                 if (data.agendaInterval) document.getElementById('agendaInterval').value = data.agendaInterval;
 
                 if (data.services) {
-                    if (data.services['Banho']) document.getElementById('timeBanho').value = data.services['Banho'];
-                    if (data.services['Tosa']) document.getElementById('timeTosa').value = data.services['Tosa'];
-                    if (data.services['Banho e Tosa']) document.getElementById('timeBanhoTosa').value = data.services['Banho e Tosa'];
-                    if (data.services['Outros']) document.getElementById('timeOutros').value = data.services['Outros'];
+                    servicesList.forEach((service, index) => {
+                        if (data.services[service]) {
+                            document.getElementById(`time-dur-${index}`).value = data.services[service];
+                        }
+                    });
                 }
 
                 if (data.sizes) {
@@ -1754,12 +2048,10 @@
     window.saveTimeSettings = async () => {
         const agendaInterval = parseInt(document.getElementById('agendaInterval').value) || 30;
 
-        const services = {
-            'Banho': parseInt(document.getElementById('timeBanho').value) || 30,
-            'Tosa': parseInt(document.getElementById('timeTosa').value) || 45,
-            'Banho e Tosa': parseInt(document.getElementById('timeBanhoTosa').value) || 90,
-            'Outros': parseInt(document.getElementById('timeOutros').value) || 30
-        };
+        const services = {};
+        servicesList.forEach((service, index) => {
+             services[service] = parseInt(document.getElementById(`time-dur-${index}`).value) || 30;
+        });
 
         const sizes = {
             'P': parseInt(document.getElementById('extraP').value) || 0,

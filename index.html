@@ -268,14 +268,13 @@
             <!-- Telefone is implicit from login, logic will handle it -->
 
             <div class="form-group">
-                <label for="serviceType">Serviço (Obrigatório)</label>
-                <select id="serviceType" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background-color: white;">
-                    <option value="" disabled selected>Selecione um serviço...</option>
-                    <option value="Banho">Banho</option>
-                    <option value="Banho e Tosa">Banho e Tosa</option>
-                    <option value="Tosa">Tosa</option>
-                    <option value="Outros">Outros</option>
-                </select>
+                <label>Serviços (Obrigatório - Selecione pelo menos 1)</label>
+                <div id="services-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                    <!-- Checkboxes generated via JS -->
+                </div>
+                <div id="price-display" style="margin-top: 1rem; padding: 1rem; background-color: #e8f5e9; border-radius: 6px; text-align: center; font-weight: bold; color: var(--primary);">
+                    Total Estimado: R$ 0,00
+                </div>
             </div>
 
             <div class="form-group">
@@ -442,12 +441,41 @@
         showScreen('menu-screen');
     });
 
+    const servicesList = [
+        "Banho Master",
+        "Hidratação Vanilla",
+        "Hidratação Ouro 24K",
+        "SPA Premium",
+        "Corte das unhas",
+        "Escov. dos dentes",
+        "Carding",
+        "Desembolo de nós"
+    ];
+
+    // Generate Checkboxes
+    const servicesContainer = document.getElementById('services-container');
+    servicesList.forEach(service => {
+        const div = document.createElement('div');
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.gap = '0.5rem';
+
+        div.innerHTML = `
+            <input type="checkbox" name="serviceOption" value="${service}" id="srv-${service.replace(/\s+/g, '')}" style="width: auto; transform: scale(1.2);">
+            <label for="srv-${service.replace(/\s+/g, '')}" style="margin: 0; font-weight: normal; cursor: pointer;">${service}</label>
+        `;
+        servicesContainer.appendChild(div);
+    });
+
     // 2. Menu Buttons
     document.getElementById('btn-agendar').addEventListener('click', () => {
         editingAppointmentId = null;
         document.getElementById('petName').value = '';
         document.getElementById('observations').value = '';
-        document.getElementById('serviceType').value = '';
+        // Clear checkboxes
+        document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.checked = false);
+        document.getElementById('price-display').textContent = 'Total Estimado: R$ 0,00';
+
         document.getElementById('petSize').value = '';
         document.getElementById('paymentMethod').value = '';
         document.getElementById('appointmentDate').value = '';
@@ -628,15 +656,33 @@
         document.getElementById('petName').value = petName;
         document.getElementById('observations').value = observations || '';
 
+        // Reset checkboxes
+        document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.checked = false);
+
         // Fetch full document to get extra fields not passed in arguments
         try {
             const docRef = doc(db, "appointments", id);
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                document.getElementById('serviceType').value = data.serviceType || '';
+
+                // Handle new array based services or fallback to string
+                if (Array.isArray(data.services)) {
+                    data.services.forEach(srv => {
+                        const cb = document.querySelector(`input[name="serviceOption"][value="${srv}"]`);
+                        if (cb) cb.checked = true;
+                    });
+                } else if (data.serviceType) {
+                    // Legacy support: check if serviceType exists in our list
+                    const cb = document.querySelector(`input[name="serviceOption"][value="${data.serviceType}"]`);
+                    if (cb) cb.checked = true;
+                }
+
                 document.getElementById('petSize').value = data.petSize || '';
                 document.getElementById('paymentMethod').value = data.paymentMethod || '';
+
+                // Trigger price calc
+                await calculateTotalAndDuration();
             }
         } catch (e) {
             console.error("Error fetching appointment for edit:", e);
@@ -662,23 +708,110 @@
     const scheduleForm = document.getElementById('schedule-form');
     const appointmentDateInput = document.getElementById('appointmentDate');
     const slotsContainer = document.getElementById('slots-container');
-    const serviceTypeInput = document.getElementById('serviceType');
     const petSizeInput = document.getElementById('petSize');
 
     let selectedSlot = null;
+    let currentTotalValue = 0;
+    let currentTotalDuration = 0;
 
     // Listen to changes
-    serviceTypeInput.addEventListener('change', checkAndGenerateSlots);
-    petSizeInput.addEventListener('change', checkAndGenerateSlots);
+    petSizeInput.addEventListener('change', () => {
+        calculateTotalAndDuration();
+        checkAndGenerateSlots();
+    });
     appointmentDateInput.addEventListener('change', checkAndGenerateSlots);
+
+    // Listen to all checkboxes
+    document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+            calculateTotalAndDuration();
+            checkAndGenerateSlots();
+        });
+    });
+
+    async function calculateTotalAndDuration() {
+        const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
+        const count = selectedCheckboxes.length;
+        const size = petSizeInput.value;
+        const priceDisplay = document.getElementById('price-display');
+
+        if (count === 0) {
+            priceDisplay.textContent = 'Total Estimado: R$ 0,00';
+            currentTotalValue = 0;
+            currentTotalDuration = 0;
+            return;
+        }
+
+        priceDisplay.textContent = 'Calculando...';
+
+        try {
+            // Fetch Prices and Times
+            const [priceSnap, timeSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "precos")),
+                getDoc(doc(db, "configuracoes", "tempos"))
+            ]);
+
+            let totalPrice = 0;
+            let totalDuration = 0;
+
+            const priceData = priceSnap.exists() ? priceSnap.data() : {};
+            const timeData = timeSnap.exists() ? timeSnap.data() : {};
+            const serviceTimes = (timeData.services || {});
+            const sizeExtras = (timeData.sizes || {});
+
+            selectedCheckboxes.forEach(cb => {
+                const serviceName = cb.value;
+
+                // Price Logic
+                if (priceData[serviceName]) {
+                    const base = parseFloat(priceData[serviceName].base) || 0;
+                    const discount = parseFloat(priceData[serviceName].discount) || 0;
+
+                    if (count >= 2) {
+                        // Apply Discount
+                        totalPrice += base * (1 - (discount / 100));
+                    } else {
+                        // Full Price
+                        totalPrice += base;
+                    }
+                }
+
+                // Time Logic (Sum of all services)
+                if (serviceTimes[serviceName]) {
+                    totalDuration += parseInt(serviceTimes[serviceName]);
+                } else {
+                    totalDuration += 30; // Default fallback
+                }
+            });
+
+            // Add Size Extra Time
+            if (size && sizeExtras[size]) {
+                totalDuration += parseInt(sizeExtras[size]);
+            }
+
+            // Add Size Extra Price
+            if (size && priceData.sizes && priceData.sizes[size]) {
+                totalPrice += parseFloat(priceData.sizes[size]);
+            }
+
+            currentTotalValue = totalPrice;
+            currentTotalDuration = totalDuration;
+
+            priceDisplay.textContent = `Total Estimado: ${totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+
+        } catch (e) {
+            console.error("Error calculating total:", e);
+            priceDisplay.textContent = 'Erro ao calcular';
+        }
+    }
 
     async function checkAndGenerateSlots() {
         const dateVal = appointmentDateInput.value;
-        const service = serviceTypeInput.value;
+        const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
         const size = petSizeInput.value;
 
-        if (!dateVal || !service || !size) {
-            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
+        if (!dateVal || selectedCheckboxes.length === 0 || !size) {
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviços, Porte e Data para ver os horários.</p>';
             return;
         }
 
@@ -701,19 +834,20 @@
             return;
         }
 
-        await generateSlots(dateVal, service, size);
+        await generateSlots(dateVal);
     }
 
-    async function generateSlots(dateString, service, size) {
+    async function generateSlots(dateString) {
         slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Calculando disponibilidade...</p>';
         selectedSlot = null;
 
         try {
+            // Ensure duration is calculated
+            if (currentTotalDuration === 0) await calculateTotalAndDuration();
+
             // 1. Fetch Configuration (Capacity & Times)
             let capacity = 1;
             let agendaInterval = 30; // Default
-            let serviceTime = 30;
-            let sizeExtra = 0;
 
             // Fetch global settings and times in parallel
             const [globalConfigSnap, timeConfigSnap] = await Promise.all([
@@ -728,11 +862,10 @@
             if (timeConfigSnap.exists()) {
                 const tData = timeConfigSnap.data();
                 if (tData.agendaInterval) agendaInterval = parseInt(tData.agendaInterval);
-                if (tData.services && tData.services[service]) serviceTime = parseInt(tData.services[service]);
-                if (tData.sizes && tData.sizes[size]) sizeExtra = parseInt(tData.sizes[size]);
             }
 
-            const totalDuration = serviceTime + sizeExtra;
+            // Use calculated global duration
+            const totalDuration = currentTotalDuration;
             // Round up slots needed
             const slotsNeeded = Math.ceil(totalDuration / agendaInterval);
 
@@ -922,12 +1055,20 @@
         try {
             const petName = document.getElementById('petName').value;
             const observations = document.getElementById('observations').value;
-            const serviceType = document.getElementById('serviceType').value;
+
+            // Get selected services
+            const selectedServices = [];
+            document.querySelectorAll('input[name="serviceOption"]:checked').forEach(cb => selectedServices.push(cb.value));
+
             const petSize = document.getElementById('petSize').value;
             const paymentMethod = document.getElementById('paymentMethod').value;
             const ownerPhone = localStorage.getItem('petshop_owner_phone'); // Get from storage
             const ownerName = localStorage.getItem('petshop_owner_name');
 
+            if (selectedServices.length === 0) {
+                alert("Selecione pelo menos um serviço.");
+                return;
+            }
             if (!selectedSlot) {
                 alert("Por favor, selecione um horário.");
                 return;
@@ -1034,35 +1175,31 @@
                     return;
                 }
 
+                const dataToSave = {
+                    petName: petName,
+                    observations: observations,
+                    services: selectedServices,
+                    // Legacy field fallback (first service)
+                    serviceType: selectedServices[0],
+                    totalValue: currentTotalValue,
+                    petSize: petSize,
+                    paymentMethod: paymentMethod,
+                    appointmentTime: appointmentTime,
+                    status: 'Agendado',
+                    durationMinutes: duration,
+                    slotsNeeded: slotsNeeded
+                };
+
                 if (editingAppointmentId) {
                      const docRef = doc(db, "appointments", editingAppointmentId);
-                     await updateDoc(docRef, {
-                        petName: petName,
-                        observations: observations,
-                        serviceType: serviceType,
-                        petSize: petSize,
-                        paymentMethod: paymentMethod,
-                        appointmentTime: appointmentTime,
-                        status: 'Agendado',
-                        durationMinutes: duration,
-                        slotsNeeded: slotsNeeded
-                     });
+                     await updateDoc(docRef, dataToSave);
                      alert('Agendamento alterado com sucesso!');
                 } else {
-                    await addDoc(collection(db, "appointments"), {
-                        petName: petName,
-                        observations: observations,
-                        serviceType: serviceType,
-                        petSize: petSize,
-                        paymentMethod: paymentMethod,
-                        ownerPhone: ownerPhone,
-                        ownerName: ownerName || "Nome não informado",
-                        appointmentTime: appointmentTime,
-                        status: 'Agendado',
-                        createdAt: toLocalISOString(new Date()),
-                        durationMinutes: duration,
-                        slotsNeeded: slotsNeeded
-                    });
+                    dataToSave.ownerPhone = ownerPhone;
+                    dataToSave.ownerName = ownerName || "Nome não informado";
+                    dataToSave.createdAt = toLocalISOString(new Date());
+
+                    await addDoc(collection(db, "appointments"), dataToSave);
                     alert('Agendamento realizado com sucesso!');
                 }
 
@@ -1073,7 +1210,8 @@
                 // Clear form
                 document.getElementById('petName').value = '';
                 document.getElementById('observations').value = '';
-                document.getElementById('serviceType').value = '';
+                document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.checked = false);
+                document.getElementById('price-display').textContent = 'Total Estimado: R$ 0,00';
                 document.getElementById('petSize').value = '';
                 document.getElementById('paymentMethod').value = '';
                 appointmentDateInput.value = '';
