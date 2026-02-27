@@ -780,7 +780,27 @@
         const selectedCount = document.querySelectorAll('input[name="serviceOption"]:checked').length;
         const applyDiscount = selectedCount >= 2;
 
+        // Helper to count valid services for discount (excluding Desembolo)
+        // Re-calculate this here to be precise inside the loop if needed, but 'applyDiscount' passed down
+        // assumes total count. We need to be careful.
+        // The rule is: if you have 2+ services (excluding Desembolo), you get discount on those services.
+        // Desembolo never gets discount and doesn't count towards the 2+ requirement.
+
+        // Let's recount strictly for logic correctness
+        const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
+        const validServicesForDiscount = Array.from(selectedCheckboxes).filter(cb => cb.value !== 'Desembolo de nós');
+        const validCount = validServicesForDiscount.length;
+        const discountActive = validCount >= 2;
+
         servicesList.forEach(service => {
+            const label = document.querySelector(`label[for="srv-${service.replace(/\s+/g, '')}"]`);
+            if (!label) return;
+
+            if (service === 'Desembolo de nós') {
+                label.innerHTML = 'Desembolo de nós - Necessário avaliação';
+                return;
+            }
+
             const data = pricingConfig[service];
             if (!data) return;
 
@@ -790,18 +810,15 @@
             else if (size === 'G') basePrice = parseFloat(data.priceG) || 0;
 
             const discountPercent = parseFloat(data.discount) || 0;
-            const finalPrice = applyDiscount ? basePrice * (1 - (discountPercent / 100)) : basePrice;
+            const finalPrice = discountActive ? basePrice * (1 - (discountPercent / 100)) : basePrice;
 
-            const label = document.querySelector(`label[for="srv-${service.replace(/\s+/g, '')}"]`);
-            if (label) {
-                const baseFmt = basePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                const finalFmt = finalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const baseFmt = basePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const finalFmt = finalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-                if (applyDiscount && discountPercent > 0) {
-                     label.innerHTML = `${service} - <s>${baseFmt}</s> <b>${finalFmt}</b>`;
-                } else {
-                     label.innerHTML = `${service} - ${baseFmt}`;
-                }
+            if (discountActive && discountPercent > 0) {
+                 label.innerHTML = `${service} - <s>${baseFmt}</s> <b>${finalFmt}</b>`;
+            } else {
+                 label.innerHTML = `${service} - ${baseFmt}`;
             }
         });
     }
@@ -832,8 +849,18 @@
             const serviceTimes = (timeData.services || {});
             const sizeExtras = (timeData.sizes || {});
 
+            // Filter for discount logic
+            const validServicesForDiscount = Array.from(selectedCheckboxes).filter(cb => cb.value !== 'Desembolo de nós');
+            const validCount = validServicesForDiscount.length;
+            const discountActive = validCount >= 2;
+            let hasDesembolo = false;
+
             selectedCheckboxes.forEach(cb => {
                 const serviceName = cb.value;
+                if (serviceName === 'Desembolo de nós') {
+                    hasDesembolo = true;
+                    // Desembolo adds 0 price, but adds time
+                }
 
                 // Price Logic (Use Cached Config)
                 if (pricingConfig[serviceName]) {
@@ -844,12 +871,15 @@
 
                     const discount = parseFloat(pricingConfig[serviceName].discount) || 0;
 
-                    if (count >= 2) {
-                        // Apply Discount
-                        totalPrice += base * (1 - (discount / 100));
-                    } else {
-                        // Full Price
-                        totalPrice += base;
+                    // Desembolo never gets a price from DB (it's 0 effectively) and never gets discount
+                    if (serviceName !== 'Desembolo de nós') {
+                        if (discountActive) {
+                            // Apply Discount
+                            totalPrice += base * (1 - (discount / 100));
+                        } else {
+                            // Full Price
+                            totalPrice += base;
+                        }
                     }
                 }
 
@@ -871,7 +901,11 @@
             currentTotalValue = totalPrice;
             currentTotalDuration = totalDuration;
 
-            priceDisplay.textContent = `Total Estimado: ${totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+            let totalText = `Total Estimado: ${totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+            if (hasDesembolo) {
+                totalText += ' + Avaliação';
+            }
+            priceDisplay.textContent = totalText;
 
         } catch (e) {
             console.error("Error calculating total:", e);

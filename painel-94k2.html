@@ -1288,9 +1288,22 @@
 
         const petSize = data.petSize || 'Não informado';
         const paymentMethod = data.paymentMethod || 'Não informado';
-        const totalValue = data.totalValue
+
+        let totalValue = data.totalValue
             ? data.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
             : '';
+
+        // Add Avaliação text if Desembolo is present in services array or serviceType string
+        let hasDesembolo = false;
+        if (data.services && Array.isArray(data.services)) {
+            if (data.services.includes('Desembolo de nós')) hasDesembolo = true;
+        } else if (data.serviceType && data.serviceType.includes('Desembolo de nós')) {
+            hasDesembolo = true;
+        }
+
+        if (hasDesembolo) {
+            totalValue += ' + Avaliação';
+        }
 
         // Observations Section
         let obsHtml = '';
@@ -1697,7 +1710,8 @@
             const sizeExtras = timeData.sizes || {};
             let agendaInterval = parseInt(timeData.agendaInterval) || 30;
 
-            const count = selectedServices.length;
+            const validServicesForDiscount = selectedServices.filter(s => s !== 'Desembolo de nós');
+            const validCount = validServicesForDiscount.length;
 
             selectedServices.forEach(srv => {
                 // Price
@@ -1708,7 +1722,7 @@
                     else if (petSize === 'G') base = parseFloat(priceData[srv].priceG) || 0;
 
                     const discount = parseFloat(priceData[srv].discount) || 0;
-                    if (count >= 2) {
+                    if (validCount >= 2 && srv !== 'Desembolo de nós') {
                         newTotalValue += base * (1 - (discount/100));
                     } else {
                         newTotalValue += base;
@@ -1907,6 +1921,11 @@
         container.innerHTML = '';
 
         servicesList.forEach((service, index) => {
+            const isDesembolo = service === 'Desembolo de nós';
+            const disabledAttr = isDesembolo ? 'disabled' : '';
+            const bgStyle = isDesembolo ? 'background-color: #f0f0f0; color: #aaa;' : '';
+            const val = isDesembolo ? '0' : '';
+
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '0.5rem';
@@ -1922,19 +1941,19 @@
                 </div>
                 <div style="flex: 1; min-width: 90px;">
                     <label style="font-size: 0.8rem; color: #666;">Preço P (R$)</label>
-                    <input type="number" id="price-p-${index}" class="price-input" min="0" step="0.01" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <input type="number" id="price-p-${index}" class="price-input" min="0" step="0.01" value="${val}" ${disabledAttr} style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; ${bgStyle}">
                 </div>
                 <div style="flex: 1; min-width: 90px;">
                     <label style="font-size: 0.8rem; color: #666;">Preço M (R$)</label>
-                    <input type="number" id="price-m-${index}" class="price-input" min="0" step="0.01" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <input type="number" id="price-m-${index}" class="price-input" min="0" step="0.01" value="${val}" ${disabledAttr} style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; ${bgStyle}">
                 </div>
                 <div style="flex: 1; min-width: 90px;">
                     <label style="font-size: 0.8rem; color: #666;">Preço G (R$)</label>
-                    <input type="number" id="price-g-${index}" class="price-input" min="0" step="0.01" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <input type="number" id="price-g-${index}" class="price-input" min="0" step="0.01" value="${val}" ${disabledAttr} style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; ${bgStyle}">
                 </div>
                 <div style="flex: 1; min-width: 90px;">
                     <label style="font-size: 0.8rem; color: #666;">% Desc. Combo</label>
-                    <input type="number" id="price-disc-${index}" class="price-input" min="0" max="100" step="1" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <input type="number" id="price-disc-${index}" class="price-input" min="0" max="100" step="1" value="${val}" ${disabledAttr} style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; ${bgStyle}">
                 </div>
             `;
             container.appendChild(row);
