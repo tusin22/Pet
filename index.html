@@ -268,16 +268,6 @@
             <!-- Telefone is implicit from login, logic will handle it -->
 
             <div class="form-group">
-                <label>Serviços (Obrigatório - Selecione pelo menos 1)</label>
-                <div id="services-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
-                    <!-- Checkboxes generated via JS -->
-                </div>
-                <div id="price-display" style="margin-top: 1rem; padding: 1rem; background-color: #e8f5e9; border-radius: 6px; text-align: center; font-weight: bold; color: var(--primary);">
-                    Total Estimado: R$ 0,00
-                </div>
-            </div>
-
-            <div class="form-group">
                 <label for="petSize">Porte do Pet (Obrigatório)</label>
                 <select id="petSize" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background-color: white;">
                     <option value="" disabled selected>Selecione o porte...</option>
@@ -285,6 +275,16 @@
                     <option value="M">M</option>
                     <option value="G">G</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label>Serviços (Obrigatório - Selecione pelo menos 1)</label>
+                <div id="services-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+                    <!-- Checkboxes generated via JS -->
+                </div>
+                <div id="price-display" style="margin-top: 1rem; padding: 1rem; background-color: #e8f5e9; border-radius: 6px; text-align: center; font-weight: bold; color: var(--primary);">
+                    Total Estimado: R$ 0,00
+                </div>
             </div>
 
             <div class="form-group">
@@ -384,6 +384,21 @@
     };
 
     // Initialize
+    let pricingConfig = {}; // Global variable for pricing
+
+    // Fetch pricing on load
+    async function loadPricingConfig() {
+        try {
+            const snap = await getDoc(doc(db, "configuracoes", "precos"));
+            if (snap.exists()) {
+                pricingConfig = snap.data();
+            }
+        } catch (e) {
+            console.error("Error loading pricing config:", e);
+        }
+    }
+
+    loadPricingConfig();
     checkLogin();
 
     // Expose showScreen globally for inline onclicks
@@ -461,7 +476,7 @@
         div.style.gap = '0.5rem';
 
         div.innerHTML = `
-            <input type="checkbox" name="serviceOption" value="${service}" id="srv-${service.replace(/\s+/g, '')}" style="width: auto; transform: scale(1.2);">
+            <input type="checkbox" name="serviceOption" value="${service}" id="srv-${service.replace(/\s+/g, '')}" disabled style="width: auto; transform: scale(1.2);">
             <label for="srv-${service.replace(/\s+/g, '')}" style="margin: 0; font-weight: normal; cursor: pointer;">${service}</label>
         `;
         servicesContainer.appendChild(div);
@@ -472,8 +487,19 @@
         editingAppointmentId = null;
         document.getElementById('petName').value = '';
         document.getElementById('observations').value = '';
-        // Clear checkboxes
-        document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.checked = false);
+
+        // Reset and disable checkboxes
+        document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
+            cb.checked = false;
+            cb.disabled = true;
+        });
+
+        // Reset labels to default text
+        servicesList.forEach(service => {
+            const label = document.querySelector(`label[for="srv-${service.replace(/\s+/g, '')}"]`);
+            if (label) label.innerHTML = service;
+        });
+
         document.getElementById('price-display').textContent = 'Total Estimado: R$ 0,00';
 
         document.getElementById('petSize').value = '';
@@ -657,7 +683,10 @@
         document.getElementById('observations').value = observations || '';
 
         // Reset checkboxes
-        document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
+            cb.checked = false;
+            cb.disabled = true; // Initially disabled until size is set
+        });
 
         // Fetch full document to get extra fields not passed in arguments
         try {
@@ -665,6 +694,14 @@
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
+
+                // Set Size First (Important for UI update)
+                document.getElementById('petSize').value = data.petSize || '';
+
+                // Enable checkboxes if size is present
+                if (data.petSize) {
+                    document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.disabled = false);
+                }
 
                 // Handle new array based services or fallback to string
                 if (Array.isArray(data.services)) {
@@ -678,10 +715,10 @@
                     if (cb) cb.checked = true;
                 }
 
-                document.getElementById('petSize').value = data.petSize || '';
                 document.getElementById('paymentMethod').value = data.paymentMethod || '';
 
-                // Trigger price calc
+                // Update UI Texts and Totals
+                updateServiceUI();
                 await calculateTotalAndDuration();
             }
         } catch (e) {
@@ -716,18 +753,58 @@
 
     // Listen to changes
     petSizeInput.addEventListener('change', () => {
+        // Enable checkboxes when size is selected
+        document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.disabled = false);
+
+        updateServiceUI();
         calculateTotalAndDuration();
         checkAndGenerateSlots();
     });
+
     appointmentDateInput.addEventListener('change', checkAndGenerateSlots);
 
     // Listen to all checkboxes
     document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
         cb.addEventListener('change', () => {
+            updateServiceUI();
             calculateTotalAndDuration();
             checkAndGenerateSlots();
         });
     });
+
+    // Function to update UI labels dynamically
+    function updateServiceUI() {
+        const size = petSizeInput.value;
+        if (!size) return;
+
+        const selectedCount = document.querySelectorAll('input[name="serviceOption"]:checked').length;
+        const applyDiscount = selectedCount >= 2;
+
+        servicesList.forEach(service => {
+            const data = pricingConfig[service];
+            if (!data) return;
+
+            let basePrice = 0;
+            if (size === 'P') basePrice = parseFloat(data.priceP) || 0;
+            else if (size === 'M') basePrice = parseFloat(data.priceM) || 0;
+            else if (size === 'G') basePrice = parseFloat(data.priceG) || 0;
+
+            const discountPercent = parseFloat(data.discount) || 0;
+            const finalPrice = applyDiscount ? basePrice * (1 - (discountPercent / 100)) : basePrice;
+
+            const label = document.querySelector(`label[for="srv-${service.replace(/\s+/g, '')}"]`);
+            if (label) {
+                const baseFmt = basePrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                const finalFmt = finalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                if (applyDiscount && discountPercent > 0) {
+                     label.innerHTML = `${service} - <s>${baseFmt}</s> <b>${finalFmt}</b>`;
+                } else {
+                     label.innerHTML = `${service} - ${baseFmt}`;
+                }
+            }
+        });
+    }
 
     async function calculateTotalAndDuration() {
         const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
@@ -745,16 +822,12 @@
         priceDisplay.textContent = 'Calculando...';
 
         try {
-            // Fetch Prices and Times
-            const [priceSnap, timeSnap] = await Promise.all([
-                getDoc(doc(db, "configuracoes", "precos")),
-                getDoc(doc(db, "configuracoes", "tempos"))
-            ]);
+            // Fetch Times only (Prices are cached)
+            const timeSnap = await getDoc(doc(db, "configuracoes", "tempos"));
 
             let totalPrice = 0;
             let totalDuration = 0;
 
-            const priceData = priceSnap.exists() ? priceSnap.data() : {};
             const timeData = timeSnap.exists() ? timeSnap.data() : {};
             const serviceTimes = (timeData.services || {});
             const sizeExtras = (timeData.sizes || {});
@@ -762,14 +835,14 @@
             selectedCheckboxes.forEach(cb => {
                 const serviceName = cb.value;
 
-                // Price Logic
-                if (priceData[serviceName]) {
+                // Price Logic (Use Cached Config)
+                if (pricingConfig[serviceName]) {
                     let base = 0;
-                    if (size === 'P') base = parseFloat(priceData[serviceName].priceP) || 0;
-                    else if (size === 'M') base = parseFloat(priceData[serviceName].priceM) || 0;
-                    else if (size === 'G') base = parseFloat(priceData[serviceName].priceG) || 0;
+                    if (size === 'P') base = parseFloat(pricingConfig[serviceName].priceP) || 0;
+                    else if (size === 'M') base = parseFloat(pricingConfig[serviceName].priceM) || 0;
+                    else if (size === 'G') base = parseFloat(pricingConfig[serviceName].priceG) || 0;
 
-                    const discount = parseFloat(priceData[serviceName].discount) || 0;
+                    const discount = parseFloat(pricingConfig[serviceName].discount) || 0;
 
                     if (count >= 2) {
                         // Apply Discount
