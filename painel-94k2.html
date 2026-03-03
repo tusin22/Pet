@@ -12,9 +12,9 @@
     </script>
     <style>
         :root {
-            --primary: #4CAF50;
+            --primary: #4E797C;
             --secondary: #2196F3;
-            --background: #f4f4f9;
+            --background: #FAF4F2;
             --surface: #ffffff;
             --text: #333333;
             --border: #ddd;
@@ -210,7 +210,7 @@
         }
 
         .btn-save:hover {
-            background-color: #43a047;
+            background-color: #3D6163;
         }
 
         /* Appointments List (Existing Styles) */
@@ -266,10 +266,10 @@
 
         /* Status Colors */
         .status-agendado { background-color: #e0e0e0; color: #616161; }
-        .status-fila { background-color: #ffe0b2; color: #e65100; }
-        .status-banho { background-color: #b3e5fc; color: #01579b; }
-        .status-secando { background-color: #e1bee7; color: #4a148c; }
-        .status-pronto { background-color: #c8e6c9; color: #1b5e20; }
+        .status-fila { background-color: #EED5D4; color: #C49595; }
+        .status-banho { background-color: #A2BABD; color: #333333; }
+        .status-secando { background-color: #C4C4A3; color: #333333; }
+        .status-pronto { background-color: #C4C4A3; color: #333333; }
 
         .actions {
             display: flex;
@@ -334,11 +334,11 @@
             background-color: #ffebee;
         }
 
-        .status-concluido { background-color: #4CAF50; color: white; }
+        .status-concluido { background-color: var(--primary); color: white; }
         .status-cancelado { background-color: #9e9e9e; color: white; }
 
         .btn-concluir {
-            background-color: #4CAF50;
+            background-color: var(--primary);
             color: white;
             border: none;
             padding: 0.75rem;
@@ -348,7 +348,7 @@
             width: 100%;
             font-weight: bold;
         }
-        .btn-concluir:hover { background-color: #43A047; }
+        .btn-concluir:hover { background-color: #3D6163; }
 
         .btn-cancelar {
             background-color: transparent;
@@ -444,7 +444,7 @@
         }
 
         .cell-booked {
-            background-color: #e8f5e9;
+            background-color: #EED5D4;
             border: none;
             border-left: 4px solid var(--primary);
             color: var(--text);
@@ -1914,6 +1914,7 @@
 
     const servicesList = [
         "Banho Master",
+        "Tosa",
         "Hidratação Vanilla",
         "Hidratação Ouro 24K",
         "SPA Premium",
