@@ -33,8 +33,14 @@ Prioridade máxima: **agendamento funcionando 100%** (mobile e desktop), com bas
 
 ## Estrutura do repositório
 
-- `index.html` — site principal + fluxo de agendamento.
-- `painel-94k2.html` — painel de gerenciamento.
+- `index.html` — site principal + fluxo de agendamento (estrutura HTML).
+- `painel-94k2.html` — painel de gerenciamento (estrutura HTML).
+- `css/index.css` — estilos do site principal.
+- `css/painel-94k2.css` — estilos do painel administrativo.
+- `js/index.js` — lógica do site principal (mantida sem alteração de regra de negócio).
+- `js/painel-94k2.js` — lógica do painel (mantida sem alteração de regra de negócio).
+- `assets/` — arquivos estáticos gerais (ex.: logo).
+- `assets/img/` — pasta reservada para imagens adicionais da interface.
 - `ROADMAP.md` — fases e prioridades do projeto.
 - `CHANGELOG.md` — histórico de mudanças.
 - `AGENTS.md` — regras obrigatórias para qualquer agente antes de alterar código.

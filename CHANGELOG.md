@@ -5,6 +5,19 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Adicionado
+- Criadas as pastas `css/`, `js/` e `assets/img/` para organizar arquivos estáticos do front-end.
+- Adicionados os arquivos `css/index.css`, `css/painel-94k2.css`, `js/index.js` e `js/painel-94k2.js` com extração do código inline existente.
+
+### Alterado
+- `index.html`: CSS e JavaScript inline externalizados para arquivos dedicados, mantendo a mesma lógica de funcionamento.
+- `painel-94k2.html`: CSS e JavaScript inline externalizados para arquivos dedicados, mantendo a mesma lógica de funcionamento.
+- `index.html` e `painel-94k2.html`: carregamento de `config/runtime-config.js` ajustado para `defer` visando parse inicial mais leve.
+- `README.md`: seção de estrutura do repositório atualizada com a nova organização de pastas.
+
+### Removido
+- Removidos blocos de código antigo comentado em `js/index.js` e `js/painel-94k2.js`.
+
+### Adicionado
 - Adicionado o botão 'Descrição dos Serviços 📑' no menu inicial (cliente).
 - Adicionada nova aba com a tabela descritiva de serviços, exibindo a descrição fixa e os preços P, M e G consultados dinamicamente do Firebase (com zebrado em branco e creme).
 - Adicionado `SECURITY.md` com plano emergencial de hardening para Hostinger + Firebase.
