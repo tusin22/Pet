@@ -10,5 +10,6 @@ window.__MELLUPET_CONFIG = {
     messagingSenderId: "SEU_MESSAGING_SENDER_ID",
     appId: "SEU_APP_ID"
   },
-  adminPanelPassword: "SENHA_FORTE_DO_PAINEL"
+  adminPanelPassword: "SENHA_FORTE_DO_PAINEL",
+  adminApiBaseUrl: "https://SEU_DOMINIO_DA_API"
 };
