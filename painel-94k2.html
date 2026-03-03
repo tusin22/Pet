@@ -37,8 +37,53 @@
         h1 {
             text-align: center;
             color: var(--text);
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
+
+        .brand-header {
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .logo-slot {
+            border: 2px dashed #c9d6d7;
+            border-radius: 10px;
+            padding: 0.85rem;
+            background: #f7fbfb;
+            color: #4e797c;
+            font-weight: 600;
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .logo-slot small {
+            display: block;
+            color: #6f8081;
+            font-weight: 400;
+            margin-top: 0.25rem;
+        }
+
+        .brand-logo {
+            max-width: 220px;
+            width: 100%;
+            max-height: 90px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .logo-placeholder {
+            color: #4e797c;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .tab-btn { padding: 0.8rem 1rem; font-size: 0.95rem; }
+        }
+
 
         /* Tabs Navigation */
         .tabs {
@@ -624,6 +669,15 @@
 <body>
 
 <div class="container">
+    <div class="brand-header">
+        <div class="logo-slot">
+            <img src="assets/logo-mellupet.png" alt="Logo MelluPet" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo-placeholder" style="display: none;">
+                Espaço reservado para logo no painel
+                <small>Adicione o arquivo em <code>assets/logo-mellupet.png</code>.</small>
+            </div>
+        </div>
+    </div>
     <h1>Painel MelluPet 🛁</h1>
 
     <div class="tabs">
