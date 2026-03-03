@@ -223,16 +223,143 @@
         }
         .status-concluido { background-color: var(--primary); color: white; }
         .status-cancelado { background-color: #9e9e9e; color: white; }
+
+        select,
+        textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            background-color: white;
+            font-family: inherit;
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .logo-slot {
+            width: 100%;
+            border: none;
+            border-radius: 0;
+            padding: 0.25rem 0 0.5rem;
+            background: transparent;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-slot small {
+            display: block;
+            color: #6f8081;
+            font-weight: 400;
+            margin-top: 0.25rem;
+        }
+
+        .brand-logo {
+            max-width: 170px;
+            width: 100%;
+            max-height: 78px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .logo-placeholder {
+            color: #4e797c;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .screen-description {
+            text-align: center;
+            color: #666;
+            margin: -0.6rem 0 1.2rem;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 8px;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 1rem;
+                border-radius: 10px;
+                min-height: calc(100vh - 16px);
+                box-shadow: none;
+            }
+
+            h1, h2 {
+                font-size: 1.3rem;
+                margin-bottom: 1rem;
+            }
+
+            .menu-btn {
+                padding: 1rem;
+                font-size: 1rem;
+            }
+
+            #slots-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 900px) {
+            .container {
+                max-width: 860px;
+                padding: 2.5rem;
+            }
+
+            #schedule-form {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 1rem;
+            }
+
+            #schedule-form > h2,
+            #schedule-form .full-row,
+            #schedule-form button {
+                grid-column: 1 / -1;
+            }
+
+            #services-container {
+                grid-template-columns: repeat(3, 1fr) !important;
+            }
+
+            #slots-container {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
     </style>
 </head>
 <body>
 
 <div class="container">
 
+    <div class="brand-header">
+        <div class="logo-slot">
+            <img src="assets/logo-mellupet.png" alt="Logo MelluPet" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo-placeholder" style="display: none;">
+                Espaço reservado para logo da MelluPet
+                <small>Adicione o arquivo em <code>assets/logo-mellupet.png</code>.</small>
+            </div>
+        </div>
+    </div>
+
     <!-- Tela Login -->
     <div id="login-screen" class="screen">
         <h1>Bem-vindo a MelluPet Agendamentos! 🐾</h1>
-        <p style="text-align: center; color: #666; margin-bottom: 1.5rem;">Preencha seus dados para continuar.</p>
+        <p class="screen-description">Preencha seus dados para continuar.</p>
         <form id="login-form">
             <div class="form-group">
                 <label for="loginName">Seu Nome</label>
@@ -259,6 +386,7 @@
     <!-- Tela Agendar -->
     <div id="schedule-screen" class="screen">
         <h2>Agendar Serviços</h2>
+        <p class="screen-description">Escolha serviço, Porte, Data e Horário</p>
         <form id="schedule-form">
             <div class="form-group">
                 <label for="petName">Nome do Pet</label>
@@ -269,7 +397,7 @@
 
             <div class="form-group">
                 <label for="petSize">Porte do Pet (Obrigatório)</label>
-                <select id="petSize" required style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background-color: white;">
+                <select id="petSize" required>
                     <option value="" disabled selected>Selecione o porte...</option>
                     <option value="P">P</option>
                     <option value="M">M</option>
@@ -277,7 +405,7 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group full-row">
                 <label>Serviços (Obrigatório - Selecione pelo menos 1)</label>
                 <div id="services-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
                     <!-- Checkboxes generated via JS -->
@@ -292,7 +420,7 @@
                 <input type="date" id="appointmentDate" required>
             </div>
 
-            <div class="form-group">
+            <div class="form-group full-row">
                 <label>Horário</label>
                 <div id="slots-container">
                     <p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>
@@ -301,7 +429,7 @@
 
             <div class="form-group">
                 <label for="paymentMethod">Forma de Pagamento (Opcional)</label>
-                <select id="paymentMethod" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem; background-color: white;">
+                <select id="paymentMethod">
                     <option value="" selected>Selecione (opcional)...</option>
                     <option value="Pix">Pix</option>
                     <option value="Cartão">Cartão</option>
@@ -309,13 +437,13 @@
                 </select>
             </div>
 
-            <div class="form-group">
+            <div class="form-group full-row">
                 <label for="observations">Observações / Alertas (Opcional)</label>
-                <textarea id="observations" rows="3" placeholder="Ex: Alergia a perfume, Cuidado ao cortar unhas, etc." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 1rem; box-sizing: border-box; resize: vertical;"></textarea>
+                <textarea id="observations" rows="3" placeholder="Ex: Alergia a perfume, Cuidado ao cortar unhas, etc." style="resize: vertical;"></textarea>
             </div>
 
-            <button type="submit">Confirmar Agendamento</button>
-            <button type="button" class="secondary" onclick="showScreen('menu-screen')">Voltar ao Menu</button>
+            <button type="submit" class="full-row">Confirmar Agendamento</button>
+            <button type="button" class="secondary full-row" onclick="showScreen('menu-screen')">Voltar ao Menu</button>
         </form>
     </div>
 
