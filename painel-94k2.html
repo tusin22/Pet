@@ -64,6 +64,7 @@
             <div class="date-control">
                 <label for="agendaDate">Data:</label>
                 <input type="date" id="agendaDate">
+                <button id="btn-new-appointment" class="btn-new-appointment">➕ Novo Agendamento</button>
             </div>
 
             <div class="filters-row">
@@ -219,6 +220,90 @@
                  <p id="config-message" style="text-align: center; color: #666; margin-top: 1rem; display: none;"></p>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Modal Novo Agendamento Admin -->
+<div id="new-appointment-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+        <button class="modal-close" onclick="closeNewAppointmentModal()">×</button>
+        <h2 style="color: var(--primary); margin-top: 0;">Novo Agendamento</h2>
+        <form id="new-appointment-form">
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="newApptOwnerName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Tutor (Obrigatório)</label>
+                <input type="text" id="newApptOwnerName" required placeholder="Ex: Maria Silva" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="newApptOwnerPhone" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">WhatsApp (Opcional)</label>
+                <input type="tel" id="newApptOwnerPhone" placeholder="(XX) XXXXX-XXXX" maxlength="15" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="newApptPetName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Pet (Obrigatório)</label>
+                <input type="text" id="newApptPetName" required placeholder="Ex: Rex" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="newApptPetSize" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Porte do Pet (Obrigatório)</label>
+                <select id="newApptPetSize" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                    <option value="" disabled selected>Selecione o porte...</option>
+                    <option value="P">Pequeno (P)</option>
+                    <option value="M">Médio (M)</option>
+                    <option value="G">Grande (G)</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Serviços (Obrigatório - Selecione pelo menos 1)</label>
+                <div id="new-appt-services-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <!-- Checkboxes generated via JS -->
+                </div>
+                <div id="new-appt-price-display" style="margin-top: 1rem; padding: 1rem; background-color: #e7efef; border: 1px solid var(--primary); border-radius: 6px; text-align: center; font-weight: bold; color: var(--primary);">
+                    Total Estimado: R$ 0,00
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="newApptDate" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Data (Obrigatório)</label>
+                    <input type="date" id="newApptDate" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="newApptTime" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Horário (Obrigatório)</label>
+                    <select id="newApptTime" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                        <option value="">Selecione Porte, Serviços e Data</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="newApptInitialStatus" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Status Inicial</label>
+                <select id="newApptInitialStatus" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                    <option value="Agendado" selected>Agendado</option>
+                    <option value="Na Fila">Na Fila</option>
+                    <option value="No Banho">No Banho</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="newApptPayment" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Forma de Pagamento (Opcional)</label>
+                <select id="newApptPayment" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                    <option value="" selected>Selecione (opcional)...</option>
+                    <option value="Pix">Pix</option>
+                    <option value="Cartão">Cartão</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label for="newApptObs" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Observações / Alertas (Opcional)</label>
+                <textarea id="newApptObs" rows="3" placeholder="Ex: Alergia a perfume, Cuidado ao cortar unhas, etc." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box; resize: vertical;"></textarea>
+            </div>
+
+            <button type="submit" id="btn-submit-new-appt" class="btn-save" style="margin-top: 0;">Confirmar Agendamento</button>
+        </form>
     </div>
 </div>
 
