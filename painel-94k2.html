@@ -63,6 +63,22 @@
             margin-top: 0.25rem;
         }
 
+        .brand-logo {
+            max-width: 220px;
+            width: 100%;
+            max-height: 90px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .logo-placeholder {
+            color: #4e797c;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
         @media (max-width: 600px) {
             body { padding: 10px; }
             .tab-btn { padding: 0.8rem 1rem; font-size: 0.95rem; }
@@ -655,8 +671,11 @@
 <div class="container">
     <div class="brand-header">
         <div class="logo-slot">
-            Espaço reservado para logo no painel
-            <small>Use a mesma identidade visual da página principal.</small>
+            <img src="assets/logo-mellupet.png" alt="Logo MelluPet" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo-placeholder" style="display: none;">
+                Espaço reservado para logo no painel
+                <small>Adicione o arquivo em <code>assets/logo-mellupet.png</code>.</small>
+            </div>
         </div>
     </div>
     <h1>Painel MelluPet 🛁</h1>

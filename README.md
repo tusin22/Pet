@@ -50,3 +50,12 @@ Prioridade máxima: **agendamento funcionando 100%** (mobile e desktop), com bas
 
 - Planejamento completo: `ROADMAP.md`.
 - Registro contínuo das mudanças: `CHANGELOG.md`.
+
+
+## Como inserir a logo agora
+
+1. Crie (ou use) a pasta `assets/` na raiz do projeto.
+2. Salve sua logo com o nome **`logo-mellupet.png`** em `assets/logo-mellupet.png`.
+3. Recarregue `index.html` e `painel-94k2.html`: a imagem será exibida automaticamente.
+
+> Se o arquivo não existir, o sistema mostra um bloco de fallback com instrução do caminho esperado.
