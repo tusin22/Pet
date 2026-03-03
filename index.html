@@ -154,11 +154,13 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
-            margin-top: 10px;
+            margin: 10px auto 0;
+            max-width: 760px;
         }
 
         .slot-btn {
-            padding: 10px;
+            padding: 0.65rem 0.4rem;
+            min-height: 44px;
             border: 1px solid var(--primary);
             background-color: white;
             color: var(--primary);
@@ -327,7 +329,7 @@
 
             #schedule-form > h2,
             #schedule-form .full-row,
-            #schedule-form button {
+            #schedule-form > button {
                 grid-column: 1 / -1;
             }
 

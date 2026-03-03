@@ -10,6 +10,7 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 - Orientação de responsividade com foco em mobile e desktop no fluxo principal.
 
 ### Alterado
+- Corrigido layout dos horários no desktop para exibir em grade (evitando um horário por linha inteira).
 - Atualizado texto da tela de agendamento para: "Escolha serviço, Porte, Data e Horário".
 - Ajustado visual da área de logo: removido tracejado e melhorado posicionamento no site principal e no painel.
 - `ROADMAP.md` atualizado com escopo solicitado: site principal, agendamento, painel, edição da primeira página, status/planos, cadastros e análise de migração de banco.
