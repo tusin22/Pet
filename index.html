@@ -287,6 +287,40 @@
             font-size: 0.95rem;
         }
 
+        /* Services Table */
+        .services-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: var(--surface);
+            font-size: 0.95rem;
+        }
+
+        .services-table th {
+            background-color: var(--primary);
+            color: white;
+            text-align: left;
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .services-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            vertical-align: top;
+        }
+
+        .services-table tbody tr:nth-child(even) {
+            background-color: var(--surface);
+        }
+
+        .services-table tbody tr:nth-child(odd) {
+            background-color: var(--background);
+        }
+
+        #services-description-screen {
+            max-width: 900px !important;
+        }
+
         @media (max-width: 600px) {
             body {
                 padding: 8px;
@@ -380,6 +414,7 @@
         <h1 id="menu-greeting">Bem-vindo ao MelluPet!</h1>
         <button id="btn-agendar" class="menu-btn">Agendar Serviços 🛁</button>
         <button id="btn-meus-pets" class="menu-btn">Meus Agendamentos 🐶</button>
+        <button id="btn-descricoes" class="menu-btn">Descrição dos Serviços 📑</button>
         <div style="margin-top: 2rem; text-align: center;">
             <a href="#" id="logout-link" style="color: #999; text-decoration: none; font-size: 0.9rem;">Sair / Trocar Telefone</a>
         </div>
@@ -457,6 +492,28 @@
         </div>
         <br>
         <button type="button" class="secondary" onclick="showScreen('menu-screen')">Voltar ao Menu</button>
+    </div>
+
+    <!-- Tela Descrição dos Serviços -->
+    <div id="services-description-screen" class="screen" style="max-width: 100%;">
+        <button type="button" class="secondary" style="width: auto; padding: 0.5rem 1rem; margin-bottom: 1rem; display: inline-block;" onclick="showScreen('menu-screen')">Voltar ao Menu</button>
+        <h2>Descrição dos Serviços</h2>
+        <div style="overflow-x: auto; width: 100%; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-top: 1rem;">
+            <table class="services-table">
+                <thead>
+                    <tr>
+                        <th>Serviço</th>
+                        <th style="min-width: 250px;">Descrição</th>
+                        <th>Preço P</th>
+                        <th>Preço M</th>
+                        <th>Preço G</th>
+                    </tr>
+                </thead>
+                <tbody id="services-description-tbody">
+                    <!-- Gerado via JS -->
+                </tbody>
+            </table>
+        </div>
     </div>
 
 </div>
@@ -607,6 +664,18 @@
         "Desembolo de nós"
     ];
 
+    const serviceDescriptions = {
+        "Banho Master": "Proporciona frescor, brilho e durabilidade por meio de um processo em três etapas: neutralização de odores, limpeza suave com hidratação e finalização que garante desembaraço, maciez e brilho.",
+        "Banho e Tosa": "Banho e tosa completos com produtos de qualidade, garantindo limpeza e bem-estar para o seu pet. Cuidado profissional com carinho, segurança e conforto em cada detalhe.",
+        "Hidratação Vanilla": "Um banho exclusivo com ativos especiais que proporcionam hidratação, brilho e maciez, realçando ainda mais a personalidade e sofisticação dos pets.",
+        "Hidratação Ouro 24K": "Um banho de puro luxo que hidrata e revitaliza a pelagem, proporcionando brilho intenso e toque sedoso, enriquecido com vitamina E e ômegas. Reduz o frizz, nutre e condiciona.",
+        "SPA Premium": "Tosa higiênica nas regiões genitais e coxins, limpeza dos olhos e ouvidos, promovendo mais limpeza, conforto e prevenção de irritações.",
+        "Corte das unhas": "Serviço de corte de unhas seguro e cuidadoso para garantir o conforto e bem-estar do seu pet, prevenindo desconfortos e problemas na locomoção.",
+        "Escov. dos dentes": "Escovação que ajuda a manter a higiene bucal, prevenindo o acúmulo de tártaro, o mau hálito e contribuindo para a saúde geral.",
+        "Carding": "Remoção de subpelos que elimina os pelos mortos, reduz a queda excessiva e ajuda a manter a pelagem mais saudável e ventilada.",
+        "Desembolo de nós": "Remoção de emaranhados com cuidado, evitando dor e preservando a saúde da pelagem (Texto do preço: 'Necessário avaliação')."
+    };
+
     // Generate Checkboxes
     const servicesContainer = document.getElementById('services-container');
     servicesList.forEach(service => {
@@ -661,6 +730,11 @@
         loadMyPets(); // We will implement this function later
     });
 
+    document.getElementById('btn-descricoes').addEventListener('click', () => {
+        loadServicesDescription();
+        showScreen('services-description-screen');
+    });
+
     document.getElementById('logout-link').addEventListener('click', (e) => {
         e.preventDefault();
         if(confirm("Deseja realmente sair?")) {
@@ -670,6 +744,39 @@
             showScreen('login-screen');
         }
     });
+
+    function loadServicesDescription() {
+        const tbody = document.getElementById('services-description-tbody');
+        tbody.innerHTML = '';
+
+        servicesList.forEach(service => {
+            const desc = serviceDescriptions[service] || '';
+            let precoP = '-';
+            let precoM = '-';
+            let precoG = '-';
+
+            if (service === 'Desembolo de nós') {
+                precoP = 'Avaliação';
+                precoM = 'Avaliação';
+                precoG = 'Avaliação';
+            } else if (pricingConfig[service]) {
+                const data = pricingConfig[service];
+                if (data.priceP) precoP = parseFloat(data.priceP).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                if (data.priceM) precoM = parseFloat(data.priceM).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                if (data.priceG) precoG = parseFloat(data.priceG).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong>${escapeHtml(service)}</strong></td>
+                <td>${escapeHtml(desc)}</td>
+                <td style="white-space: nowrap;">${escapeHtml(precoP)}</td>
+                <td style="white-space: nowrap;">${escapeHtml(precoM)}</td>
+                <td style="white-space: nowrap;">${escapeHtml(precoG)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
 
     // --- My Pets Logic ---
 

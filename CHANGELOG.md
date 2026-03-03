@@ -5,6 +5,8 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Adicionado
+- Adicionado o botão 'Descrição dos Serviços 📑' no menu inicial (cliente).
+- Adicionada nova aba com a tabela descritiva de serviços, exibindo a descrição fixa e os preços P, M e G consultados dinamicamente do Firebase (com zebrado em branco e creme).
 - Adicionado `SECURITY.md` com plano emergencial de hardening para Hostinger + Firebase.
 - Adicionado `config/runtime-config.example.js` com modelo seguro de configuração para produção na Hostinger.
 - Configurado carregamento automático de logo em `index.html` e `painel-94k2.html` via `assets/logo-mellupet.png`, com fallback visual quando o arquivo não existe.
