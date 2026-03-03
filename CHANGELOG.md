@@ -6,6 +6,7 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 
 ### Corrigido
 - `js/painel-94k2.js`: modal da agenda semanal agora atualiza visualmente o status do card (badge e botão ativo) imediatamente após clique em Agendado/Fila/Banho/Secando/Pronto, sem precisar fechar e abrir o modal.
+- `js/painel-94k2.js`: corrigido o fluxo de remarcar na agenda semanal (abre/fecha corretamente) e o carregamento de horários agora segue o mesmo padrão do cliente (intervalo configurável, bloqueios, capacidade e slots consecutivos).
 
 ### Adicionado
 - Criadas as pastas `css/`, `js/` e `assets/img/` para organizar arquivos estáticos do front-end.
