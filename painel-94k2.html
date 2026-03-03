@@ -4,10 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - MelluPet</title>
+    <script src="config/runtime-config.js"></script>
     <script>
-        const password = prompt("Digite a senha de administrador:");
-        if (password !== 'admin123') {
+        const panelPassword = window.__MELLUPET_CONFIG?.adminPanelPassword;
+        if (!panelPassword) {
+            alert('Configuração ausente: defina adminPanelPassword em config/runtime-config.js');
             window.location.href = 'index.html';
+        } else {
+            const password = prompt('Digite a senha de administrador:');
+            if (password !== panelPassword) {
+                window.location.href = 'index.html';
+            }
         }
     </script>
     <style>
@@ -37,8 +44,56 @@
         h1 {
             text-align: center;
             color: var(--text);
-            margin-bottom: 2rem;
+            margin-bottom: 1rem;
         }
+
+        .brand-header {
+            margin-bottom: 0.75rem;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+        }
+
+        .logo-slot {
+            border: none;
+            border-radius: 0;
+            padding: 0.2rem 0 0.5rem;
+            background: transparent;
+            max-width: 420px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo-slot small {
+            display: block;
+            color: #6f8081;
+            font-weight: 400;
+            margin-top: 0.25rem;
+        }
+
+        .brand-logo {
+            max-width: 170px;
+            width: 100%;
+            max-height: 78px;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .logo-placeholder {
+            color: #4e797c;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .tab-btn { padding: 0.8rem 1rem; font-size: 0.95rem; }
+        }
+
 
         /* Tabs Navigation */
         .tabs {
@@ -624,6 +679,15 @@
 <body>
 
 <div class="container">
+    <div class="brand-header">
+        <div class="logo-slot">
+            <img src="assets/logo-mellupet.png" alt="Logo MelluPet" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="logo-placeholder" style="display: none;">
+                Espaço reservado para logo no painel
+                <small>Adicione o arquivo em <code>assets/logo-mellupet.png</code>.</small>
+            </div>
+        </div>
+    </div>
     <h1>Painel MelluPet 🛁</h1>
 
     <div class="tabs">
@@ -811,14 +875,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
-        authDomain: "sistema-petshop-33f9d.firebaseapp.com",
-        projectId: "sistema-petshop-33f9d",
-        storageBucket: "sistema-petshop-33f9d.firebasestorage.app",
-        messagingSenderId: "628550103939",
-        appId: "1:628550103939:web:4a862eee914840d238fcb6"
-    };
+    const runtimeConfig = window.__MELLUPET_CONFIG || {};
+    const firebaseConfig = runtimeConfig.firebase;
+
+    if (!firebaseConfig) {
+        alert('Configuração ausente: crie config/runtime-config.js a partir do arquivo de exemplo.');
+        throw new Error('Firebase config ausente em window.__MELLUPET_CONFIG.firebase');
+    }
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
