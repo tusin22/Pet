@@ -728,6 +728,24 @@
             max-width: 350px;
         }
 
+        #login-container .brand-header {
+            margin-bottom: 1rem;
+        }
+
+        #login-container .logo-slot {
+            max-width: 220px;
+            padding: 0;
+        }
+
+        #login-container .brand-logo {
+            max-width: 140px;
+            max-height: 64px;
+        }
+
+        #login-container .logo-placeholder {
+            font-size: 0.85rem;
+        }
+
         #login-container h2 {
             text-align: center;
             color: var(--primary);
@@ -817,6 +835,15 @@
 <!-- Login Screen -->
 <div id="login-screen">
     <div id="login-container">
+        <div class="brand-header">
+            <div class="logo-slot">
+                <img src="assets/logo-mellupet.png" alt="Logo MelluPet" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                <div class="logo-placeholder" style="display: none;">
+                    Espaço reservado para logo
+                    <small>Adicione <code>assets/logo-mellupet.png</code>.</small>
+                </div>
+            </div>
+        </div>
         <h2>Acesso Admin</h2>
         <form id="admin-login-form">
             <input type="email" id="loginEmail" class="login-input" placeholder="E-mail" required>
