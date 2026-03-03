@@ -5,11 +5,15 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Adicionado
+- Adicionado `SECURITY.md` com plano emergencial de hardening para Hostinger + Firebase.
+- Adicionado `config/runtime-config.example.js` com modelo seguro de configuração para produção na Hostinger.
 - Configurado carregamento automático de logo em `index.html` e `painel-94k2.html` via `assets/logo-mellupet.png`, com fallback visual quando o arquivo não existe.
 - Espaço visual para logo no `index.html` (site principal) e no `painel-94k2.html` (painel admin).
 - Orientação de responsividade com foco em mobile e desktop no fluxo principal.
 
 ### Alterado
+- `README.md` atualizado com referência ao checklist de hardening (`SECURITY.md`).
+- Externalizada configuração do Firebase e senha do painel para `config/runtime-config.js` (fora do HTML versionado).
 - Corrigido layout dos horários no desktop para exibir em grade (evitando um horário por linha inteira).
 - Atualizado texto da tela de agendamento para: "Escolha serviço, Porte, Data e Horário".
 - Ajustado visual da área de logo: removido tracejado e melhorado posicionamento no site principal e no painel.

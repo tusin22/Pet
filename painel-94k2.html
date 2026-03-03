@@ -4,10 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - MelluPet</title>
+    <script src="config/runtime-config.js"></script>
     <script>
-        const password = prompt("Digite a senha de administrador:");
-        if (password !== 'admin123') {
+        const panelPassword = window.__MELLUPET_CONFIG?.adminPanelPassword;
+        if (!panelPassword) {
+            alert('Configuração ausente: defina adminPanelPassword em config/runtime-config.js');
             window.location.href = 'index.html';
+        } else {
+            const password = prompt('Digite a senha de administrador:');
+            if (password !== panelPassword) {
+                window.location.href = 'index.html';
+            }
         }
     </script>
     <style>
@@ -868,14 +875,13 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
-        authDomain: "sistema-petshop-33f9d.firebaseapp.com",
-        projectId: "sistema-petshop-33f9d",
-        storageBucket: "sistema-petshop-33f9d.firebasestorage.app",
-        messagingSenderId: "628550103939",
-        appId: "1:628550103939:web:4a862eee914840d238fcb6"
-    };
+    const runtimeConfig = window.__MELLUPET_CONFIG || {};
+    const firebaseConfig = runtimeConfig.firebase;
+
+    if (!firebaseConfig) {
+        alert('Configuração ausente: crie config/runtime-config.js a partir do arquivo de exemplo.');
+        throw new Error('Firebase config ausente em window.__MELLUPET_CONFIG.firebase');
+    }
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);

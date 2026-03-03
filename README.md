@@ -50,6 +50,7 @@ Prioridade máxima: **agendamento funcionando 100%** (mobile e desktop), com bas
 
 - Planejamento completo: `ROADMAP.md`.
 - Registro contínuo das mudanças: `CHANGELOG.md`.
+- Checklist de hardening: `SECURITY.md`.
 
 
 ## Como inserir a logo agora
@@ -59,3 +60,12 @@ Prioridade máxima: **agendamento funcionando 100%** (mobile e desktop), com bas
 3. Recarregue `index.html` e `painel-94k2.html`: a imagem será exibida automaticamente.
 
 > Se o arquivo não existir, o sistema mostra um bloco de fallback com instrução do caminho esperado.
+
+
+## Segurança urgente (Hostinger)
+
+1. Copie `config/runtime-config.example.js` para `config/runtime-config.js` e preencha os dados reais.
+2. **Não versione** `config/runtime-config.js` (já está no `.gitignore`).
+3. Troque imediatamente a senha do painel e defina `adminPanelPassword` forte no runtime config.
+4. Revise as regras do Firestore para bloquear escrita indevida e permitir apenas o necessário.
+5. No Hostinger, proteja o painel com camada extra (ex.: diretório protegido/senha do servidor), não apenas prompt no navegador.

@@ -26,3 +26,6 @@ yarn-error.log*
 
 # Environment files (local configs)
 /.env.*
+
+# Runtime config with credentials (do not commit)
+/config/runtime-config.js

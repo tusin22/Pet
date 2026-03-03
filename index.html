@@ -461,18 +461,18 @@
 
 </div>
 
+<script src="config/runtime-config.js"></script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getFirestore, collection, addDoc, onSnapshot, doc, query, where, getDocs, getDoc, orderBy, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyAKWE3DBMGVP1AgUN9oajztpteVzmMi92s",
-        authDomain: "sistema-petshop-33f9d.firebaseapp.com",
-        projectId: "sistema-petshop-33f9d",
-        storageBucket: "sistema-petshop-33f9d.firebasestorage.app",
-        messagingSenderId: "628550103939",
-        appId: "1:628550103939:web:4a862eee914840d238fcb6"
-    };
+    const runtimeConfig = window.__MELLUPET_CONFIG || {};
+    const firebaseConfig = runtimeConfig.firebase;
+
+    if (!firebaseConfig) {
+        alert('Configuração ausente: crie config/runtime-config.js a partir do arquivo de exemplo.');
+        throw new Error('Firebase config ausente em window.__MELLUPET_CONFIG.firebase');
+    }
 
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
