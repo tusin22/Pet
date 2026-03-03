@@ -1758,6 +1758,21 @@
                 servicesDiv.innerHTML += html;
             });
 
+            // Add Event Listeners for Mutual Exclusion
+            document.querySelectorAll(`.edit-service-cb-${id}`).forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        if (e.target.value === 'Banho e Tosa') {
+                            const masterCb = document.querySelector(`.edit-service-cb-${id}[value="Banho Master"]`);
+                            if (masterCb) masterCb.checked = false;
+                        } else if (e.target.value === 'Banho Master') {
+                            const tosaCb = document.querySelector(`.edit-service-cb-${id}[value="Banho e Tosa"]`);
+                            if (tosaCb) tosaCb.checked = false;
+                        }
+                    }
+                });
+            });
+
             area.style.display = 'block';
 
         } catch(e) {
@@ -1810,8 +1825,23 @@
             ]);
 
             const priceData = priceSnap.exists() ? priceSnap.data() : {};
+            // Migração de compatibilidade de nomes antigos:
+            if (priceData["Tosa"] && !priceData["Banho e Tosa"]) {
+                priceData["Banho e Tosa"] = priceData["Tosa"];
+            }
+            if (priceData["Banho + Tosa"] && !priceData["Banho e Tosa"]) {
+                priceData["Banho e Tosa"] = priceData["Banho + Tosa"];
+            }
+
             const timeData = timeSnap.exists() ? timeSnap.data() : {};
             const serviceTimes = timeData.services || {};
+            // Migração de compatibilidade de nomes antigos:
+            if (serviceTimes["Tosa"] && !serviceTimes["Banho e Tosa"]) {
+                serviceTimes["Banho e Tosa"] = serviceTimes["Tosa"];
+            }
+            if (serviceTimes["Banho + Tosa"] && !serviceTimes["Banho e Tosa"]) {
+                serviceTimes["Banho e Tosa"] = serviceTimes["Banho + Tosa"];
+            }
             const sizeExtras = timeData.sizes || {};
             let agendaInterval = parseInt(timeData.agendaInterval) || 30;
 
@@ -1968,7 +1998,7 @@
 
     const servicesList = [
         "Banho Master",
-        "Tosa",
+        "Banho e Tosa",
         "Hidratação Vanilla",
         "Hidratação Ouro 24K",
         "SPA Premium",
@@ -2073,6 +2103,14 @@
             if (docSnap.exists()) {
                 const data = docSnap.data();
 
+                // Migração de compatibilidade de nomes antigos:
+                if (data["Tosa"] && !data["Banho e Tosa"]) {
+                    data["Banho e Tosa"] = data["Tosa"];
+                }
+                if (data["Banho + Tosa"] && !data["Banho e Tosa"]) {
+                    data["Banho e Tosa"] = data["Banho + Tosa"];
+                }
+
                 // Services
                 servicesList.forEach((service, index) => {
                     if (data[service]) {
@@ -2135,6 +2173,13 @@
                 if (data.agendaInterval) document.getElementById('agendaInterval').value = data.agendaInterval;
 
                 if (data.services) {
+                    // Migração de compatibilidade de nomes antigos:
+                    if (data.services["Tosa"] && !data.services["Banho e Tosa"]) {
+                        data.services["Banho e Tosa"] = data.services["Tosa"];
+                    }
+                    if (data.services["Banho + Tosa"] && !data.services["Banho e Tosa"]) {
+                        data.services["Banho e Tosa"] = data.services["Banho + Tosa"];
+                    }
                     servicesList.forEach((service, index) => {
                         if (data.services[service]) {
                             document.getElementById(`time-dur-${index}`).value = data.services[service];
