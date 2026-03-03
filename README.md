@@ -46,52 +46,6 @@ Prioridade máxima: **agendamento funcionando 100%** (mobile e desktop), com bas
 3. Revisar regras de segurança do Firestore.
 4. Executar checklist final de fluxos em produção.
 
-
-## Backend Node.js para gestão de administradores
-
-Foi adicionado um backend `server.js` com Express + Firebase Admin SDK para operações seguras de acessos administrativos.
-
-### Rotas
-
-- `GET /admins` — lista usuários do Firebase Auth.
-- `POST /admins` — cria novo admin com `email` e `password`.
-- `DELETE /admins/:uid` — remove usuário/admin pelo UID.
-
-Todas as rotas exigem token JWT Firebase no header:
-
-```
-Authorization: Bearer <ID_TOKEN_DO_ADMIN_LOGADO>
-```
-
-### Setup rápido
-
-1. Instale dependências:
-   ```bash
-   npm install
-   ```
-2. Configure credenciais do Firebase Admin:
-   - opção A: variável `FIREBASE_SERVICE_ACCOUNT_JSON` com o JSON completo da service account.
-   - opção B: usar credencial padrão da infraestrutura (`applicationDefault`).
-3. (Opcional) Defina `ADMIN_PANEL_ORIGIN` para restringir CORS ao domínio do painel.
-4. Inicie a API:
-   ```bash
-   npm start
-   ```
-
-### Integração com o painel
-
-No `config/runtime-config.js` (não versionado), defina:
-
-```js
-window.__MELLUPET_CONFIG = {
-  firebase: { /* ... */ },
-  adminPanelPassword: "...",
-  adminApiBaseUrl: "https://seu-backend-node"
-};
-```
-
-Com isso, a seção **Gerenciar Acessos** em `painel-94k2.html` passa a listar/cadastrar/remover administradores consumindo a API protegida.
-
 ## Referências de gestão
 
 - Planejamento completo: `ROADMAP.md`.

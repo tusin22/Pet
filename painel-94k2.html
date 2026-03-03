@@ -786,78 +786,12 @@
             background-color: #3D6163;
         }
 
-        .forgot-password-link {
-            display: inline-block;
-            margin-top: 0.75rem;
-            color: var(--secondary);
-            font-size: 0.9rem;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
-        .forgot-password-link:hover {
-            text-decoration: underline;
-        }
-
         #login-error {
             color: #d84b4b; /* Soft red */
             font-size: 0.9rem;
             text-align: center;
             margin-top: 1rem;
             display: none;
-        }
-
-        #login-feedback {
-            font-size: 0.9rem;
-            text-align: center;
-            margin-top: 0.8rem;
-            display: none;
-        }
-
-        #login-feedback.success {
-            color: #2e7d32;
-        }
-
-        #login-feedback.error {
-            color: #d84b4b;
-        }
-
-        .admin-access-list {
-            list-style: none;
-            padding: 0;
-            margin: 1rem 0 0;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .admin-access-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 1rem;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            flex-wrap: wrap;
-        }
-
-        .admin-access-item span {
-            word-break: break-word;
-        }
-
-        .inline-feedback {
-            margin-top: 0.75rem;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        .inline-feedback.success {
-            color: #2e7d32;
-        }
-
-        .inline-feedback.error {
-            color: #d84b4b;
         }
 
         #main-panel {
@@ -915,9 +849,7 @@
             <input type="email" id="loginEmail" class="login-input" placeholder="E-mail" required>
             <input type="password" id="loginPassword" class="login-input" placeholder="Senha" required>
             <button type="submit" id="login-btn">Entrar</button>
-            <a href="#" id="forgot-password-link" class="forgot-password-link">Esqueci minha senha</a>
             <p id="login-error">Acesso negado. Verifique suas credenciais.</p>
-            <p id="login-feedback"></p>
         </form>
     </div>
 </div>
@@ -1106,35 +1038,6 @@
                  <p id="config-message" style="text-align: center; color: #666; margin-top: 1rem; display: none;"></p>
             </div>
         </div>
-
-        <div class="settings-card collapsed" style="margin-top: 1.5rem;">
-            <div class="settings-header" onclick="toggleCard(this)">
-                <h2>Gerenciar Acessos</h2>
-                <span class="arrow-icon">▼</span>
-            </div>
-            <div class="settings-body">
-                <p style="color: #666; font-size: 0.9rem;">Cadastre e remova administradores usando a API protegida do servidor Node.js.</p>
-
-                <form id="admin-create-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; align-items: end; margin-top: 1rem;">
-                    <div class="form-group" style="margin: 0;">
-                        <label for="newAdminEmail">E-mail do novo admin</label>
-                        <input type="email" id="newAdminEmail" class="login-input" placeholder="admin@dominio.com" style="margin-bottom: 0;">
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label for="newAdminPassword">Senha temporária</label>
-                        <input type="password" id="newAdminPassword" class="login-input" placeholder="Mínimo 6 caracteres" style="margin-bottom: 0;">
-                    </div>
-                    <button type="submit" class="btn-save" style="width: auto; margin: 0;">Cadastrar administrador</button>
-                </form>
-
-                <button type="button" id="reload-admins-btn" class="btn-save" style="width: auto; margin-top: 1rem;">Atualizar lista</button>
-                <p id="admin-access-feedback" class="inline-feedback"></p>
-
-                <ul id="admin-access-list" class="admin-access-list">
-                    <li style="color: #666;">Nenhum dado carregado.</li>
-                </ul>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -1151,7 +1054,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
     const runtimeConfig = window.__MELLUPET_CONFIG || {};
     const firebaseConfig = runtimeConfig.firebase;
@@ -1204,17 +1107,7 @@
     const mainPanel = document.getElementById('main-panel');
     const loginForm = document.getElementById('admin-login-form');
     const loginError = document.getElementById('login-error');
-    const loginFeedback = document.getElementById('login-feedback');
-    const forgotPasswordLink = document.getElementById('forgot-password-link');
     const logoutBtn = document.getElementById('logout-btn');
-
-    const adminApiBaseUrl = runtimeConfig.adminApiBaseUrl || '';
-    const adminCreateForm = document.getElementById('admin-create-form');
-    const newAdminEmailInput = document.getElementById('newAdminEmail');
-    const newAdminPasswordInput = document.getElementById('newAdminPassword');
-    const adminAccessList = document.getElementById('admin-access-list');
-    const adminAccessFeedback = document.getElementById('admin-access-feedback');
-    const reloadAdminsBtn = document.getElementById('reload-admins-btn');
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -1228,38 +1121,9 @@
             renderTimeTable();
             loadPriceSettings();
             loadTimeSettings();
-            loadAdmins();
         } else {
             loginScreen.style.display = 'flex';
             mainPanel.style.display = 'none';
-            adminAccessList.innerHTML = '<li style="color: #666;">Faça login para carregar os administradores.</li>';
-        }
-    });
-
-    forgotPasswordLink.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const email = document.getElementById('loginEmail').value.trim();
-
-        loginFeedback.className = '';
-        loginFeedback.style.display = 'none';
-
-        if (!email) {
-            loginFeedback.textContent = 'Preencha o e-mail para recuperar a senha.';
-            loginFeedback.className = 'error';
-            loginFeedback.style.display = 'block';
-            return;
-        }
-
-        try {
-            await sendPasswordResetEmail(auth, email);
-            loginFeedback.textContent = 'Link de recuperação enviado com sucesso. Verifique seu e-mail.';
-            loginFeedback.className = 'success';
-            loginFeedback.style.display = 'block';
-        } catch (error) {
-            console.error('Password reset error:', error);
-            loginFeedback.textContent = 'Não foi possível enviar a recuperação. Verifique o e-mail informado.';
-            loginFeedback.className = 'error';
-            loginFeedback.style.display = 'block';
         }
     });
 
@@ -1272,7 +1136,6 @@
         btn.disabled = true;
         btn.textContent = 'Aguarde...';
         loginError.style.display = 'none';
-        loginFeedback.style.display = 'none';
 
         signInWithEmailAndPassword(auth, email, password)
             .then(() => {
@@ -1291,122 +1154,6 @@
     logoutBtn.addEventListener('click', () => {
         signOut(auth).catch(error => console.error("Logout error:", error));
     });
-
-    reloadAdminsBtn.addEventListener('click', () => loadAdmins());
-
-    adminCreateForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const email = newAdminEmailInput.value.trim();
-        const password = newAdminPasswordInput.value;
-
-        if (!email || !password) {
-            setAdminFeedback('Preencha e-mail e senha para cadastrar o novo administrador.', true);
-            return;
-        }
-
-        try {
-            await adminApiRequest('/admins', {
-                method: 'POST',
-                body: JSON.stringify({ email, password })
-            });
-
-            newAdminEmailInput.value = '';
-            newAdminPasswordInput.value = '';
-            setAdminFeedback('Administrador cadastrado com sucesso.', false);
-            await loadAdmins();
-        } catch (error) {
-            console.error('Create admin error:', error);
-            setAdminFeedback(error.message || 'Erro ao cadastrar administrador.', true);
-        }
-    });
-
-    async function adminApiRequest(path, options = {}) {
-        if (!adminApiBaseUrl) {
-            throw new Error('Configure adminApiBaseUrl em config/runtime-config.js para usar a gestão de acessos.');
-        }
-
-        const currentUser = auth.currentUser;
-        if (!currentUser) {
-            throw new Error('Sessão expirada. Faça login novamente.');
-        }
-
-        const token = await currentUser.getIdToken();
-        const response = await fetch(`${adminApiBaseUrl}${path}`, {
-            ...options,
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${token}`,
-                ...(options.headers || {})
-            }
-        });
-
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-            throw new Error(payload.message || 'Falha ao comunicar com a API de administradores.');
-        }
-
-        return payload;
-    }
-
-    function setAdminFeedback(message, isError) {
-        adminAccessFeedback.textContent = message;
-        adminAccessFeedback.className = `inline-feedback ${isError ? 'error' : 'success'}`;
-        adminAccessFeedback.style.display = 'block';
-    }
-
-    async function loadAdmins() {
-        if (!adminApiBaseUrl) {
-            adminAccessList.innerHTML = '<li style="color: #666;">Configure adminApiBaseUrl no runtime-config para carregar os acessos.</li>';
-            return;
-        }
-
-        adminAccessList.innerHTML = '<li style="color: #666;">Carregando administradores...</li>';
-
-        try {
-            const data = await adminApiRequest('/admins');
-            const admins = Array.isArray(data.admins) ? data.admins : [];
-
-            if (!admins.length) {
-                adminAccessList.innerHTML = '<li style="color: #666;">Nenhum administrador encontrado.</li>';
-                return;
-            }
-
-            adminAccessList.innerHTML = admins.map((adminUser) => {
-                const email = escapeHtml(adminUser.email || '(sem e-mail)');
-                const uid = escapeHtml(adminUser.uid || '');
-                return `
-                    <li class="admin-access-item">
-                        <span>${email}</span>
-                        <button class="btn-save" style="width: auto; margin: 0; background-color: var(--danger);" data-remove-uid="${uid}">Remover</button>
-                    </li>
-                `;
-            }).join('');
-
-            document.querySelectorAll('[data-remove-uid]').forEach((button) => {
-                button.addEventListener('click', async () => {
-                    const { removeUid } = button.dataset;
-                    if (!removeUid) return;
-
-                    const confirmed = window.confirm('Tem certeza que deseja remover este administrador?');
-                    if (!confirmed) return;
-
-                    try {
-                        await adminApiRequest(`/admins/${removeUid}`, { method: 'DELETE' });
-                        setAdminFeedback('Administrador removido com sucesso.', false);
-                        await loadAdmins();
-                    } catch (error) {
-                        console.error('Delete admin error:', error);
-                        setAdminFeedback(error.message || 'Erro ao remover administrador.', true);
-                    }
-                });
-            });
-        } catch (error) {
-            console.error('Load admins error:', error);
-            adminAccessList.innerHTML = `<li style="color: #d84b4b;">${escapeHtml(error.message || 'Falha ao carregar administradores.')}</li>`;
-            setAdminFeedback(error.message || 'Falha ao carregar administradores.', true);
-        }
-    }
 
     // --- Initialization ---
     // Set default date to today for both inputs
