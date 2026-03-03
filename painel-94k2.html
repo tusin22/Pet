@@ -1206,7 +1206,6 @@
     };
 
     window.loadAppointments = () => {
-        if (!auth.currentUser) return;
         const dateVal = agendaDateInput.value;
         if (!dateVal) return;
 
@@ -1298,7 +1297,6 @@
     };
 
     window.loadHistory = () => {
-        if (!auth.currentUser) return;
         if (historyUnsubscribe) {
             historyUnsubscribe();
         }
@@ -1345,7 +1343,6 @@
     };
 
     window.loadWeekSchedule = async () => {
-        if (!auth.currentUser) return;
         if (weekUnsubscribe) {
             weekUnsubscribe();
         }
@@ -1723,7 +1720,6 @@
     }
 
     window.loadConfiguration = async () => {
-        if (!auth.currentUser) return;
         const dateVal = configDateInput.value;
         if (!dateVal) {
             configOptions.style.display = 'none';
@@ -2241,7 +2237,6 @@
 
     // --- Global Settings Logic ---
     async function loadGlobalSettings() {
-        if (!auth.currentUser) return;
         try {
             const docRef = doc(db, "configuracoes", "geral");
             const docSnap = await getDoc(docRef);
@@ -2320,7 +2315,6 @@
     }
 
     async function loadPriceSettings() {
-        if (!auth.currentUser) return;
         try {
             const docRef = doc(db, "configuracoes", "precos");
             const docSnap = await getDoc(docRef);
@@ -2389,7 +2383,6 @@
     }
 
     async function loadTimeSettings() {
-        if (!auth.currentUser) return;
         try {
             const docRef = doc(db, "configuracoes", "tempos");
             const docSnap = await getDoc(docRef);
