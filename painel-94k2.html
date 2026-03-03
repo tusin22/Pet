@@ -1223,8 +1223,7 @@
         const q = query(
             collection(db, "appointments"),
             where("appointmentTime", ">=", startOfDay),
-            where("appointmentTime", "<=", endOfDay),
-            orderBy("appointmentTime", "asc")
+            where("appointmentTime", "<=", endOfDay)
         );
 
         unsubscribe = onSnapshot(q, (snapshot) => {
@@ -1240,6 +1239,12 @@
                 }
             });
 
+            activeDocs.sort((a, b) => {
+                const timeA = (a.appointmentTime || '');
+                const timeB = (b.appointmentTime || '');
+                return timeA.localeCompare(timeB);
+            });
+
             if (activeDocs.length === 0) {
                 listContainer.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Nenhum agendamento ativo para este dia.</p>';
                 return;
@@ -1252,7 +1257,8 @@
             filterAppointments();
         }, (error) => {
             console.error("Error fetching appointments:", error);
-            listContainer.innerHTML = '<p style="text-align: center; color: red; grid-column: 1/-1;">Erro ao carregar agendamentos.</p>';
+            const code = error?.code ? ` (${error.code})` : '';
+            listContainer.innerHTML = `<p style="text-align: center; color: red; grid-column: 1/-1;">Erro ao carregar agendamentos${code}.</p>`;
         });
     };
 
