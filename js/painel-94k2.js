@@ -19,6 +19,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     const listContainer = document.getElementById('appointments-list');
     const historyContainer = document.getElementById('history-list');
 
+    // New Appointment Elements
+    const btnNewAppointment = document.getElementById('btn-new-appointment');
+    const newAppointmentModal = document.getElementById('new-appointment-modal');
+    const newAppointmentForm = document.getElementById('new-appointment-form');
+    const newApptServicesContainer = document.getElementById('new-appt-services-container');
+    const newApptPriceDisplay = document.getElementById('new-appt-price-display');
+    const newApptDate = document.getElementById('newApptDate');
+    const newApptTime = document.getElementById('newApptTime');
+    const newApptPetSize = document.getElementById('newApptPetSize');
+
     const configDateInput = document.getElementById('configDate');
     const configOptions = document.getElementById('config-options');
     const blockAllDayCheckbox = document.getElementById('blockAllDay');
@@ -141,6 +151,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     configDateInput.value = today;
 
     // --- Functions ---
+
+    const servicesList = [
+        "Banho Master",
+        "Banho e Tosa",
+        "Hidratação Vanilla",
+        "Hidratação Ouro 24K",
+        "SPA Premium",
+        "Corte das unhas",
+        "Escov. dos dentes",
+        "Carding",
+        "Desembolo de nós"
+    ];
 
     function toLocalDateString(date) {
         const pad = (n) => n < 10 ? '0' + n : n;
@@ -505,6 +527,326 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 }
                 weekGrid.appendChild(cell);
             });
+        });
+    }
+
+    // --- New Appointment Modal Logic ---
+
+    function renderNewApptServices() {
+        newApptServicesContainer.innerHTML = '';
+        servicesList.forEach(srv => {
+            const id = `new-appt-srv-${srv.replace(/\s+/g, '')}`;
+            const isBanhoMaster = srv === 'Banho Master';
+            const html = `
+                <div style="display:flex; align-items:center; gap:0.25rem;">
+                    <input type="checkbox" id="${id}" value="${srv}" class="new-appt-service-cb" ${isBanhoMaster ? 'checked' : ''}>
+                    <label for="${id}" style="font-size:0.9rem;">${srv}</label>
+                </div>
+            `;
+            newApptServicesContainer.innerHTML += html;
+        });
+
+        document.querySelectorAll('.new-appt-service-cb').forEach(cb => {
+            cb.addEventListener('change', async (e) => {
+                // Mutual exclusion
+                if (e.target.checked) {
+                    if (e.target.value === 'Banho e Tosa') {
+                        const masterCb = document.querySelector('.new-appt-service-cb[value="Banho Master"]');
+                        if (masterCb) masterCb.checked = false;
+                    } else if (e.target.value === 'Banho Master') {
+                        const tosaCb = document.querySelector('.new-appt-service-cb[value="Banho e Tosa"]');
+                        if (tosaCb) tosaCb.checked = false;
+                    }
+                }
+                await updateNewAppointmentSlots();
+            });
+        });
+    }
+
+    if (btnNewAppointment) {
+        btnNewAppointment.addEventListener('click', () => {
+            // Reset form
+            newAppointmentForm.reset();
+            renderNewApptServices();
+            newApptDate.value = toLocalDateString(new Date());
+            newApptPriceDisplay.textContent = 'Total Estimado: R$ 0,00';
+            newApptTime.innerHTML = '<option value="">Selecione Porte, Serviços e Data</option>';
+            newAppointmentModal.classList.add('active');
+            updateNewAppointmentSlots();
+        });
+    }
+
+    window.closeNewAppointmentModal = () => {
+        newAppointmentModal.classList.remove('active');
+    };
+
+    if (newApptPetSize) newApptPetSize.addEventListener('change', updateNewAppointmentSlots);
+    if (newApptDate) {
+        newApptDate.addEventListener('change', updateNewAppointmentSlots);
+        newApptDate.addEventListener('input', updateNewAppointmentSlots);
+    }
+
+    async function updateNewAppointmentSlots() {
+        if (!newApptDate || !newApptTime || !newApptPetSize) return;
+
+        const dateVal = newApptDate.value;
+        const petSize = newApptPetSize.value;
+        const selectedServices = [];
+        document.querySelectorAll('.new-appt-service-cb:checked').forEach(cb => selectedServices.push(cb.value));
+
+        if (!dateVal || !petSize || selectedServices.length === 0) {
+            newApptTime.innerHTML = '<option value="">Selecione Porte, Serviços e Data</option>';
+            newApptPriceDisplay.textContent = 'Total Estimado: R$ 0,00';
+            return;
+        }
+
+        const dateObj = new Date(dateVal + 'T00:00:00');
+        if (dateObj.getDay() === 0) {
+            newApptTime.innerHTML = '<option value="">Fechado aos domingos</option>';
+            return;
+        }
+
+        try {
+            const [globalConfigSnap, timeConfigSnap, priceConfigSnap, dayConfigSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "geral")),
+                getDoc(doc(db, "configuracoes", "tempos")),
+                getDoc(doc(db, "configuracoes", "precos")),
+                getDoc(doc(db, "configuracoes", dateVal))
+            ]);
+
+            // --- Price Calculation ---
+            let newTotalValue = 0;
+            const priceData = priceConfigSnap.exists() ? priceConfigSnap.data() : {};
+            if (priceData["Tosa"] && !priceData["Banho e Tosa"]) priceData["Banho e Tosa"] = priceData["Tosa"];
+            if (priceData["Banho + Tosa"] && !priceData["Banho e Tosa"]) priceData["Banho e Tosa"] = priceData["Banho + Tosa"];
+
+            const validServicesForDiscount = selectedServices.filter(s => s !== 'Desembolo de nós');
+            const validCount = validServicesForDiscount.length;
+            const hasDesembolo = selectedServices.includes('Desembolo de nós');
+
+            selectedServices.forEach(srv => {
+                if (priceData[srv]) {
+                    let base = 0;
+                    if (petSize === 'P') base = parseFloat(priceData[srv].priceP) || 0;
+                    else if (petSize === 'M') base = parseFloat(priceData[srv].priceM) || 0;
+                    else if (petSize === 'G') base = parseFloat(priceData[srv].priceG) || 0;
+
+                    const discount = parseFloat(priceData[srv].discount) || 0;
+                    if (validCount >= 2 && srv !== 'Desembolo de nós') {
+                        newTotalValue += base * (1 - (discount/100));
+                    } else {
+                        newTotalValue += base;
+                    }
+                }
+            });
+
+            const formattedPrice = newTotalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            newApptPriceDisplay.textContent = hasDesembolo ? `Total Estimado: ${formattedPrice} + Avaliação` : `Total Estimado: ${formattedPrice}`;
+            newAppointmentForm.setAttribute('data-calculated-price', newTotalValue);
+
+            // --- Slots Calculation ---
+            let capacity = 1;
+            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                capacity = parseInt(globalConfigSnap.data().capacityPerSlot) || 1;
+            }
+
+            const timeData = timeConfigSnap.exists() ? timeConfigSnap.data() : {};
+            const serviceTimes = timeData.services || {};
+            if (serviceTimes["Tosa"] && !serviceTimes["Banho e Tosa"]) serviceTimes["Banho e Tosa"] = serviceTimes["Tosa"];
+            if (serviceTimes["Banho + Tosa"] && !serviceTimes["Banho e Tosa"]) serviceTimes["Banho e Tosa"] = serviceTimes["Banho + Tosa"];
+            const sizeExtras = timeData.sizes || {};
+            const agendaInterval = parseInt(timeData.agendaInterval) || 30;
+
+            let totalDuration = 0;
+            selectedServices.forEach(srv => {
+                totalDuration += serviceTimes[srv] ? parseInt(serviceTimes[srv]) : 30;
+            });
+            if (sizeExtras[petSize]) totalDuration += parseInt(sizeExtras[petSize]);
+            const slotsNeeded = Math.ceil(totalDuration / agendaInterval);
+            newAppointmentForm.setAttribute('data-duration', totalDuration);
+            newAppointmentForm.setAttribute('data-slots', slotsNeeded);
+
+            let blockedAllDay = false;
+            const blockedSlots = new Set();
+            if (dayConfigSnap.exists()) {
+                const dayData = dayConfigSnap.data();
+                if (dayData.blockedAllDay) blockedAllDay = true;
+                if (Array.isArray(dayData.blockedSlots)) dayData.blockedSlots.forEach(s => blockedSlots.add(s));
+            }
+
+            if (blockedAllDay) {
+                newApptTime.innerHTML = '<option value="">Fechado neste dia</option>';
+                return;
+            }
+
+            const startOfDay = `${dateVal}T00:00`;
+            const endOfDay = `${dateVal}T23:59`;
+            const q = query(
+                collection(db, "appointments"),
+                where("appointmentTime", ">=", startOfDay),
+                where("appointmentTime", "<=", endOfDay)
+            );
+            const querySnapshot = await getDocs(q);
+
+            const allSlots = [];
+            let t = new Date(`${dateVal}T08:00:00`);
+            const endT = new Date(`${dateVal}T18:00:00`);
+            while (t < endT) {
+                allSlots.push(`${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`);
+                t.setMinutes(t.getMinutes() + agendaInterval);
+            }
+
+            const occupancy = {};
+            allSlots.forEach(s => occupancy[s] = 0);
+
+            querySnapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (data.status === 'Cancelado' || data.status === 'Concluído') return;
+                if (!data.appointmentTime) return;
+
+                const timePart = data.appointmentTime.split('T')[1];
+                const apptSlots = data.slotsNeeded || 1;
+                const startIdx = allSlots.indexOf(timePart);
+                if (startIdx !== -1) {
+                    for (let i = 0; i < apptSlots; i++) {
+                        const check = allSlots[startIdx + i];
+                        if (check) occupancy[check] = (occupancy[check] || 0) + 1;
+                    }
+                }
+            });
+
+            const previous = newApptTime.value;
+            const now = new Date();
+            const isToday = (new Date(`${dateVal}T00:00:00`).toDateString() === now.toDateString());
+
+            newApptTime.innerHTML = '';
+            let firstValid = null;
+
+            allSlots.forEach((slot, index) => {
+                let isPast = false;
+                if (isToday) {
+                    const [h,m] = slot.split(':').map(Number);
+                    if (h < now.getHours() || (h === now.getHours() && m < now.getMinutes())) isPast = true;
+                }
+
+                let outOfBounds = (index + slotsNeeded > allSlots.length);
+                let isBlocked = false;
+                let isFull = false;
+
+                if (!isPast && !outOfBounds) {
+                    for (let i = 0; i < slotsNeeded; i++) {
+                        const check = allSlots[index + i];
+                        if (blockedSlots.has(check)) {
+                            isBlocked = true;
+                            break;
+                        }
+                        if ((occupancy[check] || 0) >= capacity) {
+                            isFull = true;
+                        }
+                    }
+                }
+
+                if (!isPast && !outOfBounds && !isBlocked) {
+                    const opt = document.createElement('option');
+                    opt.value = slot;
+                    opt.textContent = isFull ? `${slot} (Encaixe)` : slot;
+                    opt.setAttribute('data-is-full', isFull ? 'true' : 'false');
+
+                    if (isFull) {
+                        opt.style.color = '#d32f2f'; // Highlight full slots slightly if browser supports
+                    }
+
+                    newApptTime.appendChild(opt);
+                    if (!firstValid && !isFull) firstValid = slot;
+                }
+            });
+
+            if (newApptTime.options.length === 0) {
+                newApptTime.innerHTML = '<option value="">Sem horários disponíveis</option>';
+            } else {
+                if (previous && Array.from(newApptTime.options).some(o => o.value === previous)) {
+                    newApptTime.value = previous;
+                } else if (firstValid) {
+                    newApptTime.value = firstValid;
+                }
+            }
+
+        } catch (e) {
+            console.error('Error loading new appointment slots:', e);
+            newApptTime.innerHTML = '<option value="">Erro ao carregar horários</option>';
+        }
+    }
+
+    if (newAppointmentForm) {
+        newAppointmentForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const ownerName = document.getElementById('newApptOwnerName').value.trim();
+            const ownerPhone = document.getElementById('newApptOwnerPhone').value.trim();
+            const petName = document.getElementById('newApptPetName').value.trim();
+            const petSize = document.getElementById('newApptPetSize').value;
+            const apptDate = document.getElementById('newApptDate').value;
+            const apptTime = document.getElementById('newApptTime').value;
+            const initialStatus = document.getElementById('newApptInitialStatus').value;
+            const paymentMethod = document.getElementById('newApptPayment').value;
+            const observations = document.getElementById('newApptObs').value.trim();
+
+            const selectedServices = [];
+            document.querySelectorAll('.new-appt-service-cb:checked').forEach(cb => selectedServices.push(cb.value));
+
+            if (!ownerName || !petName || !petSize || !apptDate || !apptTime || selectedServices.length === 0) {
+                alert('Preencha todos os campos obrigatórios.');
+                return;
+            }
+
+            const selectedOption = newApptTime.options[newApptTime.selectedIndex];
+            if (selectedOption && selectedOption.getAttribute('data-is-full') === 'true') {
+                if (!confirm(`Atenção: O horário das ${apptTime} já está com a capacidade máxima ou o agendamento excede o final do dia. Deseja forçar o encaixe?`)) {
+                    return;
+                }
+            }
+
+            const submitBtn = document.getElementById('btn-submit-new-appt');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Aguarde...';
+
+            try {
+                const totalValue = parseFloat(newAppointmentForm.getAttribute('data-calculated-price')) || 0;
+                const durationMinutes = parseInt(newAppointmentForm.getAttribute('data-duration')) || 30;
+                const slotsNeeded = parseInt(newAppointmentForm.getAttribute('data-slots')) || 1;
+
+                const appointmentTimeIso = `${apptDate}T${apptTime}`;
+                const now = toLocalISOString(new Date());
+
+                const newDocRef = doc(collection(db, "appointments"));
+                await setDoc(newDocRef, {
+                    ownerName: ownerName,
+                    ownerPhone: ownerPhone,
+                    petName: petName,
+                    petSize: petSize,
+                    services: selectedServices,
+                    serviceType: selectedServices.join(', '), // legacy
+                    appointmentTime: appointmentTimeIso,
+                    status: initialStatus,
+                    paymentMethod: paymentMethod,
+                    observations: observations,
+                    totalValue: totalValue,
+                    valorDesembolo: 0,
+                    durationMinutes: durationMinutes,
+                    slotsNeeded: slotsNeeded,
+                    createdAt: now
+                });
+
+                alert('Agendamento criado com sucesso!');
+                closeNewAppointmentModal();
+            } catch (error) {
+                console.error("Error creating appointment:", error);
+                alert("Erro ao criar agendamento.");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
         });
     }
 
@@ -1492,18 +1834,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     configDateInput.addEventListener('input', () => {
         loadConfiguration();
     });
-
-    const servicesList = [
-        "Banho Master",
-        "Banho e Tosa",
-        "Hidratação Vanilla",
-        "Hidratação Ouro 24K",
-        "SPA Premium",
-        "Corte das unhas",
-        "Escov. dos dentes",
-        "Carding",
-        "Desembolo de nós"
-    ];
 
     // --- Execution ---
     generateSlotCheckboxes();
