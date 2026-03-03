@@ -810,18 +810,21 @@
         /* Header Layout for Logout */
         .panel-header-top {
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             margin-bottom: 1rem;
             flex-wrap: wrap;
+            position: relative;
         }
 
         .panel-header-top h1 {
             margin-bottom: 0;
-            text-align: left;
+            text-align: center;
         }
 
         .logout-btn {
+            position: absolute;
+            right: 0;
             background: transparent;
             color: var(--secondary);
             border: 1px solid var(--secondary);

@@ -44,3 +44,9 @@
 127.0.0.1 - - [03/Mar/2026 20:32:38] "GET /assets/logo-mellupet.png HTTP/1.1" 404 -
 127.0.0.1 - - [03/Mar/2026 20:32:38] "GET /config/runtime-config.js HTTP/1.1" 200 -
 127.0.0.1 - - [03/Mar/2026 20:32:38] "GET /js/painel-94k2.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 20:37:00] "GET /painel-94k2.html HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 20:37:00] "GET /css/painel-94k2.css HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 20:37:00] code 404, message File not found
+127.0.0.1 - - [03/Mar/2026 20:37:00] "GET /assets/logo-mellupet.png HTTP/1.1" 404 -
+127.0.0.1 - - [03/Mar/2026 20:37:00] "GET /config/runtime-config.js HTTP/1.1" 200 -
+127.0.0.1 - - [03/Mar/2026 20:37:00] "GET /js/painel-94k2.js HTTP/1.1" 200 -
