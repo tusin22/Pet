@@ -14,6 +14,7 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 - Orientação de responsividade com foco em mobile e desktop no fluxo principal.
 
 ### Alterado
+- `painel-94k2.html`: ajustada a consulta da agenda para evitar falha por índice composto no Firestore (remoção de `orderBy` na leitura diária), com ordenação feita no cliente e exibição do código do erro para facilitar diagnóstico.
 - Melhorada navegação do painel no celular: abas em grade 2x2, melhor legibilidade e ajustes de campos/filtros para mobile.
 - `README.md` atualizado com referência ao checklist de hardening (`SECURITY.md`).
 - Externalizada configuração do Firebase e senha do painel para `config/runtime-config.js` (fora do HTML versionado).
