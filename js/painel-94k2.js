@@ -643,17 +643,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             buttonsHtml = `
             <div class="actions">
-                <button class="btn-status ${data.status === 'Agendado' ? 'active' : ''}" onclick="updateStatus('${id}', 'Agendado')">Agendado</button>
-                <button class="btn-status ${data.status === 'Na Fila' ? 'active' : ''}" onclick="updateStatus('${id}', 'Na Fila')">Fila</button>
-                <button class="btn-status ${data.status === 'No Banho' ? 'active' : ''}" onclick="updateStatus('${id}', 'No Banho')">Banho</button>
-                <button class="btn-status ${data.status === 'Secando' ? 'active' : ''}" onclick="updateStatus('${id}', 'Secando')">Secando</button>
-                <button class="btn-status ${data.status === 'Pronto' ? 'active' : ''}" onclick="updateStatus('${id}', 'Pronto')">Pronto</button>
+                <button class="btn-status ${data.status === 'Agendado' ? 'active' : ''}" onclick="updateStatus('${id}', 'Agendado', this)">Agendado</button>
+                <button class="btn-status ${data.status === 'Na Fila' ? 'active' : ''}" onclick="updateStatus('${id}', 'Na Fila', this)">Fila</button>
+                <button class="btn-status ${data.status === 'No Banho' ? 'active' : ''}" onclick="updateStatus('${id}', 'No Banho', this)">Banho</button>
+                <button class="btn-status ${data.status === 'Secando' ? 'active' : ''}" onclick="updateStatus('${id}', 'Secando', this)">Secando</button>
+                <button class="btn-status ${data.status === 'Pronto' ? 'active' : ''}" onclick="updateStatus('${id}', 'Pronto', this)">Pronto</button>
             </div>
 
             ${whatsappHtml}
 
             <div style="display: flex; gap: 0.5rem;">
-                <button class="btn-cancelar" onclick="cancelAppointment('${id}')">❌ Cancelar</button>
+                <button class="btn-cancelar" onclick="cancelAppointment('${id}', this)">❌ Cancelar</button>
                 <button class="btn-reschedule" onclick="toggleReschedule('${id}')">🗓️ Remarcar</button>
             </div>
 
@@ -671,10 +671,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     ${options}
                 </select>
 
-                <button class="btn-save" style="margin-top:0;" onclick="saveReschedule('${id}')">Salvar Alterações</button>
+                <button class="btn-save" style="margin-top:0;" onclick="saveReschedule('${id}', this)">Salvar Alterações</button>
             </div>
 
-            <button class="btn-concluir" onclick="confirmAndComplete('${id}')">✅ Concluir</button>
+            <button class="btn-concluir" onclick="confirmAndComplete('${id}', this)">✅ Concluir</button>
             `;
         } else {
             buttonsHtml = `
@@ -864,32 +864,84 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     };
 
-    window.updateStatus = async (id, newStatus) => {
+    window.updateStatus = async (id, newStatus, btnElement) => {
+        if (!confirm(`Tem certeza que deseja alterar o status para ${newStatus}?`)) {
+            return;
+        }
+
+        let originalText = '';
+        if (btnElement) {
+            btnElement.disabled = true;
+            originalText = btnElement.textContent;
+            btnElement.textContent = 'Processando...';
+        }
+
         try {
             const docRef = doc(db, "appointments", id);
             await updateDoc(docRef, {
                 status: newStatus
             });
+            closeModal(null, true);
         } catch (e) {
             console.error("Error updating status: ", e);
             alert("Erro ao atualizar status.");
-        }
-    };
-
-    window.cancelAppointment = async (id) => {
-        if (confirm("Tem certeza que deseja CANCELAR este agendamento?")) {
-            try {
-                await updateStatus(id, 'Cancelado');
-            } catch (e) {
-                console.error("Error canceling document: ", e);
-                alert("Erro ao cancelar.");
+        } finally {
+            if (btnElement) {
+                btnElement.disabled = false;
+                btnElement.textContent = originalText;
             }
         }
     };
 
-    window.confirmAndComplete = async (id) => {
+    window.cancelAppointment = async (id, btnElement) => {
+        if (confirm("Tem certeza que deseja CANCELAR este agendamento?")) {
+            let originalText = '';
+            if (btnElement) {
+                btnElement.disabled = true;
+                originalText = btnElement.textContent;
+                btnElement.textContent = 'Processando...';
+            }
+            try {
+                const docRef = doc(db, "appointments", id);
+                await updateDoc(docRef, {
+                    status: 'Cancelado'
+                });
+                closeModal(null, true);
+            } catch (e) {
+                console.error("Error canceling document: ", e);
+                alert("Erro ao cancelar.");
+            } finally {
+                if (btnElement) {
+                    btnElement.disabled = false;
+                    btnElement.textContent = originalText;
+                }
+            }
+        }
+    };
+
+    window.confirmAndComplete = async (id, btnElement) => {
         if (confirm("Tem certeza que deseja CONCLUIR este agendamento?")) {
-            await updateStatus(id, 'Concluído');
+            let originalText = '';
+            if (btnElement) {
+                btnElement.disabled = true;
+                originalText = btnElement.textContent;
+                btnElement.textContent = 'Processando...';
+            }
+            try {
+                const docRef = doc(db, "appointments", id);
+                await updateDoc(docRef, {
+                    status: 'Concluído'
+                });
+                closeModal(null, true);
+            } catch (e) {
+                console.error("Error completing document: ", e);
+                alert("Erro ao concluir.");
+            } finally {
+                if (btnElement) {
+                    btnElement.disabled = false;
+                    btnElement.textContent = originalText;
+                }
+            }
         }
     };
 
@@ -1010,7 +1062,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     };
 
-    window.saveReschedule = async (id) => {
+    window.saveReschedule = async (id, btnElement) => {
         const dateInput = document.getElementById(`reschedule-date-${id}`);
         const timeInput = document.getElementById(`reschedule-time-${id}`);
         const area = document.getElementById(`reschedule-area-${id}`);
@@ -1023,13 +1075,28 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         const selectedServices = [];
         document.querySelectorAll(`.edit-service-cb-${id}:checked`).forEach(cb => selectedServices.push(cb.value));
 
+        let originalText = '';
+        if (btnElement) {
+            btnElement.disabled = true;
+            originalText = btnElement.textContent;
+            btnElement.textContent = 'Processando...';
+        }
+
         if (selectedServices.length === 0) {
             alert("Selecione pelo menos um serviço.");
+            if (btnElement) {
+                btnElement.disabled = false;
+                btnElement.textContent = originalText;
+            }
             return;
         }
 
         if (!newDate || !newTime) {
             alert("Selecione data e horário.");
+            if (btnElement) {
+                btnElement.disabled = false;
+                btnElement.textContent = originalText;
+            }
             return;
         }
 
@@ -1037,6 +1104,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         const dateObj = new Date(newDate + 'T00:00:00');
         if (dateObj.getDay() === 0) {
             alert("Não é possível agendar ou remarcar para Domingos.");
+            if (btnElement) {
+                btnElement.disabled = false;
+                btnElement.textContent = originalText;
+            }
             return;
         }
 
@@ -1158,6 +1229,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (startIdx === -1) {
                 alert("Horário inválido (fora do expediente).");
+                if (btnElement) {
+                    btnElement.disabled = false;
+                    btnElement.textContent = originalText;
+                }
                 return;
             }
 
@@ -1171,6 +1246,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (isFull) {
                 if (!confirm(`Atenção: A nova duração (${newDuration}min) requer ${newSlotsNeeded} horários, mas não há vagas suficientes. Deseja forçar o encaixe?`)) {
+                    if (btnElement) {
+                        btnElement.disabled = false;
+                        btnElement.textContent = originalText;
+                    }
                     return;
                 }
             }
@@ -1189,10 +1268,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             alert("Agendamento alterado com sucesso!");
             toggleReschedule(id); // close
+            closeModal(null, true);
 
         } catch(e) {
             console.error("Error rescheduling:", e);
             alert("Erro ao salvar alterações.");
+        } finally {
+            if (btnElement) {
+                btnElement.disabled = false;
+                btnElement.textContent = originalText;
+            }
         }
     };
 
