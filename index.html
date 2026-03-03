@@ -515,6 +515,7 @@
 
     // Initialize
     let pricingConfig = {}; // Global variable for pricing
+    window.pricingConfig = pricingConfig;
 
     // Fetch pricing on load
     async function loadPricingConfig() {
@@ -522,6 +523,14 @@
             const snap = await getDoc(doc(db, "configuracoes", "precos"));
             if (snap.exists()) {
                 pricingConfig = snap.data();
+                // Migração de compatibilidade de nomes antigos:
+                if (pricingConfig["Tosa"] && !pricingConfig["Banho e Tosa"]) {
+                    pricingConfig["Banho e Tosa"] = pricingConfig["Tosa"];
+                }
+                if (pricingConfig["Banho + Tosa"] && !pricingConfig["Banho e Tosa"]) {
+                    pricingConfig["Banho e Tosa"] = pricingConfig["Banho + Tosa"];
+                }
+                window.pricingConfig = pricingConfig;
             }
         } catch (e) {
             console.error("Error loading pricing config:", e);
@@ -588,7 +597,7 @@
 
     const servicesList = [
         "Banho Master",
-        "Tosa",
+        "Banho e Tosa",
         "Hidratação Vanilla",
         "Hidratação Ouro 24K",
         "SPA Premium",
@@ -901,7 +910,18 @@
 
     // Listen to all checkboxes
     document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
-        cb.addEventListener('change', () => {
+        cb.addEventListener('change', (e) => {
+            // Lógica de exclusão mútua
+            if (e.target.checked) {
+                if (e.target.value === 'Banho e Tosa') {
+                    const masterCb = document.querySelector('input[name="serviceOption"][value="Banho Master"]');
+                    if (masterCb) masterCb.checked = false;
+                } else if (e.target.value === 'Banho Master') {
+                    const tosaCb = document.querySelector('input[name="serviceOption"][value="Banho e Tosa"]');
+                    if (tosaCb) tosaCb.checked = false;
+                }
+            }
+
             updateServiceUI();
             calculateTotalAndDuration();
             checkAndGenerateSlots();
@@ -983,6 +1003,13 @@
 
             const timeData = timeSnap.exists() ? timeSnap.data() : {};
             const serviceTimes = (timeData.services || {});
+            // Migração de compatibilidade de nomes antigos:
+            if (serviceTimes["Tosa"] && !serviceTimes["Banho e Tosa"]) {
+                serviceTimes["Banho e Tosa"] = serviceTimes["Tosa"];
+            }
+            if (serviceTimes["Banho + Tosa"] && !serviceTimes["Banho e Tosa"]) {
+                serviceTimes["Banho e Tosa"] = serviceTimes["Banho + Tosa"];
+            }
             const sizeExtras = (timeData.sizes || {});
 
             // Filter for discount logic
