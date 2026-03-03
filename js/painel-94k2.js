@@ -536,6 +536,45 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     };
 
+    function getStatusClass(status) {
+        const s = (status || '').toLowerCase();
+        if (s.includes('agendado')) return 'status-agendado';
+        if (s.includes('banho')) return 'status-banho';
+        if (s.includes('secando')) return 'status-secando';
+        if (s.includes('pronto')) return 'status-pronto';
+        if (s.includes('concluído')) return 'status-concluido';
+        if (s.includes('cancelado')) return 'status-cancelado';
+        return 'status-fila';
+    }
+
+    function syncCardVisualStatus(btnElement, newStatus) {
+        if (!btnElement) return;
+        const card = btnElement.closest('.card');
+        if (!card) return;
+
+        card.setAttribute('data-status', newStatus);
+
+        const badge = card.querySelector('.status-badge');
+        if (badge) {
+            badge.textContent = newStatus;
+            badge.className = `status-badge ${getStatusClass(newStatus)}`;
+        }
+
+        const actionButtons = card.querySelectorAll('.btn-status');
+        actionButtons.forEach(button => {
+            button.classList.remove('active');
+            if (button === btnElement) {
+                button.classList.add('active');
+            }
+        });
+
+        const whatsappButton = card.querySelector('.whatsapp-btn');
+        const isPronto = (newStatus || '').toLowerCase().includes('pronto');
+        if (whatsappButton) {
+            whatsappButton.style.display = isPronto ? 'inline-flex' : 'none';
+        }
+    }
+
     function createCard(id, data, isHistory) {
         const card = document.createElement('div');
         card.className = 'card';
@@ -546,14 +585,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         card.setAttribute('data-status', data.status || '');
 
         // Determine status class
-        let statusClass = 'status-fila';
+        const statusClass = getStatusClass(data.status);
         const s = (data.status || '').toLowerCase();
-        if (s.includes('agendado')) statusClass = 'status-agendado';
-        else if (s.includes('banho')) statusClass = 'status-banho';
-        else if (s.includes('secando')) statusClass = 'status-secando';
-        else if (s.includes('pronto')) statusClass = 'status-pronto';
-        else if (s.includes('concluído')) statusClass = 'status-concluido';
-        else if (s.includes('cancelado')) statusClass = 'status-cancelado';
 
         // Format Date
         const dateObj = new Date(data.appointmentTime);
@@ -881,7 +914,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             await updateDoc(docRef, {
                 status: newStatus
             });
-            closeModal(null, true);
+            syncCardVisualStatus(btnElement, newStatus);
         } catch (e) {
             console.error("Error updating status: ", e);
             alert("Erro ao atualizar status.");
