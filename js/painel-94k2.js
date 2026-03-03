@@ -536,6 +536,45 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     };
 
+    function getStatusClass(status) {
+        const s = (status || '').toLowerCase();
+        if (s.includes('agendado')) return 'status-agendado';
+        if (s.includes('banho')) return 'status-banho';
+        if (s.includes('secando')) return 'status-secando';
+        if (s.includes('pronto')) return 'status-pronto';
+        if (s.includes('concluído')) return 'status-concluido';
+        if (s.includes('cancelado')) return 'status-cancelado';
+        return 'status-fila';
+    }
+
+    function syncCardVisualStatus(btnElement, newStatus) {
+        if (!btnElement) return;
+        const card = btnElement.closest('.card');
+        if (!card) return;
+
+        card.setAttribute('data-status', newStatus);
+
+        const badge = card.querySelector('.status-badge');
+        if (badge) {
+            badge.textContent = newStatus;
+            badge.className = `status-badge ${getStatusClass(newStatus)}`;
+        }
+
+        const actionButtons = card.querySelectorAll('.btn-status');
+        actionButtons.forEach(button => {
+            button.classList.remove('active');
+            if (button === btnElement) {
+                button.classList.add('active');
+            }
+        });
+
+        const whatsappButton = card.querySelector('.whatsapp-btn');
+        const isPronto = (newStatus || '').toLowerCase().includes('pronto');
+        if (whatsappButton) {
+            whatsappButton.style.display = isPronto ? 'inline-flex' : 'none';
+        }
+    }
+
     function createCard(id, data, isHistory) {
         const card = document.createElement('div');
         card.className = 'card';
@@ -546,14 +585,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         card.setAttribute('data-status', data.status || '');
 
         // Determine status class
-        let statusClass = 'status-fila';
+        const statusClass = getStatusClass(data.status);
         const s = (data.status || '').toLowerCase();
-        if (s.includes('agendado')) statusClass = 'status-agendado';
-        else if (s.includes('banho')) statusClass = 'status-banho';
-        else if (s.includes('secando')) statusClass = 'status-secando';
-        else if (s.includes('pronto')) statusClass = 'status-pronto';
-        else if (s.includes('concluído')) statusClass = 'status-concluido';
-        else if (s.includes('cancelado')) statusClass = 'status-cancelado';
 
         // Format Date
         const dateObj = new Date(data.appointmentTime);
@@ -654,7 +687,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             <div style="display: flex; gap: 0.5rem;">
                 <button class="btn-cancelar" onclick="cancelAppointment('${id}', this)">❌ Cancelar</button>
-                <button class="btn-reschedule" onclick="toggleReschedule('${id}')">🗓️ Remarcar</button>
+                <button class="btn-reschedule" onclick="toggleReschedule('${id}', this)">🗓️ Remarcar</button>
             </div>
 
             <div id="reschedule-area-${id}" class="reschedule-area">
@@ -881,7 +914,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             await updateDoc(docRef, {
                 status: newStatus
             });
-            closeModal(null, true);
+            syncCardVisualStatus(btnElement, newStatus);
         } catch (e) {
             console.error("Error updating status: ", e);
             alert("Erro ao atualizar status.");
@@ -995,38 +1028,178 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     };
 
-    window.toggleReschedule = async (id) => {
+
+    async function buildRescheduleOptions(id) {
         const area = document.getElementById(`reschedule-area-${id}`);
-        if (area.style.display === 'block') {
-            area.style.display = 'none';
+        const dateInput = document.getElementById(`reschedule-date-${id}`);
+        const timeInput = document.getElementById(`reschedule-time-${id}`);
+        if (!area || !dateInput || !timeInput) return;
+
+        const dateVal = dateInput.value;
+        const petSize = area.getAttribute('data-size') || 'M';
+        const selectedServices = [];
+        document.querySelectorAll(`.edit-service-cb-${id}:checked`).forEach(cb => selectedServices.push(cb.value));
+
+        if (!dateVal || selectedServices.length === 0) {
+            timeInput.innerHTML = '<option value="">Selecione serviços e data</option>';
             return;
         }
 
-        // Populate Services for this card
+        const dateObj = new Date(dateVal + 'T00:00:00');
+        if (dateObj.getDay() === 0) {
+            timeInput.innerHTML = '<option value="">Fechado aos domingos</option>';
+            return;
+        }
+
+        try {
+            const [globalConfigSnap, timeConfigSnap, dayConfigSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "geral")),
+                getDoc(doc(db, "configuracoes", "tempos")),
+                getDoc(doc(db, "configuracoes", dateVal))
+            ]);
+
+            let capacity = 1;
+            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                capacity = parseInt(globalConfigSnap.data().capacityPerSlot) || 1;
+            }
+
+            const timeData = timeConfigSnap.exists() ? timeConfigSnap.data() : {};
+            const serviceTimes = timeData.services || {};
+            if (serviceTimes["Tosa"] && !serviceTimes["Banho e Tosa"]) serviceTimes["Banho e Tosa"] = serviceTimes["Tosa"];
+            if (serviceTimes["Banho + Tosa"] && !serviceTimes["Banho e Tosa"]) serviceTimes["Banho e Tosa"] = serviceTimes["Banho + Tosa"];
+            const sizeExtras = timeData.sizes || {};
+            const agendaInterval = parseInt(timeData.agendaInterval) || 30;
+
+            let totalDuration = 0;
+            selectedServices.forEach(srv => {
+                totalDuration += serviceTimes[srv] ? parseInt(serviceTimes[srv]) : 30;
+            });
+            if (sizeExtras[petSize]) totalDuration += parseInt(sizeExtras[petSize]);
+            const slotsNeeded = Math.ceil(totalDuration / agendaInterval);
+
+            let blockedAllDay = false;
+            const blockedSlots = new Set();
+            if (dayConfigSnap.exists()) {
+                const dayData = dayConfigSnap.data();
+                if (dayData.blockedAllDay) blockedAllDay = true;
+                if (Array.isArray(dayData.blockedSlots)) dayData.blockedSlots.forEach(s => blockedSlots.add(s));
+            }
+
+            if (blockedAllDay) {
+                timeInput.innerHTML = '<option value="">Fechado neste dia</option>';
+                return;
+            }
+
+            const startOfDay = `${dateVal}T00:00`;
+            const endOfDay = `${dateVal}T23:59`;
+            const q = query(
+                collection(db, "appointments"),
+                where("appointmentTime", ">=", startOfDay),
+                where("appointmentTime", "<=", endOfDay)
+            );
+            const querySnapshot = await getDocs(q);
+
+            const allSlots = [];
+            let t = new Date(`${dateVal}T08:00:00`);
+            const endT = new Date(`${dateVal}T18:00:00`);
+            while (t < endT) {
+                allSlots.push(`${t.getHours().toString().padStart(2, '0')}:${t.getMinutes().toString().padStart(2, '0')}`);
+                t.setMinutes(t.getMinutes() + agendaInterval);
+            }
+
+            const occupancy = {};
+            allSlots.forEach(s => occupancy[s] = 0);
+
+            querySnapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                if (docSnap.id === id) return;
+                if (data.status === 'Cancelado' || data.status === 'Concluído') return;
+                if (!data.appointmentTime) return;
+
+                const timePart = data.appointmentTime.split('T')[1];
+                const apptSlots = data.slotsNeeded || 1;
+                const startIdx = allSlots.indexOf(timePart);
+                if (startIdx !== -1) {
+                    for (let i = 0; i < apptSlots; i++) {
+                        const check = allSlots[startIdx + i];
+                        if (check) occupancy[check] = (occupancy[check] || 0) + 1;
+                    }
+                }
+            });
+
+            const previous = timeInput.value;
+            const now = new Date();
+            const isToday = (new Date(`${dateVal}T00:00:00`).toDateString() === now.toDateString());
+
+            timeInput.innerHTML = '';
+            allSlots.forEach((slot, index) => {
+                let canBook = true;
+                if (isToday) {
+                    const [h,m] = slot.split(':').map(Number);
+                    if (h < now.getHours() || (h === now.getHours() && m < now.getMinutes())) canBook = false;
+                }
+                if (canBook && (index + slotsNeeded > allSlots.length)) canBook = false;
+
+                if (canBook) {
+                    for (let i = 0; i < slotsNeeded; i++) {
+                        const check = allSlots[index + i];
+                        if (blockedSlots.has(check) || (occupancy[check] || 0) >= capacity) {
+                            canBook = false;
+                            break;
+                        }
+                    }
+                }
+
+                const opt = document.createElement('option');
+                opt.value = slot;
+                opt.textContent = slot;
+                opt.disabled = !canBook;
+                timeInput.appendChild(opt);
+            });
+
+            const firstEnabled = Array.from(timeInput.options).find(o => !o.disabled);
+            if (previous && Array.from(timeInput.options).some(o => o.value === previous && !o.disabled)) {
+                timeInput.value = previous;
+            } else if (firstEnabled) {
+                timeInput.value = firstEnabled.value;
+            } else {
+                timeInput.innerHTML = '<option value="">Sem horários disponíveis</option>';
+            }
+        } catch (e) {
+            console.error('Error loading reschedule slots:', e);
+            timeInput.innerHTML = '<option value="">Erro ao carregar horários</option>';
+        }
+    }
+
+    window.toggleReschedule = async (id, btnElement) => {
+        const area = document.getElementById(`reschedule-area-${id}`);
+        if (!area) return;
+
+        const isOpen = area.style.display === 'block';
+        if (isOpen) {
+            area.style.display = 'none';
+            if (btnElement) btnElement.textContent = '🗓️ Remarcar';
+            return;
+        }
+
         const servicesDiv = document.getElementById(`edit-services-${id}`);
         servicesDiv.innerHTML = 'Carregando serviços...';
 
         try {
-            // Get Current Appointment Data to check boxes
             const apptRef = doc(db, "appointments", id);
             const apptSnap = await getDoc(apptRef);
             let currentServices = [];
-            let currentSize = 'M'; // default fallback
+            let currentSize = 'M';
 
             if (apptSnap.exists()) {
                 const d = apptSnap.data();
-                if (d.services && Array.isArray(d.services)) {
-                    currentServices = d.services;
-                } else if (d.serviceType) {
-                    currentServices = [d.serviceType];
-                }
+                if (d.services && Array.isArray(d.services)) currentServices = d.services;
+                else if (d.serviceType) currentServices = [d.serviceType];
                 if (d.petSize) currentSize = d.petSize;
 
-                // Also store petSize on the area for calc reference
                 area.setAttribute('data-size', currentSize);
             }
 
-            // Render Checkboxes
             servicesDiv.innerHTML = '';
             servicesList.forEach(srv => {
                 const checked = currentServices.includes(srv) ? 'checked' : '';
@@ -1039,9 +1212,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 servicesDiv.innerHTML += html;
             });
 
-            // Add Event Listeners for Mutual Exclusion
             document.querySelectorAll(`.edit-service-cb-${id}`).forEach(cb => {
-                cb.addEventListener('change', (e) => {
+                cb.addEventListener('change', async (e) => {
                     if (e.target.checked) {
                         if (e.target.value === 'Banho e Tosa') {
                             const masterCb = document.querySelector(`.edit-service-cb-${id}[value="Banho Master"]`);
@@ -1051,10 +1223,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                             if (tosaCb) tosaCb.checked = false;
                         }
                     }
+                    await buildRescheduleOptions(id);
                 });
             });
 
+            const dateInput = document.getElementById(`reschedule-date-${id}`);
+            if (dateInput) {
+                dateInput.addEventListener('change', () => buildRescheduleOptions(id));
+                dateInput.addEventListener('input', () => buildRescheduleOptions(id));
+            }
+
             area.style.display = 'block';
+            if (btnElement) btnElement.textContent = '✖ Fechar remarcar';
+            await buildRescheduleOptions(id);
 
         } catch(e) {
             console.error("Error preparing edit:", e);
@@ -1267,7 +1448,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             });
 
             alert("Agendamento alterado com sucesso!");
-            toggleReschedule(id); // close
+            area.style.display = 'none';
+            const toggleButton = document.querySelector(`#reschedule-area-${id}`)?.parentElement?.querySelector('.btn-reschedule');
+            if (toggleButton) toggleButton.textContent = '🗓️ Remarcar';
             closeModal(null, true);
 
         } catch(e) {
