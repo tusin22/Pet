@@ -5,18 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - MelluPet</title>
     <script src="config/runtime-config.js"></script>
-    <script>
-        const panelPassword = window.__MELLUPET_CONFIG?.adminPanelPassword;
-        if (!panelPassword) {
-            alert('Configuração ausente: defina adminPanelPassword em config/runtime-config.js');
-            window.location.href = 'index.html';
-        } else {
-            const password = prompt('Digite a senha de administrador:');
-            if (password !== panelPassword) {
-                window.location.href = 'index.html';
-            }
-        }
-    </script>
     <style>
         :root {
             --primary: #4E797C;
@@ -721,11 +709,125 @@
             margin-top: 0.25rem;
         }
 
+        /* Login Screen */
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: var(--background);
+        }
+
+        #login-container {
+            background-color: var(--surface);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 350px;
+        }
+
+        #login-container h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            margin-bottom: 1rem;
+        }
+
+        .login-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(78, 121, 124, 0.2);
+        }
+
+        #login-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        #login-btn:hover {
+            background-color: #3D6163;
+        }
+
+        #login-error {
+            color: #d84b4b; /* Soft red */
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        #main-panel {
+            display: none;
+        }
+
+        /* Header Layout for Logout */
+        .panel-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .panel-header-top h1 {
+            margin-bottom: 0;
+            text-align: left;
+        }
+
+        .logout-btn {
+            background: transparent;
+            color: var(--secondary);
+            border: 1px solid var(--secondary);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .logout-btn:hover {
+            background-color: #e3f2fd;
+        }
+
     </style>
 </head>
 <body>
 
-<div class="container">
+<!-- Login Screen -->
+<div id="login-screen">
+    <div id="login-container">
+        <h2>Acesso Admin</h2>
+        <form id="admin-login-form">
+            <input type="email" id="loginEmail" class="login-input" placeholder="E-mail" required>
+            <input type="password" id="loginPassword" class="login-input" placeholder="Senha" required>
+            <button type="submit" id="login-btn">Entrar</button>
+            <p id="login-error">Acesso negado. Verifique suas credenciais.</p>
+        </form>
+    </div>
+</div>
+
+<div class="container" id="main-panel">
     <div class="brand-header">
         <div class="logo-slot">
             <img src="assets/logo-mellupet.png" alt="Logo MelluPet" class="brand-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -735,7 +837,11 @@
             </div>
         </div>
     </div>
-    <h1>Painel MelluPet 🛁</h1>
+
+    <div class="panel-header-top">
+        <h1>Painel MelluPet 🛁</h1>
+        <button id="logout-btn" class="logout-btn">Sair</button>
+    </div>
 
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('agenda')">Agenda do Dia</button>
@@ -921,6 +1027,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
 
     const runtimeConfig = window.__MELLUPET_CONFIG || {};
     const firebaseConfig = runtimeConfig.firebase;
@@ -932,6 +1039,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     // --- State & Elements ---
     const agendaDateInput = document.getElementById('agendaDate');
@@ -966,6 +1074,59 @@
         "08:00", "09:00", "10:00", "11:00", "12:00",
         "13:00", "14:00", "15:00", "16:00", "17:00"
     ];
+
+    // --- Auth Logic ---
+    const loginScreen = document.getElementById('login-screen');
+    const mainPanel = document.getElementById('main-panel');
+    const loginForm = document.getElementById('admin-login-form');
+    const loginError = document.getElementById('login-error');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            loginScreen.style.display = 'none';
+            mainPanel.style.display = 'block';
+
+            // Only load data after auth is confirmed
+            loadAppointments();
+            loadGlobalSettings();
+            renderPriceTable();
+            renderTimeTable();
+            loadPriceSettings();
+            loadTimeSettings();
+        } else {
+            loginScreen.style.display = 'flex';
+            mainPanel.style.display = 'none';
+        }
+    });
+
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const password = document.getElementById('loginPassword').value;
+        const btn = document.getElementById('login-btn');
+
+        btn.disabled = true;
+        btn.textContent = 'Aguarde...';
+        loginError.style.display = 'none';
+
+        signInWithEmailAndPassword(auth, email, password)
+            .then(() => {
+                // Success is handled by onAuthStateChanged
+                btn.disabled = false;
+                btn.textContent = 'Entrar';
+            })
+            .catch((error) => {
+                console.error("Auth error:", error);
+                loginError.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Entrar';
+            });
+    });
+
+    logoutBtn.addEventListener('click', () => {
+        signOut(auth).catch(error => console.error("Logout error:", error));
+    });
 
     // --- Initialization ---
     // Set default date to today for both inputs
@@ -2066,12 +2227,13 @@
 
     // --- Execution ---
     generateSlotCheckboxes();
-    loadAppointments();
-    loadGlobalSettings();
-    renderPriceTable(); // Initial Render
-    renderTimeTable();  // Initial Render
-    loadPriceSettings();
-    loadTimeSettings();
+    // Replaced by Auth logic:
+    // loadAppointments();
+    // loadGlobalSettings();
+    // renderPriceTable(); // Initial Render
+    // renderTimeTable();  // Initial Render
+    // loadPriceSettings();
+    // loadTimeSettings();
 
     // --- Global Settings Logic ---
     async function loadGlobalSettings() {
