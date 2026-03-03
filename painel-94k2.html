@@ -849,7 +849,11 @@
             <input type="email" id="loginEmail" class="login-input" placeholder="E-mail" required>
             <input type="password" id="loginPassword" class="login-input" placeholder="Senha" required>
             <button type="submit" id="login-btn">Entrar</button>
+            <div style="text-align: center; margin-top: 1rem;">
+                <a href="#" id="forgot-password-link" style="color: #666; text-decoration: none; font-size: 0.9rem;">Esqueci minha senha</a>
+            </div>
             <p id="login-error">Acesso negado. Verifique suas credenciais.</p>
+            <p id="reset-msg" style="text-align: center; margin-top: 1rem; font-size: 0.9rem; display: none;"></p>
         </form>
     </div>
 </div>
@@ -1007,6 +1011,29 @@
             </div>
         </div>
 
+        <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
+            <div class="settings-header" onclick="toggleCard(this)">
+                <h2>Gerenciar Acessos</h2>
+                <span class="arrow-icon">▼</span>
+            </div>
+            <div class="settings-body">
+                <p style="color: #666; font-size: 0.9rem;">Lista de administradores que possuem acesso ao painel.</p>
+
+                <div id="admins-list-container" style="margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <p style="text-align: center; color: #666;">Carregando...</p>
+                </div>
+
+                <div style="border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem;">
+                    <h3 style="font-size: 1.1rem; color: var(--text); margin-bottom: 0.5rem;">Adicionar Novo Admin</h3>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <input type="email" id="newAdminEmail" placeholder="E-mail" style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                        <input type="password" id="newAdminPassword" placeholder="Senha (min 6 carac.)" style="flex: 1; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                        <button class="btn-save" style="margin-top: 0; width: auto; padding: 0.5rem 1rem;" onclick="createAdminFront(event)">Adicionar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="settings-card collapsed">
             <div class="settings-header" onclick="toggleCard(this)">
                 <h2>Gerenciar Disponibilidade (Por Dia)</h2>
@@ -1054,7 +1081,8 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-app.js";
     import { getFirestore, collection, onSnapshot, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, limit, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-auth.js";
+    import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-functions.js";
 
     const runtimeConfig = window.__MELLUPET_CONFIG || {};
     const firebaseConfig = runtimeConfig.firebase;
@@ -1067,6 +1095,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
+    const functions = getFunctions(app);
 
     // --- State & Elements ---
     const agendaDateInput = document.getElementById('agendaDate');
@@ -1121,6 +1150,7 @@
             renderTimeTable();
             loadPriceSettings();
             loadTimeSettings();
+            loadAdmins();
         } else {
             loginScreen.style.display = 'flex';
             mainPanel.style.display = 'none';
@@ -1136,6 +1166,7 @@
         btn.disabled = true;
         btn.textContent = 'Aguarde...';
         loginError.style.display = 'none';
+        document.getElementById('reset-msg').style.display = 'none';
 
         signInWithEmailAndPassword(auth, email, password)
             .then(() => {
@@ -1148,6 +1179,38 @@
                 loginError.style.display = 'block';
                 btn.disabled = false;
                 btn.textContent = 'Entrar';
+            });
+    });
+
+    const forgotPasswordLink = document.getElementById('forgot-password-link');
+    forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const emailInput = document.getElementById('loginEmail');
+        const email = emailInput.value.trim();
+        const resetMsg = document.getElementById('reset-msg');
+        loginError.style.display = 'none';
+
+        if (!email) {
+            resetMsg.style.display = 'block';
+            resetMsg.style.color = '#d84b4b'; // Soft red
+            resetMsg.textContent = 'Por favor, digite seu e-mail no campo acima para recuperar a senha.';
+            emailInput.focus();
+            return;
+        }
+
+        resetMsg.style.display = 'block';
+        resetMsg.style.color = '#666';
+        resetMsg.textContent = 'Enviando...';
+
+        sendPasswordResetEmail(auth, email)
+            .then(() => {
+                resetMsg.style.color = '#4CAF50'; // Green
+                resetMsg.textContent = 'Link de recuperação enviado! Verifique seu e-mail.';
+            })
+            .catch((error) => {
+                console.error("Reset error:", error);
+                resetMsg.style.color = '#d84b4b'; // Soft red
+                resetMsg.textContent = 'Erro ao enviar e-mail de recuperação. Verifique se o e-mail está correto.';
             });
     });
 
@@ -2473,6 +2536,106 @@
         } catch (e) {
             console.error("Error saving time settings:", e);
             alert("Erro ao salvar configurações de tempo.");
+        }
+    };
+
+    // --- Admin Management Logic (Cloud Functions) ---
+
+    async function loadAdmins() {
+        if (!auth.currentUser) return;
+        const container = document.getElementById('admins-list-container');
+        container.innerHTML = '<p style="text-align: center; color: #666;">Carregando administradores...</p>';
+
+        try {
+            const listAdmins = httpsCallable(functions, 'listAdmins');
+            const result = await listAdmins();
+            const admins = result.data.admins;
+
+            container.innerHTML = '';
+            if (!admins || admins.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">Nenhum administrador encontrado.</p>';
+                return;
+            }
+
+            admins.forEach(admin => {
+                const row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.justifyContent = 'space-between';
+                row.style.alignItems = 'center';
+                row.style.padding = '0.5rem';
+                row.style.border = '1px solid var(--border)';
+                row.style.borderRadius = '6px';
+                row.style.backgroundColor = '#fafafa';
+
+                // Prevent self-deletion
+                const isSelf = admin.uid === auth.currentUser.uid;
+                const btnHtml = isSelf
+                    ? `<span style="color: #9e9e9e; font-size: 0.8rem;">(Você)</span>`
+                    : `<button class="btn-cancelar" style="width: auto; margin: 0; padding: 0.25rem 0.5rem;" onclick="deleteAdminFront('${admin.uid}')">Remover</button>`;
+
+                row.innerHTML = `
+                    <span style="font-weight: 500;">${escapeHtml(admin.email)}</span>
+                    ${btnHtml}
+                `;
+                container.appendChild(row);
+            });
+        } catch (error) {
+            console.error("Error loading admins:", error);
+            container.innerHTML = '<p style="text-align: center; color: var(--danger);">Erro ao carregar administradores.</p>';
+        }
+    }
+
+    window.createAdminFront = async (event) => {
+        const emailInput = document.getElementById('newAdminEmail');
+        const passwordInput = document.getElementById('newAdminPassword');
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+            alert("Por favor, preencha o e-mail e a senha.");
+            return;
+        }
+        if (password.length < 6) {
+            alert("A senha deve ter pelo menos 6 caracteres.");
+            return;
+        }
+
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Adicionando...";
+
+        try {
+            const createAdmin = httpsCallable(functions, 'createAdmin');
+            await createAdmin({ email, password });
+
+            alert("Administrador adicionado com sucesso!");
+            emailInput.value = '';
+            passwordInput.value = '';
+            loadAdmins(); // Refresh the list
+        } catch (error) {
+            console.error("Error creating admin:", error);
+            alert("Erro ao criar administrador: " + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    };
+
+    window.deleteAdminFront = async (uid) => {
+        if (!confirm("Tem certeza que deseja remover este administrador? O acesso dele será revogado imediatamente.")) {
+            return;
+        }
+
+        try {
+            const deleteAdmin = httpsCallable(functions, 'deleteAdmin');
+            await deleteAdmin({ uid });
+
+            alert("Administrador removido com sucesso.");
+            loadAdmins(); // Refresh the list
+        } catch (error) {
+            console.error("Error deleting admin:", error);
+            alert("Erro ao remover administrador: " + error.message);
         }
     };
 
