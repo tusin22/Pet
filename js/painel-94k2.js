@@ -14,88 +14,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // --- Custom Modal System ---
-    window.showCustomAlert = function(message) {
-        return new Promise((resolve) => {
-            const overlay = document.getElementById('custom-modal-overlay');
-            if(!overlay) { alert(message); resolve(); return; }
-            const msgEl = document.getElementById('custom-modal-message');
-            const btnsEl = document.getElementById('custom-modal-buttons');
-
-            msgEl.textContent = message;
-            btnsEl.innerHTML = `<button class="custom-modal-btn btn-teal" id="custom-modal-ok">OK</button>`;
-
-            overlay.style.display = 'flex';
-
-            document.getElementById('custom-modal-ok').onclick = () => {
-                overlay.style.display = 'none';
-                resolve();
-            };
-        });
-    };
-
-    window.showCustomConfirm = function(message, isDestructive = false) {
-        return new Promise((resolve) => {
-            const overlay = document.getElementById('custom-modal-overlay');
-            if(!overlay) { resolve(confirm(message)); return; }
-            const msgEl = document.getElementById('custom-modal-message');
-            const btnsEl = document.getElementById('custom-modal-buttons');
-
-            msgEl.textContent = message;
-            const confirmClass = isDestructive ? 'btn-red' : 'btn-teal';
-
-            btnsEl.innerHTML = `
-                <button class="custom-modal-btn btn-gray" id="custom-modal-cancel">Voltar</button>
-                <button class="custom-modal-btn ${confirmClass}" id="custom-modal-confirm">Confirmar</button>
-            `;
-
-            overlay.style.display = 'flex';
-
-            document.getElementById('custom-modal-confirm').onclick = () => {
-                overlay.style.display = 'none';
-                resolve(true);
-            };
-
-            document.getElementById('custom-modal-cancel').onclick = () => {
-                overlay.style.display = 'none';
-                resolve(false);
-            };
-        });
-    };
-
-    window.showCustomPrompt = function(message) {
-        return new Promise((resolve) => {
-            const overlay = document.getElementById('custom-modal-overlay');
-            if(!overlay) { resolve(prompt(message)); return; }
-            const msgEl = document.getElementById('custom-modal-message');
-            const btnsEl = document.getElementById('custom-modal-buttons');
-
-            msgEl.textContent = message;
-
-            btnsEl.innerHTML = `
-                <input type="text" id="custom-modal-input" style="width: 100%; margin-bottom: 1rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
-                <button class="custom-modal-btn btn-gray" id="custom-modal-cancel" style="width: 48%;">Cancelar</button>
-                <button class="custom-modal-btn btn-red" id="custom-modal-confirm" style="width: 48%;">Confirmar</button>
-            `;
-
-            overlay.style.display = 'flex';
-
-            const inputEl = document.getElementById('custom-modal-input');
-            inputEl.focus();
-
-            document.getElementById('custom-modal-confirm').onclick = () => {
-                overlay.style.display = 'none';
-                resolve(inputEl.value);
-            };
-
-            document.getElementById('custom-modal-cancel').onclick = () => {
-                overlay.style.display = 'none';
-                resolve(null);
-            };
-        });
-    };
-
-
     // --- State & Elements ---
     const agendaDateInput = document.getElementById('agendaDate');
     const listContainer = document.getElementById('appointments-list');
@@ -899,13 +817,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             document.querySelectorAll('.new-appt-service-cb:checked').forEach(cb => selectedServices.push(cb.value));
 
             if (!ownerName || !petName || !petSize || !apptDate || !apptTime || selectedServices.length === 0) {
-                await showCustomAlert('Preencha todos os campos obrigatórios.');
+                alert('Preencha todos os campos obrigatórios.');
                 return;
             }
 
             const selectedOption = newApptTime.options[newApptTime.selectedIndex];
             if (selectedOption && selectedOption.getAttribute('data-is-full') === 'true') {
-                if (!await showCustomConfirm(`Atenção: O horário das ${apptTime} já está com a capacidade máxima ou o agendamento excede o final do dia. Deseja forçar o encaixe?`)) {
+                if (!confirm(`Atenção: O horário das ${apptTime} já está com a capacidade máxima ou o agendamento excede o final do dia. Deseja forçar o encaixe?`)) {
                     return;
                 }
             }
@@ -942,11 +860,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     createdAt: now
                 });
 
-                await showCustomAlert('Agendamento criado com sucesso!');
+                alert('Agendamento criado com sucesso!');
                 closeNewAppointmentModal();
             } catch (error) {
                 console.error("Error creating appointment:", error);
-                await showCustomAlert("Erro ao criar agendamento.");
+                alert("Erro ao criar agendamento.");
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
@@ -1281,7 +1199,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             }
         } catch (error) {
             console.error("Error loading config:", error);
-            await showCustomAlert("Erro ao carregar configurações.");
+            alert("Erro ao carregar configurações.");
         }
     };
 
@@ -1291,7 +1209,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         const dateObj = new Date(dateVal + 'T00:00:00');
         if (dateObj.getDay() === 0) {
-            await showCustomAlert("Não é possível alterar configurações de domingos.");
+            alert("Não é possível alterar configurações de domingos.");
             return;
         }
 
@@ -1323,7 +1241,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             }, 3000);
         } catch (error) {
             console.error("Error saving config:", error);
-            await showCustomAlert("Erro ao salvar configurações.");
+            alert("Erro ao salvar configurações.");
         }
     };
 
@@ -1336,10 +1254,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
              await updateDoc(doc(db, "appointments", id), {
                 observations: newText
             });
-            await showCustomAlert("Observação salva com sucesso!");
+            alert("Observação salva com sucesso!");
         } catch(e) {
             console.error("Error saving obs:", e);
-            await showCustomAlert("Erro ao salvar observação.");
+            alert("Erro ao salvar observação.");
         }
     };
 
@@ -1348,7 +1266,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         const newValue = parseFloat(input.value);
 
         if (isNaN(newValue) || newValue < 0) {
-            await showCustomAlert("Por favor, insira um valor válido.");
+            alert("Por favor, insira um valor válido.");
             return;
         }
 
@@ -1357,7 +1275,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const docSnap = await getDoc(docRef);
 
             if (!docSnap.exists()) {
-                await showCustomAlert("Agendamento não encontrado.");
+                alert("Agendamento não encontrado.");
                 return;
             }
 
@@ -1373,15 +1291,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 totalValue: newTotal
             });
 
-            await showCustomAlert("Valor do desembolo salvo e total atualizado!");
+            alert("Valor do desembolo salvo e total atualizado!");
         } catch (e) {
             console.error("Error saving desembolo:", e);
-            await showCustomAlert("Erro ao salvar valor do desembolo.");
+            alert("Erro ao salvar valor do desembolo.");
         }
     };
 
     window.updateStatus = async (id, newStatus, btnElement) => {
-        if (!await showCustomConfirm(`Tem certeza que deseja alterar o status para ${newStatus}?`)) {
+        if (!confirm(`Tem certeza que deseja alterar o status para ${newStatus}?`)) {
             return;
         }
 
@@ -1400,7 +1318,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             syncCardVisualStatus(btnElement, newStatus);
         } catch (e) {
             console.error("Error updating status: ", e);
-            await showCustomAlert("Erro ao atualizar status.");
+            alert("Erro ao atualizar status.");
         } finally {
             if (btnElement) {
                 btnElement.disabled = false;
@@ -1410,7 +1328,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     };
 
     window.cancelAppointment = async (id, btnElement) => {
-        if (await showCustomConfirm("Tem certeza que deseja CANCELAR este agendamento?")) {
+        if (confirm("Tem certeza que deseja CANCELAR este agendamento?")) {
             let originalText = '';
             if (btnElement) {
                 btnElement.disabled = true;
@@ -1425,7 +1343,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 closeModal(null, true);
             } catch (e) {
                 console.error("Error canceling document: ", e);
-                await showCustomAlert("Erro ao cancelar.");
+                alert("Erro ao cancelar.");
             } finally {
                 if (btnElement) {
                     btnElement.disabled = false;
@@ -1436,7 +1354,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     };
 
     window.confirmAndComplete = async (id, btnElement) => {
-        if (await showCustomConfirm("Tem certeza que deseja CONCLUIR este agendamento?")) {
+        if (confirm("Tem certeza que deseja CONCLUIR este agendamento?")) {
             let originalText = '';
             if (btnElement) {
                 btnElement.disabled = true;
@@ -1451,7 +1369,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 closeModal(null, true);
             } catch (e) {
                 console.error("Error completing document: ", e);
-                await showCustomAlert("Erro ao concluir.");
+                alert("Erro ao concluir.");
             } finally {
                 if (btnElement) {
                     btnElement.disabled = false;
@@ -1462,25 +1380,25 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     };
 
     window.deletePermanently = async (id) => {
-        if (await showCustomConfirm("Tem certeza que deseja APAGAR este agendamento permanentemente?")) {
+        if (confirm("Tem certeza que deseja APAGAR este agendamento permanentemente?")) {
             try {
                 await deleteDoc(doc(db, "appointments", id));
                 // If we are in history tab, the listener will update the list
             } catch (e) {
                 console.error("Error deleting document: ", e);
-                await showCustomAlert("Erro ao apagar agendamento.");
+                alert("Erro ao apagar agendamento.");
             }
         }
     };
 
     window.deleteAllHistory = async () => {
-        if (!await showCustomConfirm("ESTA AÇÃO É IRREVERSÍVEL. Deseja apagar todo o histórico?")) {
+        if (!confirm("ESTA AÇÃO É IRREVERSÍVEL. Deseja apagar todo o histórico?")) {
             return;
         }
 
-        const sure = await showCustomPrompt("Para confirmar, digite 'APAGAR' (sem aspas):");
+        const sure = prompt("Para confirmar, digite 'APAGAR' (sem aspas):");
         if (sure !== 'APAGAR') {
-            await showCustomAlert("Ação cancelada.");
+            alert("Ação cancelada.");
             return;
         }
 
@@ -1494,7 +1412,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             const snapshot = await getDocs(q);
             if (snapshot.empty) {
-                await showCustomAlert("Nenhum histórico para apagar.");
+                alert("Nenhum histórico para apagar.");
                 return;
             }
 
@@ -1504,10 +1422,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             });
 
             await batch.commit();
-            await showCustomAlert("Histórico apagado com sucesso!");
+            alert("Histórico apagado com sucesso!");
         } catch (e) {
             console.error("Error deleting history: ", e);
-            await showCustomAlert("Erro ao apagar histórico.");
+            alert("Erro ao apagar histórico.");
         }
     };
 
@@ -1748,7 +1666,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
 
         if (selectedServices.length === 0) {
-            await showCustomAlert("Selecione pelo menos um serviço.");
+            alert("Selecione pelo menos um serviço.");
             if (btnElement) {
                 btnElement.disabled = false;
                 btnElement.textContent = originalText;
@@ -1757,7 +1675,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
 
         if (!newDate || !newTime) {
-            await showCustomAlert("Selecione data e horário.");
+            alert("Selecione data e horário.");
             if (btnElement) {
                 btnElement.disabled = false;
                 btnElement.textContent = originalText;
@@ -1768,7 +1686,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         // Sunday Check
         const dateObj = new Date(newDate + 'T00:00:00');
         if (dateObj.getDay() === 0) {
-            await showCustomAlert("Não é possível agendar ou remarcar para Domingos.");
+            alert("Não é possível agendar ou remarcar para Domingos.");
             if (btnElement) {
                 btnElement.disabled = false;
                 btnElement.textContent = originalText;
@@ -1899,7 +1817,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             let isFull = false;
 
             if (startIdx === -1) {
-                await showCustomAlert("Horário inválido (fora do expediente).");
+                alert("Horário inválido (fora do expediente).");
                 if (btnElement) {
                     btnElement.disabled = false;
                     btnElement.textContent = originalText;
@@ -1916,7 +1834,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             }
 
             if (isFull) {
-                if (!await showCustomConfirm(`Atenção: A nova duração (${newDuration}min) requer ${newSlotsNeeded} horários, mas não há vagas suficientes. Deseja forçar o encaixe?`)) {
+                if (!confirm(`Atenção: A nova duração (${newDuration}min) requer ${newSlotsNeeded} horários, mas não há vagas suficientes. Deseja forçar o encaixe?`)) {
                     if (btnElement) {
                         btnElement.disabled = false;
                         btnElement.textContent = originalText;
@@ -1937,7 +1855,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 slotsNeeded: newSlotsNeeded
             });
 
-            await showCustomAlert("Agendamento alterado com sucesso!");
+            alert("Agendamento alterado com sucesso!");
             area.style.display = 'none';
             const toggleButton = document.querySelector(`#reschedule-area-${id}`)?.parentElement?.querySelector('.btn-reschedule');
             if (toggleButton) toggleButton.textContent = '🗓️ Remarcar';
@@ -1945,7 +1863,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         } catch(e) {
             console.error("Error rescheduling:", e);
-            await showCustomAlert("Erro ao salvar alterações.");
+            alert("Erro ao salvar alterações.");
         } finally {
             if (btnElement) {
                 btnElement.disabled = false;
@@ -2006,10 +1924,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         const capacity = parseInt(globalCapacityInput.value) || 1;
         try {
             await setDoc(doc(db, "configuracoes", "geral"), { capacityPerSlot: capacity }, { merge: true });
-            await showCustomAlert("Capacidade global salva com sucesso!");
+            alert("Capacidade global salva com sucesso!");
         } catch (e) {
             console.error("Error saving global settings:", e);
-            await showCustomAlert("Erro ao salvar capacidade global.");
+            alert("Erro ao salvar capacidade global.");
         }
     };
 
@@ -2060,10 +1978,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         try {
             await setDoc(doc(db, "configuracoes", "descricoes"), descriptions, { merge: true });
-            await showCustomAlert("Descrições salvas com sucesso!");
+            alert("Descrições salvas com sucesso!");
         } catch (e) {
             console.error("Error saving descriptions:", e);
-            await showCustomAlert("Erro ao salvar descrições.");
+            alert("Erro ao salvar descrições.");
         }
     };
 
@@ -2157,10 +2075,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         try {
             await setDoc(doc(db, "configuracoes", "precos"), prices);
-            await showCustomAlert("Tabela de preços salva com sucesso!");
+            alert("Tabela de preços salva com sucesso!");
         } catch (e) {
             console.error("Error saving prices:", e);
-            await showCustomAlert("Erro ao salvar preços.");
+            alert("Erro ao salvar preços.");
         }
     };
 
@@ -2235,9 +2153,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 services: services,
                 sizes: sizes
             });
-            await showCustomAlert("Configurações de tempo salvas com sucesso!");
+            alert("Configurações de tempo salvas com sucesso!");
         } catch (e) {
             console.error("Error saving time settings:", e);
-            await showCustomAlert("Erro ao salvar configurações de tempo.");
+            alert("Erro ao salvar configurações de tempo.");
         }
     };
