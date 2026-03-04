@@ -35,6 +35,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     const slotsCheckboxesContainer = document.getElementById('slots-checkboxes');
     const configMessage = document.getElementById('config-message');
     const globalCapacityInput = document.getElementById('globalCapacity');
+    const configDayCapacityInput = document.getElementById('configDayCapacity');
 
     // Week Grid Elements
     const weekGrid = document.getElementById('week-grid');
@@ -73,6 +74,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             // Only load data after auth is confirmed
             loadAppointments();
             loadGlobalSettings();
+            renderServiceDescriptions();
+            loadServiceDescriptions();
             renderPriceTable();
             renderTimeTable();
             loadPriceSettings();
@@ -670,6 +673,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const blockedSlots = new Set();
             if (dayConfigSnap.exists()) {
                 const dayData = dayConfigSnap.data();
+                if (dayData.capacityPerSlot) capacity = parseInt(dayData.capacityPerSlot); // Override global
                 if (dayData.blockedAllDay) blockedAllDay = true;
                 if (Array.isArray(dayData.blockedSlots)) dayData.blockedSlots.forEach(s => blockedSlots.add(s));
             }
@@ -1128,6 +1132,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         // Reset form
         blockAllDayCheckbox.checked = false;
+        configDayCapacityInput.value = '';
         document.querySelectorAll('input[name="blockedSlot"]').forEach(cb => cb.checked = false);
 
         try {
@@ -1136,6 +1141,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                if (data.capacityPerSlot) {
+                    configDayCapacityInput.value = data.capacityPerSlot;
+                }
                 if (data.blockedAllDay) {
                     blockAllDayCheckbox.checked = true;
                 }
@@ -1173,8 +1181,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             blockedSlots: blockedSlots
         };
 
+        const customCap = parseInt(configDayCapacityInput.value);
+        if (!isNaN(customCap) && customCap > 0) {
+            data.capacityPerSlot = customCap;
+        } else {
+            // we remove it if it was previously set and now is empty
+            data.capacityPerSlot = null;
+        }
+
         try {
-            await setDoc(doc(db, "configuracoes", dateVal), data);
+            await setDoc(doc(db, "configuracoes", dateVal), data, {merge: true}); // Use merge so we don't overwrite if other data exists implicitly
             configMessage.textContent = "Configurações salvas com sucesso! ✅";
             configMessage.style.display = 'block';
             setTimeout(() => {
@@ -1423,6 +1439,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const blockedSlots = new Set();
             if (dayConfigSnap.exists()) {
                 const dayData = dayConfigSnap.data();
+                if (dayData.capacityPerSlot) capacity = parseInt(dayData.capacityPerSlot); // Override global
                 if (dayData.blockedAllDay) blockedAllDay = true;
                 if (Array.isArray(dayData.blockedSlots)) dayData.blockedSlots.forEach(s => blockedSlots.add(s));
             }
@@ -1642,9 +1659,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         let newSlotsNeeded = 1;
 
         try {
-            const [priceSnap, timeSnap] = await Promise.all([
+            const [priceSnap, timeSnap, globalConfigSnap, dayConfigSnap] = await Promise.all([
                 getDoc(doc(db, "configuracoes", "precos")),
-                getDoc(doc(db, "configuracoes", "tempos"))
+                getDoc(doc(db, "configuracoes", "tempos")),
+                getDoc(doc(db, "configuracoes", "geral")),
+                getDoc(doc(db, "configuracoes", newDate))
             ]);
 
             const priceData = priceSnap.exists() ? priceSnap.data() : {};
@@ -1745,8 +1764,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             // Check requested slots
             const startIdx = allSlots.indexOf(newTime);
             let capacity = 1;
-            const capInput = document.getElementById('globalCapacity');
-            if (capInput && capInput.value) capacity = parseInt(capInput.value);
+            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                capacity = parseInt(globalConfigSnap.data().capacityPerSlot) || 1;
+            }
+            if (dayConfigSnap.exists() && dayConfigSnap.data().capacityPerSlot) {
+                capacity = parseInt(dayConfigSnap.data().capacityPerSlot);
+            }
 
             let isFull = false;
 
@@ -1837,8 +1860,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     // --- Execution ---
     generateSlotCheckboxes();
-    // --- Global Settings Logic ---
-    async function loadGlobalSettings() {
+    // --- Global Capacity Settings Logic ---
+    window.loadGlobalSettings = async () => {
+        if (!auth.currentUser) return;
         try {
             const docRef = doc(db, "configuracoes", "geral");
             const docSnap = await getDoc(docRef);
@@ -1851,22 +1875,71 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         } catch (e) {
             console.error("Error loading global settings:", e);
         }
-    }
+    };
 
     window.saveGlobalSettings = async () => {
-        const val = parseInt(globalCapacityInput.value);
-        if (val < 1) {
-            alert("A capacidade deve ser pelo menos 1.");
-            return;
-        }
-
+        if (!auth.currentUser) return;
+        const capacity = parseInt(globalCapacityInput.value) || 1;
         try {
-            const docRef = doc(db, "configuracoes", "geral");
-            await setDoc(docRef, { capacityPerSlot: val }, { merge: true });
+            await setDoc(doc(db, "configuracoes", "geral"), { capacityPerSlot: capacity }, { merge: true });
             alert("Capacidade global salva com sucesso!");
         } catch (e) {
             console.error("Error saving global settings:", e);
-            alert("Erro ao salvar configuração global.");
+            alert("Erro ao salvar capacidade global.");
+        }
+    };
+
+    // --- Service Descriptions Settings Logic ---
+    function renderServiceDescriptions() {
+        const container = document.getElementById('service-descriptions-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        servicesList.forEach((service, index) => {
+            const div = document.createElement('div');
+            div.className = 'form-group';
+            div.style.marginBottom = '1rem';
+            div.innerHTML = `
+                <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">${service}</label>
+                <textarea id="desc-${index}" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; resize: vertical;"></textarea>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    async function loadServiceDescriptions() {
+        try {
+            const docRef = doc(db, "configuracoes", "descricoes");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                servicesList.forEach((service, index) => {
+                    const textarea = document.getElementById(`desc-${index}`);
+                    if (textarea && data[service]) {
+                        textarea.value = data[service];
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Error loading descriptions:", e);
+        }
+    }
+
+    window.saveServiceDescriptions = async () => {
+        const descriptions = {};
+        servicesList.forEach((service, index) => {
+            const textarea = document.getElementById(`desc-${index}`);
+            if (textarea) {
+                descriptions[service] = textarea.value.trim();
+            }
+        });
+
+        try {
+            await setDoc(doc(db, "configuracoes", "descricoes"), descriptions, { merge: true });
+            alert("Descrições salvas com sucesso!");
+        } catch (e) {
+            console.error("Error saving descriptions:", e);
+            alert("Erro ao salvar descrições.");
         }
     };
 

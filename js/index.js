@@ -732,6 +732,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (configSnap.exists()) {
                 const configData = configSnap.data();
+                if (configData.capacityPerSlot) capacity = parseInt(configData.capacityPerSlot); // Override global
                 if (configData.blockedAllDay) blockedAllDay = true;
                 if (configData.blockedSlots && Array.isArray(configData.blockedSlots)) {
                     configData.blockedSlots.forEach(s => blockedSlots.add(s));
@@ -958,6 +959,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 const globalConfigSnap = await getDoc(globalConfigRef);
                 if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
                     capacity = globalConfigSnap.data().capacityPerSlot;
+                }
+
+                const dayConfigSnap = await getDoc(doc(db, "configuracoes", datePart));
+                if (dayConfigSnap.exists() && dayConfigSnap.data().capacityPerSlot) {
+                    capacity = parseInt(dayConfigSnap.data().capacityPerSlot);
                 }
 
                 // 2. Fetch Existing Appointments

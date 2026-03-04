@@ -126,9 +126,24 @@
                 <div class="form-group">
                     <label for="globalCapacity" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Capacidade Global de Atendimentos por Horário:</label>
                     <input type="number" id="globalCapacity" min="1" value="1" style="width: 100%; max-width: 150px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
-                    <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Define quantos pets podem ser agendados no mesmo horário.</p>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Define quantos pets podem ser agendados no mesmo horário por padrão.</p>
                     <button class="btn-save" style="margin-top: 0.5rem; width: auto;" onclick="saveGlobalSettings()">Salvar Capacidade Global</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Descrição dos Serviços -->
+        <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
+            <div class="settings-header" onclick="toggleCard(this)">
+                <h2>Descrição dos Serviços</h2>
+                <span class="arrow-icon">▼</span>
+            </div>
+            <div class="settings-body">
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Edite os textos que descrevem cada serviço.</p>
+                <div id="service-descriptions-container" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <!-- Gerado via JS -->
+                </div>
+                <button class="btn-save" style="margin-top: 1rem; width: auto;" onclick="saveServiceDescriptions()">Salvar Descrições</button>
             </div>
         </div>
 
@@ -201,6 +216,12 @@
                 </div>
 
                 <div id="config-options" style="display: none;">
+                    <div class="form-group">
+                        <label for="configDayCapacity" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Capacidade Exclusiva Deste Dia (por horário):</label>
+                        <input type="number" id="configDayCapacity" min="1" placeholder="Usar Padrão Global" style="width: 100%; max-width: 200px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+                        <p style="color: #666; font-size: 0.85rem; margin-top: 0.25rem;">Deixe vazio para usar a Capacidade Global.</p>
+                    </div>
+
                     <div class="form-group">
                         <label class="checkbox-item" style="border: none; padding: 0;">
                             <input type="checkbox" id="blockAllDay">
