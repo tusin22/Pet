@@ -5,9 +5,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     const firebaseConfig = runtimeConfig.firebase;
 
     if (!firebaseConfig) {
-        // Can't use custom alert yet, DOM might not be fully loaded or styles applied
-        alert('Configuração ausente: crie config/runtime-config.js a partir do arquivo de exemplo.');
-        throw new Error('Firebase config ausente em window.__MELLUPET_CONFIG.firebase');
+        throw new Error('Configuração ausente: crie config/runtime-config.js a partir do arquivo de exemplo.');
     }
 
     // Initialize Firebase

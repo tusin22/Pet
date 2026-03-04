@@ -4,6 +4,13 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 
 ## [Não lançado]
 
+### Corrigido
+- `css/index.css`: ajustado o modal customizado do site para comportamento real de pop-up (overlay fixo em tela cheia com fundo semitransparente, centralização via flex e z-index alto), eliminando deslocamento lateral e barra de rolagem indevida no mobile.
+- `js/index.js`: removido `alert()` nativo residual no fluxo de configuração ausente para manter padrão sem caixas nativas.
+- `js/painel-94k2.js` e `painel-94k2.html`: substituídas confirmações/alertas nativos por modal customizado em todas as ações do painel (incluindo cancelar agendamento), com overlay dedicado no HTML.
+- `css/painel-94k2.css`: reforçado comportamento dos overlays dos modais com `position: fixed`, `top/left: 0`, `width: 100vw`, `height: 100vh`, fundo escuro semitransparente e camada acima dos demais elementos.
+- `index.html` e `painel-94k2.html`: atualizado versionamento de assets (`?v=`) para forçar limpeza de cache de CSS/JS.
+
 ### Alterado
 - `README.md` e `ROADMAP.md`: adicionada seção **Próximos Passos / Sequência real de execução** com ordem prática de implementação (sprints e regra de transição entre etapas).
 - `README.md`: atualizado com diagnóstico do estado atual do MVP, lacunas principais e plano passo a passo de evolução do produto (UX, operação, backend PHP+MySQL e integrações).

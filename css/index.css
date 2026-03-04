@@ -256,6 +256,64 @@
             background-color: #1976D2;
         }
 
+        .custom-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            padding: 1rem;
+            box-sizing: border-box;
+        }
+
+        .custom-modal-content {
+            width: min(460px, 100%);
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.25);
+        }
+
+        .custom-modal-message {
+            margin: 0 0 1rem;
+            text-align: center;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .custom-modal-buttons {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+
+        .custom-modal-btn {
+            width: auto;
+            min-width: 110px;
+            margin: 0;
+            padding: 0.7rem 1rem;
+        }
+
+        .btn-teal {
+            background-color: var(--primary);
+            color: #fff;
+        }
+
+        .btn-gray {
+            background-color: #9e9e9e;
+            color: #fff;
+        }
+
+        .btn-red {
+            background-color: #d84b4b;
+            color: #fff;
+        }
+
         /* Time Slots Grid */
         /* Removed old #slots-container styles in favor of .slots-grid */
 
