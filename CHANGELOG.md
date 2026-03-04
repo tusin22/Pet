@@ -4,6 +4,12 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 
 ## [Não lançado]
 
+### Alterado
+- `README.md` e `ROADMAP.md`: adicionada seção **Próximos Passos / Sequência real de execução** com ordem prática de implementação (sprints e regra de transição entre etapas).
+- `README.md`: atualizado com diagnóstico do estado atual do MVP, lacunas principais e plano passo a passo de evolução do produto (UX, operação, backend PHP+MySQL e integrações).
+- `ROADMAP.md`: reestruturado com fases solicitadas (1–2 dias, 1 semana e evolução do produto), backlog por prioridade e arquitetura técnica alvo sem Node.js.
+- `AGENTS.md`: reforçadas diretrizes operacionais para manter aderência à stack da Hostinger e obrigatoriedade de sincronizar roadmap/documentação em pedidos de evolução.
+
 ### Corrigido
 - `js/painel-94k2.js`: modal da agenda semanal agora atualiza visualmente o status do card (badge e botão ativo) imediatamente após clique em Agendado/Fila/Banho/Secando/Pronto, sem precisar fechar e abrir o modal.
 - `js/painel-94k2.js`: corrigido o fluxo de remarcar na agenda semanal (abre/fecha corretamente) e o carregamento de horários agora segue o mesmo padrão do cliente (intervalo configurável, bloqueios, capacidade e slots consecutivos).
