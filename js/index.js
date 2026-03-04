@@ -52,6 +52,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     let pricingConfig = {}; // Global variable for pricing
     window.pricingConfig = pricingConfig;
 
+    let serviceDescriptions = {}; // Global variable for descriptions
+
     // Fetch pricing on load
     async function loadPricingConfig() {
         try {
@@ -72,7 +74,28 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     }
 
+    // Fetch descriptions on load
+    async function loadDescriptionsConfig() {
+        try {
+            const snap = await getDoc(doc(db, "configuracoes", "descricoes"));
+            if (snap.exists()) {
+                serviceDescriptions = snap.data();
+
+                // Migração de compatibilidade de nomes antigos:
+                if (serviceDescriptions["Tosa"] && !serviceDescriptions["Banho e Tosa"]) {
+                    serviceDescriptions["Banho e Tosa"] = serviceDescriptions["Tosa"];
+                }
+                if (serviceDescriptions["Banho + Tosa"] && !serviceDescriptions["Banho e Tosa"]) {
+                    serviceDescriptions["Banho e Tosa"] = serviceDescriptions["Banho + Tosa"];
+                }
+            }
+        } catch (e) {
+            console.error("Error loading descriptions config:", e);
+        }
+    }
+
     loadPricingConfig();
+    loadDescriptionsConfig();
     checkLogin();
 
     // Expose showScreen globally for inline onclicks
@@ -141,18 +164,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         "Carding",
         "Desembolo de nós"
     ];
-
-    const serviceDescriptions = {
-        "Banho Master": "Proporciona frescor, brilho e durabilidade por meio de um processo em três etapas: neutralização de odores, limpeza suave com hidratação e finalização que garante desembaraço, maciez e brilho.",
-        "Banho e Tosa": "Banho e tosa completos com produtos de qualidade, garantindo limpeza e bem-estar para o seu pet. Cuidado profissional com carinho, segurança e conforto em cada detalhe.",
-        "Hidratação Vanilla": "Um banho exclusivo com ativos especiais que proporcionam hidratação, brilho e maciez, realçando ainda mais a personalidade e sofisticação dos pets.",
-        "Hidratação Ouro 24K": "Um banho de puro luxo que hidrata e revitaliza a pelagem, proporcionando brilho intenso e toque sedoso, enriquecido com vitamina E e ômegas. Reduz o frizz, nutre e condiciona.",
-        "SPA Premium": "Tosa higiênica nas regiões genitais e coxins, limpeza dos olhos e ouvidos, promovendo mais limpeza, conforto e prevenção de irritações.",
-        "Corte das unhas": "Serviço de corte de unhas seguro e cuidadoso para garantir o conforto e bem-estar do seu pet, prevenindo desconfortos e problemas na locomoção.",
-        "Escov. dos dentes": "Escovação que ajuda a manter a higiene bucal, prevenindo o acúmulo de tártaro, o mau hálito e contribuindo para a saúde geral.",
-        "Carding": "Remoção de subpelos que elimina os pelos mortos, reduz a queda excessiva e ajuda a manter a pelagem mais saudável e ventilada.",
-        "Desembolo de nós": "Remoção de emaranhados com cuidado, evitando dor e preservando a saúde da pelagem (Texto do preço: 'Necessário avaliação')."
-    };
 
     // Generate Checkboxes
     const servicesContainer = document.getElementById('services-container');
