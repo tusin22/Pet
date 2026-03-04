@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MelluPet - Agendamentos e Status</title>
-    <link rel="stylesheet" href="css/index.css?v=3">
+    <link rel="stylesheet" href="css/index.css?v=4">
 </head>
 <body>
 
@@ -178,8 +178,18 @@
 
 </div>
 
-<script src="config/runtime-config.js?v=3" defer></script>
-<script type="module" src="js/index.js?v=3"></script>
+<!-- Custom Modal Overlay -->
+<div id="custom-modal-overlay" class="custom-modal-overlay" style="display: none;">
+    <div class="custom-modal-content">
+        <p id="custom-modal-message" class="custom-modal-message"></p>
+        <div id="custom-modal-buttons" class="custom-modal-buttons">
+            <!-- Buttons will be injected here via JS -->
+        </div>
+    </div>
+</div>
+
+<script src="config/runtime-config.js?v=4" defer></script>
+<script type="module" src="js/index.js?v=4"></script>
 
 
 </body>
