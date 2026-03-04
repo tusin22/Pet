@@ -17,6 +17,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     window.showScreen = (screenId) => {
         document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
+        if (screenId === 'schedule-screen') {
+            goToStep(1);
+            hideFeedback();
+        }
     };
 
     const loginPhoneInput = document.getElementById('loginPhone');
@@ -128,6 +132,106 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     }
 
+
+    // --- Stepper Logic ---
+    let currentStep = 1;
+    const totalSteps = 3;
+
+    function goToStep(step) {
+        currentStep = step;
+
+        // Update Sections
+        document.querySelectorAll('.form-section').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.section-${step}`).classList.add('active');
+
+        // Update Stepper Visuals
+        document.querySelectorAll('.step').forEach((el, index) => {
+            if (index + 1 <= step) {
+                el.classList.add('active');
+            } else {
+                el.classList.remove('active');
+            }
+        });
+
+        // Update Buttons
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        if (step === 1) {
+            btnPrev.style.display = 'none';
+            btnNext.style.display = 'block';
+            btnSubmit.style.display = 'none';
+        } else if (step === totalSteps) {
+            btnPrev.style.display = 'block';
+            btnNext.style.display = 'none';
+            btnSubmit.style.display = 'block';
+        } else {
+            btnPrev.style.display = 'block';
+            btnNext.style.display = 'block';
+            btnSubmit.style.display = 'none';
+        }
+    }
+
+    function validateStep1() {
+        const petName = document.getElementById('petName').value.trim();
+        const petSize = document.getElementById('petSize').value;
+        const checkedServices = document.querySelectorAll('input[name="serviceOption"]:checked').length;
+
+        if (!petName) {
+            showFeedback('Por favor, informe o nome do pet.', 'error');
+            return false;
+        }
+        if (!petSize) {
+            showFeedback('Por favor, selecione o porte do pet.', 'error');
+            return false;
+        }
+        if (checkedServices === 0) {
+            showFeedback('Por favor, selecione pelo menos um serviço.', 'error');
+            return false;
+        }
+        hideFeedback();
+        return true;
+    }
+
+    function validateStep2() {
+        const dateVal = document.getElementById('appointmentDate').value;
+        if (!dateVal) {
+            showFeedback('Por favor, escolha uma data.', 'error');
+            return false;
+        }
+        if (!selectedSlot) {
+            showFeedback('Por favor, selecione um horário disponível.', 'error');
+            return false;
+        }
+        hideFeedback();
+        return true;
+    }
+
+    document.getElementById('btn-next').addEventListener('click', () => {
+        if (currentStep === 1 && !validateStep1()) return;
+        if (currentStep === 2 && !validateStep2()) return;
+        if (currentStep < totalSteps) goToStep(currentStep + 1);
+    });
+
+    document.getElementById('btn-prev').addEventListener('click', () => {
+        if (currentStep > 1) goToStep(currentStep - 1);
+        hideFeedback();
+    });
+
+    // Feedback Messages
+    function showFeedback(message, type) {
+        const fb = document.getElementById('feedback-message');
+        fb.textContent = message;
+        fb.className = `feedback-message feedback-${type}`;
+        fb.style.display = 'block';
+    }
+
+    function hideFeedback() {
+        const fb = document.getElementById('feedback-message');
+        fb.style.display = 'none';
+    }
+
     // --- Event Listeners ---
 
     // 1. Login Form
@@ -208,7 +312,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         document.getElementById('petSize').value = '';
         document.getElementById('paymentMethod').value = '';
         document.getElementById('appointmentDate').value = '';
-        document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
+        document.getElementById('slots-container').innerHTML = '<p class="empty-slots-msg">Selecione o porte, os serviços e a data para ver os horários disponíveis.</p>';
         selectedSlot = null;
         document.querySelector('#schedule-form button[type="submit"]').textContent = 'Confirmar Agendamento';
         showScreen('schedule-screen');
@@ -467,14 +571,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
 
         // Reset date/slots because user needs to pick new ones
-        document.getElementById('slots-container').innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
+        document.getElementById('slots-container').innerHTML = '<p class="empty-slots-msg">Selecione o porte, os serviços e a data para ver os horários disponíveis.</p>';
         selectedSlot = null;
 
         // Trigger logic if fields are already filled (e.g. from existing data)
         checkAndGenerateSlots();
 
         // Update UI
-        const submitBtn = document.querySelector('#schedule-form button[type="submit"]');
+        const submitBtn = document.getElementById('btn-submit');
         submitBtn.textContent = 'Salvar Alteração';
 
         showScreen('schedule-screen');
@@ -581,13 +685,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         const priceDisplay = document.getElementById('price-display');
 
         if (count === 0) {
-            priceDisplay.textContent = 'Total Estimado: R$ 0,00';
+            if(priceDisplay) priceDisplay.textContent = 'Total Estimado: R$ 0,00';
             currentTotalValue = 0;
             currentTotalDuration = 0;
             return;
         }
 
-        priceDisplay.textContent = 'Calculando...';
+        if(priceDisplay) priceDisplay.textContent = 'Calculando...';
 
         try {
             // Fetch Times only (Prices are cached)
@@ -654,8 +758,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 totalDuration += parseInt(sizeExtras[size]);
             }
 
-            // Note: Size Extra Price is now built into per-service prices, so we don't add it globally anymore.
-
             currentTotalValue = totalPrice;
             currentTotalDuration = totalDuration;
 
@@ -663,11 +765,32 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             if (hasDesembolo) {
                 totalText += ' + Avaliação';
             }
-            priceDisplay.textContent = totalText;
+            if(priceDisplay) priceDisplay.textContent = totalText;
+
+            // Update the new fixed Order Summary
+            const summaryPrice = document.querySelector('#order-summary .summary-price');
+            const summaryServices = document.getElementById('summary-services');
+            const summaryTime = document.getElementById('summary-time');
+
+            if (summaryPrice) {
+                summaryPrice.textContent = hasDesembolo ? totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) + ' + Avaliação' : totalPrice.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            }
+            if (summaryServices) {
+                const serviceNames = Array.from(selectedCheckboxes).map(cb => cb.value).join(', ');
+                summaryServices.textContent = serviceNames || 'Nenhum serviço selecionado';
+            }
+            if (summaryTime) {
+                const hours = Math.floor(totalDuration / 60);
+                const mins = totalDuration % 60;
+                let timeText = '';
+                if (hours > 0) timeText += `${hours}h `;
+                if (mins > 0) timeText += `${mins}m`;
+                summaryTime.textContent = 'Duração: ' + (hasDesembolo ? 'Tempo indefinido' : (timeText || '--'));
+            }
 
         } catch (e) {
             console.error("Error calculating total:", e);
-            priceDisplay.textContent = 'Erro ao calcular';
+            if(priceDisplay) priceDisplay.textContent = 'Erro ao calcular';
         }
     }
 
@@ -677,7 +800,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         const size = petSizeInput.value;
 
         if (!dateVal || selectedCheckboxes.length === 0 || !size) {
-            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviços, Porte e Data para ver os horários.</p>';
+            slotsContainer.innerHTML = '<p class="empty-slots-msg">Selecione o porte, os serviços e a data para ver os horários disponíveis.</p>';
             return;
         }
 
@@ -913,6 +1036,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     scheduleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
+        if (!validateStep1() || !validateStep2()) {
+            return;
+        }
+
         const submitBtn = scheduleForm.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
 
@@ -933,16 +1060,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const ownerName = localStorage.getItem('petshop_owner_name');
 
             if (selectedServices.length === 0) {
-                alert("Selecione pelo menos um serviço.");
+                showFeedback("Selecione pelo menos um serviço.", "error");
                 return;
             }
             if (!selectedSlot) {
-                alert("Por favor, selecione um horário.");
+                showFeedback("Por favor, selecione um horário.", "error");
                 return;
             }
             if (!ownerPhone) {
-                alert("Erro: Telefone não encontrado. Faça login novamente.");
-                showScreen('login-screen');
+                showFeedback("Erro: Telefone não encontrado. Faça login novamente.", "error");
+                setTimeout(() => showScreen('login-screen'), 2000);
                 return;
             }
 
@@ -1041,8 +1168,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 }
 
                 if (isBlocked) {
-                    alert("Ops! Esse horário acabou de ser reservado ou não há vagas suficientes para a duração do serviço.");
-                    // Refresh slots
+                    showFeedback("Ops! Esse horário acabou de ser reservado ou não há vagas suficientes. Por favor, escolha outro.", "error");
+                    // Voltar para etapa 2 para escolher outro horario
+                    goToStep(2);
                     checkAndGenerateSlots();
                     return;
                 }
@@ -1065,7 +1193,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 if (editingAppointmentId) {
                      const docRef = doc(db, "appointments", editingAppointmentId);
                      await updateDoc(docRef, dataToSave);
-                     alert('Agendamento alterado com sucesso!');
+                     alert('Agendamento alterado com sucesso!'); // native alert is fine for success redirect
                 } else {
                     dataToSave.ownerPhone = ownerPhone;
                     dataToSave.ownerName = ownerName || "Nome não informado";
@@ -1084,10 +1212,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 document.getElementById('observations').value = '';
                 document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.checked = false);
                 document.getElementById('price-display').textContent = 'Total Estimado: R$ 0,00';
+                const summaryPrice = document.querySelector('#order-summary .summary-price');
+                if (summaryPrice) summaryPrice.textContent = 'R$ 0,00';
+                const summaryServices = document.getElementById('summary-services');
+                if (summaryServices) summaryServices.textContent = 'Nenhum serviço selecionado';
+                const summaryTime = document.getElementById('summary-time');
+                if (summaryTime) summaryTime.textContent = 'Duração: --';
+
                 document.getElementById('petSize').value = '';
                 document.getElementById('paymentMethod').value = '';
                 appointmentDateInput.value = '';
-                slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione uma data para ver os horários.</p>';
+                slotsContainer.innerHTML = '<p class="empty-slots-msg">Selecione o porte, os serviços e a data para ver os horários disponíveis.</p>';
                 selectedSlot = null;
 
                 // Redirect

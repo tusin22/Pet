@@ -24,12 +24,12 @@ Este roadmap prioriza a evolução do MVP atual para uma operação profissional
 **Objetivo:** melhorar conversão e entendimento do usuário nos primeiros segundos.
 
 ### Entregas
-1. Revisão da proposta de valor acima da dobra (o que é, para quem, benefício direto).
-2. Ajuste de microcopy do fluxo de agendamento (texto simples e objetivo).
-3. Barra de progresso no fluxo: serviço → porte → data → horário → confirmação.
-4. Resumo do agendamento sempre visível: serviços, preço estimado, duração estimada.
-5. Estados visuais mais claros (carregando, erro, sucesso, horário indisponível).
-6. CTA principal consistente em toda navegação (desktop e mobile).
+- Revisão da proposta de valor acima da dobra (o que é, para quem, benefício direto).
+- Ajuste de microcopy do fluxo de agendamento (texto simples e objetivo).
+- Barra de progresso no fluxo: serviço → porte → data → horário → confirmação.
+- Resumo do agendamento sempre visível: serviços, preço estimado, duração estimada.
+- Estados visuais mais claros (carregando, erro, sucesso, horário indisponível).
+- CTA principal consistente em toda navegação (desktop e mobile).
 
 ### Critérios de aceite
 - Usuário novo entende como agendar em até 10 segundos.
@@ -79,11 +79,11 @@ Este roadmap prioriza a evolução do MVP atual para uma operação profissional
 
 ## Sequência real de execução (ordem recomendada)
 
-1. **Sprint A (Dia 1–2):** Fase 1 completa (clareza + UX + feedback visual).
-2. **Sprint B (Semana 1):** Fase 2 completa (cadastros, capacidade, reagendamento/cancelamento, painel diário).
-3. **Sprint C (Semana 2+):** Backend PHP + MySQL em paralelo (sem big-bang).
-4. **Sprint D:** Automações (WhatsApp, lembretes, alertas internos).
-5. **Sprint E:** Evoluções P1/P2 (CRM, fidelização, multi-funcionário avançado, SaaS).
+- **Sprint A (Dia 1–2):** Fase 1 completa (clareza + UX + feedback visual).
+- **Sprint B (Semana 1):** Fase 2 completa (cadastros, capacidade, reagendamento/cancelamento, painel diário).
+- **Sprint C (Semana 2+):** Backend PHP + MySQL em paralelo (sem big-bang).
+- **Sprint D:** Automações (WhatsApp, lembretes, alertas internos).
+- **Sprint E:** Evoluções P1/P2 (CRM, fidelização, multi-funcionário avançado, SaaS).
 
 ### Regra de transição entre sprints
 - Não iniciar sprint seguinte sem checklist da sprint atual validado em produção/sandbox da Hostinger.
