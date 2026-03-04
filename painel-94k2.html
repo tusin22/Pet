@@ -116,41 +116,19 @@
 
     <!-- Configurações Tab -->
     <div id="tab-config" class="tab-content">
-        <!-- Capacidade Diária -->
+        <!-- Global Settings -->
         <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
             <div class="settings-header" onclick="toggleCard(this)">
-                <h2>Capacidade por Dia da Semana</h2>
+                <h2>Capacidade de Atendimento</h2>
                 <span class="arrow-icon">▼</span>
             </div>
             <div class="settings-body">
-                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Defina o limite de atendimentos por horário dependendo do dia da semana.</p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-                    <div class="form-group">
-                        <label for="capacitySeg" style="font-weight: bold;">Segunda-feira</label>
-                        <input type="number" id="capacitySeg" min="1" value="1" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
-                    </div>
-                    <div class="form-group">
-                        <label for="capacityTer" style="font-weight: bold;">Terça-feira</label>
-                        <input type="number" id="capacityTer" min="1" value="1" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
-                    </div>
-                    <div class="form-group">
-                        <label for="capacityQua" style="font-weight: bold;">Quarta-feira</label>
-                        <input type="number" id="capacityQua" min="1" value="1" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
-                    </div>
-                    <div class="form-group">
-                        <label for="capacityQui" style="font-weight: bold;">Quinta-feira</label>
-                        <input type="number" id="capacityQui" min="1" value="1" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
-                    </div>
-                    <div class="form-group">
-                        <label for="capacitySex" style="font-weight: bold;">Sexta-feira</label>
-                        <input type="number" id="capacitySex" min="1" value="1" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
-                    </div>
-                    <div class="form-group">
-                        <label for="capacitySab" style="font-weight: bold;">Sábado</label>
-                        <input type="number" id="capacitySab" min="1" value="1" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
-                    </div>
+                <div class="form-group">
+                    <label for="globalCapacity" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Capacidade Global de Atendimentos por Horário:</label>
+                    <input type="number" id="globalCapacity" min="1" value="1" style="width: 100%; max-width: 150px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Define quantos pets podem ser agendados no mesmo horário por padrão.</p>
+                    <button class="btn-save" style="margin-top: 0.5rem; width: auto;" onclick="saveGlobalSettings()">Salvar Capacidade Global</button>
                 </div>
-                <button class="btn-save" style="margin-top: 1rem; width: auto;" onclick="saveDailyCapacitySettings()">Salvar Capacidades</button>
             </div>
         </div>
 
@@ -238,6 +216,12 @@
                 </div>
 
                 <div id="config-options" style="display: none;">
+                    <div class="form-group">
+                        <label for="configDayCapacity" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Capacidade Exclusiva Deste Dia (por horário):</label>
+                        <input type="number" id="configDayCapacity" min="1" placeholder="Usar Padrão Global" style="width: 100%; max-width: 200px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 1rem;">
+                        <p style="color: #666; font-size: 0.85rem; margin-top: 0.25rem;">Deixe vazio para usar a Capacidade Global.</p>
+                    </div>
+
                     <div class="form-group">
                         <label class="checkbox-item" style="border: none; padding: 0;">
                             <input type="checkbox" id="blockAllDay">

@@ -705,19 +705,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             let agendaInterval = 30; // Default
 
             // Fetch global settings and times in parallel
-            const [capacityConfigSnap, timeConfigSnap] = await Promise.all([
-                getDoc(doc(db, "configuracoes", "capacidade_dias")),
+            const [globalConfigSnap, timeConfigSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "geral")),
                 getDoc(doc(db, "configuracoes", "tempos"))
             ]);
 
-            const targetDate = new Date(dateString + 'T00:00:00');
-            const dayOfWeek = targetDate.getDay();
-
-            if (capacityConfigSnap.exists()) {
-                const capData = capacityConfigSnap.data();
-                if (capData[dayOfWeek] !== undefined) {
-                    capacity = parseInt(capData[dayOfWeek]) || 1;
-                }
+            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                capacity = globalConfigSnap.data().capacityPerSlot;
             }
 
             if (timeConfigSnap.exists()) {
@@ -738,6 +732,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (configSnap.exists()) {
                 const configData = configSnap.data();
+                if (configData.capacityPerSlot) capacity = parseInt(configData.capacityPerSlot); // Override global
                 if (configData.blockedAllDay) blockedAllDay = true;
                 if (configData.blockedSlots && Array.isArray(configData.blockedSlots)) {
                     configData.blockedSlots.forEach(s => blockedSlots.add(s));
@@ -960,17 +955,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
                 // 1. Fetch Config
                 let capacity = 1;
-                const capacityConfigRef = doc(db, "configuracoes", "capacidade_dias");
-                const capacityConfigSnap = await getDoc(capacityConfigRef);
+                const globalConfigRef = doc(db, "configuracoes", "geral");
+                const globalConfigSnap = await getDoc(globalConfigRef);
+                if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                    capacity = globalConfigSnap.data().capacityPerSlot;
+                }
 
-                const reschDateObj = new Date(datePart + 'T00:00:00');
-                const reschDayOfWeek = reschDateObj.getDay();
-
-                if (capacityConfigSnap.exists()) {
-                    const capData = capacityConfigSnap.data();
-                    if (capData[reschDayOfWeek] !== undefined) {
-                        capacity = parseInt(capData[reschDayOfWeek]) || 1;
-                    }
+                const dayConfigSnap = await getDoc(doc(db, "configuracoes", datePart));
+                if (dayConfigSnap.exists() && dayConfigSnap.data().capacityPerSlot) {
+                    capacity = parseInt(dayConfigSnap.data().capacityPerSlot);
                 }
 
                 // 2. Fetch Existing Appointments

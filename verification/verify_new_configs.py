@@ -6,7 +6,6 @@ def test_configs():
         page = browser.new_page()
 
         # Route to bypass everything and just load the static file directly with modified JS
-        # Let's just use evaluate to set the HTML we want to test to see if it renders correctly.
         page.goto("http://localhost:8080/painel-94k2.html")
         page.wait_for_timeout(500)
 
@@ -22,8 +21,10 @@ def test_configs():
         # Expand cards
         page.evaluate("document.querySelectorAll('.settings-card').forEach(card => card.classList.remove('collapsed'));")
 
-        # We also need to call renderServiceDescriptions from our module, or just use JS to populate it to see it.
         page.evaluate("""
+            document.getElementById('configDate').value = '2023-10-25';
+            document.getElementById('config-options').style.display = 'block';
+
             const servicesList = [
                 "Banho Master", "Banho e Tosa", "Hidratação Vanilla", "Hidratação Ouro 24K",
                 "SPA Premium", "Corte das unhas", "Escov. dos dentes", "Carding", "Desembolo de nós"

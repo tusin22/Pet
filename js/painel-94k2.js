@@ -34,6 +34,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     const blockAllDayCheckbox = document.getElementById('blockAllDay');
     const slotsCheckboxesContainer = document.getElementById('slots-checkboxes');
     const configMessage = document.getElementById('config-message');
+    const globalCapacityInput = document.getElementById('globalCapacity');
+    const configDayCapacityInput = document.getElementById('configDayCapacity');
 
     // Week Grid Elements
     const weekGrid = document.getElementById('week-grid');
@@ -71,7 +73,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             // Only load data after auth is confirmed
             loadAppointments();
-            loadDailyCapacitySettings();
+            loadGlobalSettings();
             renderServiceDescriptions();
             loadServiceDescriptions();
             renderPriceTable();
@@ -608,8 +610,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
 
         try {
-            const [capacitySnap, timeConfigSnap, priceConfigSnap, dayConfigSnap] = await Promise.all([
-                getDoc(doc(db, "configuracoes", "capacidade_dias")),
+            const [globalConfigSnap, timeConfigSnap, priceConfigSnap, dayConfigSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "geral")),
                 getDoc(doc(db, "configuracoes", "tempos")),
                 getDoc(doc(db, "configuracoes", "precos")),
                 getDoc(doc(db, "configuracoes", dateVal))
@@ -647,12 +649,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             // --- Slots Calculation ---
             let capacity = 1;
-            const dayOfWeek = dateObj.getDay(); // 1 = Seg, 6 = Sab
-            if (capacitySnap.exists()) {
-                const capData = capacitySnap.data();
-                if (capData[dayOfWeek] !== undefined) {
-                    capacity = parseInt(capData[dayOfWeek]) || 1;
-                }
+            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                capacity = parseInt(globalConfigSnap.data().capacityPerSlot) || 1;
             }
 
             const timeData = timeConfigSnap.exists() ? timeConfigSnap.data() : {};
@@ -675,6 +673,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const blockedSlots = new Set();
             if (dayConfigSnap.exists()) {
                 const dayData = dayConfigSnap.data();
+                if (dayData.capacityPerSlot) capacity = parseInt(dayData.capacityPerSlot); // Override global
                 if (dayData.blockedAllDay) blockedAllDay = true;
                 if (Array.isArray(dayData.blockedSlots)) dayData.blockedSlots.forEach(s => blockedSlots.add(s));
             }
@@ -1133,6 +1132,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         // Reset form
         blockAllDayCheckbox.checked = false;
+        configDayCapacityInput.value = '';
         document.querySelectorAll('input[name="blockedSlot"]').forEach(cb => cb.checked = false);
 
         try {
@@ -1141,6 +1141,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                if (data.capacityPerSlot) {
+                    configDayCapacityInput.value = data.capacityPerSlot;
+                }
                 if (data.blockedAllDay) {
                     blockAllDayCheckbox.checked = true;
                 }
@@ -1178,8 +1181,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             blockedSlots: blockedSlots
         };
 
+        const customCap = parseInt(configDayCapacityInput.value);
+        if (!isNaN(customCap) && customCap > 0) {
+            data.capacityPerSlot = customCap;
+        } else {
+            // we remove it if it was previously set and now is empty
+            data.capacityPerSlot = null;
+        }
+
         try {
-            await setDoc(doc(db, "configuracoes", dateVal), data);
+            await setDoc(doc(db, "configuracoes", dateVal), data, {merge: true}); // Use merge so we don't overwrite if other data exists implicitly
             configMessage.textContent = "Configurações salvas com sucesso! ✅";
             configMessage.style.display = 'block';
             setTimeout(() => {
@@ -1399,19 +1410,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
 
         try {
-            const [capacitySnap, timeConfigSnap, dayConfigSnap] = await Promise.all([
-                getDoc(doc(db, "configuracoes", "capacidade_dias")),
+            const [globalConfigSnap, timeConfigSnap, dayConfigSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "geral")),
                 getDoc(doc(db, "configuracoes", "tempos")),
                 getDoc(doc(db, "configuracoes", dateVal))
             ]);
 
             let capacity = 1;
-            const dayOfWeek = dateObj.getDay();
-            if (capacitySnap.exists()) {
-                const capData = capacitySnap.data();
-                if (capData[dayOfWeek] !== undefined) {
-                    capacity = parseInt(capData[dayOfWeek]) || 1;
-                }
+            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                capacity = parseInt(globalConfigSnap.data().capacityPerSlot) || 1;
             }
 
             const timeData = timeConfigSnap.exists() ? timeConfigSnap.data() : {};
@@ -1432,6 +1439,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const blockedSlots = new Set();
             if (dayConfigSnap.exists()) {
                 const dayData = dayConfigSnap.data();
+                if (dayData.capacityPerSlot) capacity = parseInt(dayData.capacityPerSlot); // Override global
                 if (dayData.blockedAllDay) blockedAllDay = true;
                 if (Array.isArray(dayData.blockedSlots)) dayData.blockedSlots.forEach(s => blockedSlots.add(s));
             }
@@ -1651,10 +1659,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         let newSlotsNeeded = 1;
 
         try {
-            const [priceSnap, timeSnap, capacitySnap] = await Promise.all([
+            const [priceSnap, timeSnap, globalConfigSnap, dayConfigSnap] = await Promise.all([
                 getDoc(doc(db, "configuracoes", "precos")),
                 getDoc(doc(db, "configuracoes", "tempos")),
-                getDoc(doc(db, "configuracoes", "capacidade_dias"))
+                getDoc(doc(db, "configuracoes", "geral")),
+                getDoc(doc(db, "configuracoes", newDate))
             ]);
 
             const priceData = priceSnap.exists() ? priceSnap.data() : {};
@@ -1755,13 +1764,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             // Check requested slots
             const startIdx = allSlots.indexOf(newTime);
             let capacity = 1;
-            const reschDateObj = new Date(newDate + 'T00:00:00');
-            const reschDayOfWeek = reschDateObj.getDay();
-            if (capacitySnap.exists()) {
-                const capData = capacitySnap.data();
-                if (capData[reschDayOfWeek] !== undefined) {
-                    capacity = parseInt(capData[reschDayOfWeek]) || 1;
-                }
+            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
+                capacity = parseInt(globalConfigSnap.data().capacityPerSlot) || 1;
+            }
+            if (dayConfigSnap.exists() && dayConfigSnap.data().capacityPerSlot) {
+                capacity = parseInt(dayConfigSnap.data().capacityPerSlot);
             }
 
             let isFull = false;
@@ -1853,48 +1860,32 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     // --- Execution ---
     generateSlotCheckboxes();
-    // --- Daily Capacity Settings Logic ---
-    async function loadDailyCapacitySettings() {
+    // --- Global Capacity Settings Logic ---
+    window.loadGlobalSettings = async () => {
+        if (!auth.currentUser) return;
         try {
-            const docRef = doc(db, "configuracoes", "capacidade_dias");
+            const docRef = doc(db, "configuracoes", "geral");
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                document.getElementById('capacitySeg').value = data[1] || 1;
-                document.getElementById('capacityTer').value = data[2] || 1;
-                document.getElementById('capacityQua').value = data[3] || 1;
-                document.getElementById('capacityQui').value = data[4] || 1;
-                document.getElementById('capacitySex').value = data[5] || 1;
-                document.getElementById('capacitySab').value = data[6] || 1;
+                if (data.capacityPerSlot) {
+                    globalCapacityInput.value = data.capacityPerSlot;
+                }
             }
         } catch (e) {
-            console.error("Error loading daily capacity settings:", e);
+            console.error("Error loading global settings:", e);
         }
-    }
+    };
 
-    window.saveDailyCapacitySettings = async () => {
-        const capacities = {
-            1: parseInt(document.getElementById('capacitySeg').value) || 1,
-            2: parseInt(document.getElementById('capacityTer').value) || 1,
-            3: parseInt(document.getElementById('capacityQua').value) || 1,
-            4: parseInt(document.getElementById('capacityQui').value) || 1,
-            5: parseInt(document.getElementById('capacitySex').value) || 1,
-            6: parseInt(document.getElementById('capacitySab').value) || 1
-        };
-
-        for (const [day, val] of Object.entries(capacities)) {
-            if (val < 1) {
-                alert("A capacidade deve ser pelo menos 1 para todos os dias.");
-                return;
-            }
-        }
-
+    window.saveGlobalSettings = async () => {
+        if (!auth.currentUser) return;
+        const capacity = parseInt(globalCapacityInput.value) || 1;
         try {
-            await setDoc(doc(db, "configuracoes", "capacidade_dias"), capacities, { merge: true });
-            alert("Capacidade por dia salva com sucesso!");
+            await setDoc(doc(db, "configuracoes", "geral"), { capacityPerSlot: capacity }, { merge: true });
+            alert("Capacidade global salva com sucesso!");
         } catch (e) {
-            console.error("Error saving daily capacity settings:", e);
-            alert("Erro ao salvar configurações de capacidade.");
+            console.error("Error saving global settings:", e);
+            alert("Erro ao salvar capacidade global.");
         }
     };
 
