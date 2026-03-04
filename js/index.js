@@ -705,13 +705,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             let agendaInterval = 30; // Default
 
             // Fetch global settings and times in parallel
-            const [globalConfigSnap, timeConfigSnap] = await Promise.all([
-                getDoc(doc(db, "configuracoes", "geral")),
+            const [capacityConfigSnap, timeConfigSnap] = await Promise.all([
+                getDoc(doc(db, "configuracoes", "capacidade_dias")),
                 getDoc(doc(db, "configuracoes", "tempos"))
             ]);
 
-            if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
-                capacity = globalConfigSnap.data().capacityPerSlot;
+            const targetDate = new Date(dateString + 'T00:00:00');
+            const dayOfWeek = targetDate.getDay();
+
+            if (capacityConfigSnap.exists()) {
+                const capData = capacityConfigSnap.data();
+                if (capData[dayOfWeek] !== undefined) {
+                    capacity = parseInt(capData[dayOfWeek]) || 1;
+                }
             }
 
             if (timeConfigSnap.exists()) {
@@ -954,10 +960,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
                 // 1. Fetch Config
                 let capacity = 1;
-                const globalConfigRef = doc(db, "configuracoes", "geral");
-                const globalConfigSnap = await getDoc(globalConfigRef);
-                if (globalConfigSnap.exists() && globalConfigSnap.data().capacityPerSlot) {
-                    capacity = globalConfigSnap.data().capacityPerSlot;
+                const capacityConfigRef = doc(db, "configuracoes", "capacidade_dias");
+                const capacityConfigSnap = await getDoc(capacityConfigRef);
+
+                const reschDateObj = new Date(datePart + 'T00:00:00');
+                const reschDayOfWeek = reschDateObj.getDay();
+
+                if (capacityConfigSnap.exists()) {
+                    const capData = capacityConfigSnap.data();
+                    if (capData[reschDayOfWeek] !== undefined) {
+                        capacity = parseInt(capData[reschDayOfWeek]) || 1;
+                    }
                 }
 
                 // 2. Fetch Existing Appointments
