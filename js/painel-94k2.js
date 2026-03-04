@@ -491,8 +491,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     cell.classList.add('cell-blocked');
                     cell.textContent = 'Bloqueado';
                 } else {
-                    // Check Appointments (Find all for this slot)
-                    const apps = appointments.filter(a => a.appointmentTime === fullIso);
+                    // Check Appointments (Find all for this slot by matching the date and hour part)
+                    const slotHour = time.split(':')[0]; // e.g., "08"
+                    const apps = appointments.filter(a => {
+                        if (!a.appointmentTime) return false;
+                        const aDateStr = a.appointmentTime.split('T')[0];
+                        const aTimeStr = a.appointmentTime.split('T')[1];
+                        if (aDateStr !== dateStr) return false;
+                        if (!aTimeStr) return false;
+                        const aHour = aTimeStr.split(':')[0];
+                        return aHour === slotHour;
+                    });
 
                     if (apps.length > 0) {
                         const firstApp = apps[0];
@@ -518,9 +527,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                             badgeHtml = `<div class="count-badge">+${apps.length - 1}</div>`;
                         }
 
+                        // Add time prefix for fractional times (e.g. 17:30)
+                        let timeLabelHtml = '';
+                        if (firstApp.appointmentTime) {
+                            const tStr = firstApp.appointmentTime.split('T')[1];
+                            if (tStr && !tStr.endsWith(':00')) {
+                                timeLabelHtml = `<span style="font-size:0.7rem; font-weight:bold; color:#fff; background:rgba(0,0,0,0.3); padding:1px 3px; border-radius:3px; margin-right:3px;">${tStr}</span>`;
+                            }
+                        }
+
                         cell.innerHTML = `
                             ${badgeHtml}
-                            <div class="pet-mini">${icon} ${escapeHtml(firstApp.petName)}</div>
+                            <div class="pet-mini">${timeLabelHtml}${icon} ${escapeHtml(firstApp.petName)}</div>
                             <div class="owner-mini">${escapeHtml(firstApp.ownerName || '')}</div>
                         `;
 
@@ -1018,7 +1036,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const currentIsoDate = data.appointmentTime.split('T')[0];
             const currentTime = data.appointmentTime.split('T')[1];
 
-            const options = timeSlots.map(t => `<option value="${t}" ${t === currentTime ? 'selected' : ''}>${t}</option>`).join('');
+            // Render just the current time initially to avoid confusion before dynamic slots are loaded
+            const options = `<option value="${currentTime}" selected>${currentTime}</option>`;
 
             buttonsHtml = `
             <div class="actions">
@@ -1096,18 +1115,41 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     // --- Settings Logic ---
 
-    // Generate Checkboxes once
-    function generateSlotCheckboxes() {
-        slotsCheckboxesContainer.innerHTML = '';
-        timeSlots.forEach(slot => {
-            const label = document.createElement('label');
-            label.className = 'checkbox-item';
-            label.innerHTML = `
-                <input type="checkbox" name="blockedSlot" value="${slot}">
-                <span>${slot}</span>
-            `;
-            slotsCheckboxesContainer.appendChild(label);
-        });
+    async function generateDynamicSlotCheckboxes() {
+        slotsCheckboxesContainer.innerHTML = 'Carregando horários...';
+
+        try {
+            const timeConfigSnap = await getDoc(doc(db, "configuracoes", "tempos"));
+            let agendaInterval = 30;
+            if (timeConfigSnap.exists() && timeConfigSnap.data().agendaInterval) {
+                agendaInterval = parseInt(timeConfigSnap.data().agendaInterval);
+            }
+
+            const allSlots = [];
+            let t = new Date(`2000-01-01T08:00:00`);
+            const endT = new Date(`2000-01-01T18:00:00`);
+
+            while (t < endT) {
+                const h = t.getHours().toString().padStart(2, '0');
+                const m = t.getMinutes().toString().padStart(2, '0');
+                allSlots.push(`${h}:${m}`);
+                t.setMinutes(t.getMinutes() + agendaInterval);
+            }
+
+            slotsCheckboxesContainer.innerHTML = '';
+            allSlots.forEach(slot => {
+                const label = document.createElement('label');
+                label.className = 'checkbox-item';
+                label.innerHTML = `
+                    <input type="checkbox" name="blockedSlot" value="${slot}">
+                    <span>${slot}</span>
+                `;
+                slotsCheckboxesContainer.appendChild(label);
+            });
+        } catch (error) {
+            console.error("Error generating slot checkboxes:", error);
+            slotsCheckboxesContainer.innerHTML = 'Erro ao carregar horários.';
+        }
     }
 
     window.loadConfiguration = async () => {
@@ -1133,7 +1175,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         // Reset form
         blockAllDayCheckbox.checked = false;
         configDayCapacityInput.value = '';
-        document.querySelectorAll('input[name="blockedSlot"]').forEach(cb => cb.checked = false);
+
+        await generateDynamicSlotCheckboxes();
 
         try {
             const docRef = doc(db, "configuracoes", dateVal);
@@ -1859,7 +1902,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     });
 
     // --- Execution ---
-    generateSlotCheckboxes();
     // --- Global Capacity Settings Logic ---
     window.loadGlobalSettings = async () => {
         if (!auth.currentUser) return;
