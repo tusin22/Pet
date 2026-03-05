@@ -5,6 +5,8 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Corrigido
+- `css/painel-94k2.css`: reorganizado o cabeçalho no mobile para impedir sobreposição do botão `Sair` com o título e padronizar a grade dos botões/abas do painel.
+- `painel-94k2.html`: atualizado versionamento do CSS do painel (`?v=7`) para forçar recarga do ajuste de layout em celular.
 - `js/index.js`: removido o tratamento de "Tempo indefinido" para `Desembolo de nós` no resumo do agendamento; a duração agora segue a mesma lógica dos demais serviços.
 - `js/index.js`: removido o sufixo `- Necessário avaliação` no rótulo do serviço `Desembolo de nós` na tela do cliente.
 - `index.html`: atualizado versionamento de assets (`?v=`) para forçar recarga das alterações no cliente.
