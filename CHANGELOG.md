@@ -5,6 +5,8 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Corrigido
+- `js/painel-94k2.js`: corrigida a leitura/salvamento das durações na aba de configurações para aceitar valor `0` sem cair em fallback por verificação falsy (`||`/`if (!valor)`), preservando o zero na ida e na volta do Firestore.
+- `painel-94k2.html`: atualizado versionamento de assets (`?v=`) para forçar recarga do painel com a correção de duração.
 - `css/index.css`: ajustado o modal customizado do site para comportamento real de pop-up (overlay fixo em tela cheia com fundo semitransparente, centralização via flex e z-index alto), eliminando deslocamento lateral e barra de rolagem indevida no mobile.
 - `js/index.js`: removido `alert()` nativo residual no fluxo de configuração ausente para manter padrão sem caixas nativas.
 - `js/painel-94k2.js` e `painel-94k2.html`: substituídas confirmações/alertas nativos por modal customizado em todas as ações do painel (incluindo cancelar agendamento), com overlay dedicado no HTML.
