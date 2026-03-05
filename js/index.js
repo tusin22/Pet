@@ -117,6 +117,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 if (pricingConfig["Banho + Tosa"] && !pricingConfig["Banho e Tosa"]) {
                     pricingConfig["Banho e Tosa"] = pricingConfig["Banho + Tosa"];
                 }
+                if (pricingConfig["SPA Premium"] && !pricingConfig["Tosa Higiênica"]) {
+                    pricingConfig["Tosa Higiênica"] = pricingConfig["SPA Premium"];
+                }
                 window.pricingConfig = pricingConfig;
             }
         } catch (e) {
@@ -137,6 +140,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 }
                 if (serviceDescriptions["Banho + Tosa"] && !serviceDescriptions["Banho e Tosa"]) {
                     serviceDescriptions["Banho e Tosa"] = serviceDescriptions["Banho + Tosa"];
+                }
+                if (serviceDescriptions["SPA Premium"] && !serviceDescriptions["Tosa Higiênica"]) {
+                    serviceDescriptions["Tosa Higiênica"] = serviceDescriptions["SPA Premium"];
                 }
             }
         } catch (e) {
@@ -308,7 +314,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         "Banho e Tosa",
         "Hidratação Vanilla",
         "Hidratação Ouro 24K",
-        "SPA Premium",
+        "Tosa Higiênica",
         "Corte das unhas",
         "Escov. dos dentes",
         "Carding",
@@ -754,6 +760,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             }
             if (serviceTimes["Banho + Tosa"] && !serviceTimes["Banho e Tosa"]) {
                 serviceTimes["Banho e Tosa"] = serviceTimes["Banho + Tosa"];
+            }
+            if (serviceTimes["SPA Premium"] && !serviceTimes["Tosa Higiênica"]) {
+                serviceTimes["Tosa Higiênica"] = serviceTimes["SPA Premium"];
             }
             const sizeExtras = (timeData.sizes || {});
 
