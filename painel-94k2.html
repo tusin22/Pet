@@ -64,6 +64,7 @@
         <button class="tab-btn active" onclick="switchTab('agenda')">Agenda do Dia</button>
         <button class="tab-btn" onclick="switchTab('semana')">Agenda da Semana</button>
         <button class="tab-btn" onclick="switchTab('historico')">Histórico</button>
+        <button class="tab-btn" onclick="switchTab('pacote')">Cadastrar Pacote</button>
         <button class="tab-btn" onclick="switchTab('config')">Configurações</button>
     </div>
 
@@ -123,6 +124,74 @@
         </div>
     </div>
 
+    <!-- Cadastrar Pacote Tab -->
+    <div id="tab-pacote" class="tab-content">
+        <div class="settings-card">
+            <div class="settings-header" style="cursor: default;">
+                <h2>Novo Pacote</h2>
+            </div>
+            <div class="settings-body">
+                <form id="cadastrar-pacote-form">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="pacotePhone" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Telefone do Cliente (Obrigatório)</label>
+                            <input type="tel" id="pacotePhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="pacotePetName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Pet (Obrigatório para Plano 1)</label>
+                            <input type="text" id="pacotePetName" required placeholder="Ex: Rex" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="pacotePetSize" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Porte do Pet (Obrigatório)</label>
+                            <select id="pacotePetSize" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                                <option value="" disabled selected>Selecione o porte...</option>
+                                <option value="P">Pequeno (P)</option>
+                                <option value="M">Médio (M)</option>
+                                <option value="G">Grande (G)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="pacotePlano" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Plano Vendido (Obrigatório)</label>
+                            <select id="pacotePlano" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                                <option value="" disabled selected>Selecione o plano...</option>
+                                <option value="plano1">Pacote 4 Banhos</option>
+                                <option value="plano2">Pacote 12 Banhos</option>
+                                <option value="plano3">Pacote 24 Banhos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--primary);">Serviços Extras (Opcional)</h3>
+                    <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Adicione a quantidade de serviços avulsos que farão parte do pacote.</p>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" id="pacoteExtraUnhas" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                            <label for="pacoteExtraUnhas">Corte das unhas</label>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" id="pacoteExtraDentes" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                            <label for="pacoteExtraDentes">Escov. dos dentes</label>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" id="pacoteExtraCarding" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                            <label for="pacoteExtraCarding">Carding</label>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" id="pacoteExtraDesembolo" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                            <label for="pacoteExtraDesembolo">Desembolo de nós</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-submit-pacote" class="btn-save" style="margin-top: 0; width: auto;">Cadastrar Pacote</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Configurações Tab -->
     <div id="tab-config" class="tab-content">
         <!-- Global Settings -->
@@ -169,6 +238,21 @@
                 </div>
 
                 <button class="btn-save" onclick="savePriceSettings()">Salvar Preços</button>
+            </div>
+        </div>
+
+        <!-- Preços dos Pacotes -->
+        <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
+            <div class="settings-header" onclick="toggleCard(this)">
+                <h2>Preços dos Pacotes</h2>
+                <span class="arrow-icon">▼</span>
+            </div>
+            <div class="settings-body">
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Defina o preço de venda de cada plano de pacote por porte.</p>
+                <div id="packages-price-container">
+                    <!-- Gerado via JS -->
+                </div>
+                <button class="btn-save" onclick="savePackagesPriceSettings()">Salvar Preços dos Pacotes</button>
             </div>
         </div>
 

@@ -13,6 +13,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    const planosNames = {
+        plano1: 'Pacote 4 Banhos',
+        plano2: 'Pacote 12 Banhos',
+        plano3: 'Pacote 24 Banhos'
+    };
+
     function showCustomAlert(message) {
         return new Promise((resolve) => {
             const overlay = document.getElementById('custom-modal-overlay');
@@ -70,6 +76,22 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     // --- State & Elements ---
     const agendaDateInput = document.getElementById('agendaDate');
+    const pacotePhoneInput = document.getElementById('pacotePhone');
+
+    // Apply Phone Mask Logic for Pacote Form
+    const applyPhoneMask = (value) => {
+        value = value.replace(/\D/g, '');
+        if (value.length > 11) value = value.slice(0, 11);
+        if (value.length > 2) value = `(${value.substring(0, 2)}) ${value.substring(2)}`;
+        if (value.length > 9) value = `${value.substring(0, 10)}-${value.substring(10)}`;
+        return value;
+    };
+
+    if (pacotePhoneInput) {
+        pacotePhoneInput.addEventListener('input', (e) => {
+            e.target.value = applyPhoneMask(e.target.value);
+        });
+    }
     const listContainer = document.getElementById('appointments-list');
     const historyContainer = document.getElementById('history-list');
 
@@ -131,8 +153,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             renderServiceDescriptions();
             loadServiceDescriptions();
             renderPriceTable();
+            renderPackagesPriceTable();
             renderTimeTable();
             loadPriceSettings();
+            loadPackagesPriceSettings();
             loadTimeSettings();
         } else {
             loginScreen.style.display = 'flex';
@@ -262,7 +286,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         // Update button state
         const buttons = document.querySelectorAll('.tab-btn');
-        // 0: Agenda, 1: Week, 2: History, 3: Config
+        // 0: Agenda, 1: Week, 2: History, 3: Pacote, 4: Config
         if (tabName === 'agenda') {
             buttons[0].classList.add('active');
             if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
@@ -281,8 +305,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
             loadHistory();
         }
-        else if (tabName === 'config') {
+        else if (tabName === 'pacote') {
             buttons[3].classList.add('active');
+            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+            if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
+            if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
+            // loadPacoteForm() could be added later if needed
+        }
+        else if (tabName === 'config') {
+            buttons[4].classList.add('active');
             if (unsubscribe) { unsubscribe(); unsubscribe = null; }
             if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
             if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
@@ -1981,6 +2012,142 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         loadConfiguration();
     });
 
+    // --- Cadastrar Pacote Logic ---
+    const cadastrarPacoteForm = document.getElementById('cadastrar-pacote-form');
+
+    if (cadastrarPacoteForm) {
+        cadastrarPacoteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const phoneRaw = document.getElementById('pacotePhone').value.replace(/\D/g, '');
+            if (phoneRaw.length !== 11) {
+                await showCustomAlert("Número de telefone incompleto ou inválido.");
+                return;
+            }
+
+            const petName = document.getElementById('pacotePetName').value.trim();
+            const petSize = document.getElementById('pacotePetSize').value;
+            const plano = document.getElementById('pacotePlano').value;
+
+            const extraUnhas = parseInt(document.getElementById('pacoteExtraUnhas').value) || 0;
+            const extraDentes = parseInt(document.getElementById('pacoteExtraDentes').value) || 0;
+            const extraCarding = parseInt(document.getElementById('pacoteExtraCarding').value) || 0;
+            const extraDesembolo = parseInt(document.getElementById('pacoteExtraDesembolo').value) || 0;
+
+            if (plano === 'plano1' && !petName) {
+                await showCustomAlert("Para o Plano 1 (4 Banhos), o Nome do Pet é obrigatório.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit-pacote');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Processando...';
+
+            try {
+                let banhos = 0;
+                let higienicas = 0;
+                let hidratacoes = 0;
+                let isShared = false;
+                let walletType = 'individual'; // default
+                let walletId = '';
+
+                if (plano === 'plano1') {
+                    banhos = 4;
+                    higienicas = 1;
+                    hidratacoes = 1;
+                    walletType = 'individual';
+                    // unique key: phone_petname (normalized)
+                    const normalizedPetName = petName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    walletId = `${phoneRaw}_${normalizedPetName}`;
+                } else if (plano === 'plano2') {
+                    banhos = 12;
+                    higienicas = 3;
+                    hidratacoes = 3;
+                    walletType = 'shared';
+                    isShared = true;
+                    // unique key: phone_size
+                    walletId = `${phoneRaw}_${petSize}`;
+                } else if (plano === 'plano3') {
+                    banhos = 24;
+                    higienicas = 5;
+                    hidratacoes = 5;
+                    walletType = 'shared';
+                    isShared = true;
+                    // unique key: phone_size
+                    walletId = `${phoneRaw}_${petSize}`;
+                }
+
+                const docRef = doc(db, "carteiras", walletId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    // Update existing wallet (Sum balances)
+                    const data = docSnap.data();
+                    const currentBanhos = (data.saldo && data.saldo["Banho Master"]) || 0;
+                    const currentHigienicas = (data.saldo && data.saldo["Tosa Higiênica"]) || 0;
+                    const currentHidratacoes = (data.saldo && data.saldo["Hidratação Vanilla"]) || 0;
+                    const currentUnhas = (data.saldo && data.saldo["Corte das unhas"]) || 0;
+                    const currentDentes = (data.saldo && data.saldo["Escov. dos dentes"]) || 0;
+                    const currentCarding = (data.saldo && data.saldo["Carding"]) || 0;
+                    const currentDesembolo = (data.saldo && data.saldo["Desembolo de nós"]) || 0;
+
+                    const newSaldo = {
+                        "Banho Master": currentBanhos + banhos,
+                        "Tosa Higiênica": currentHigienicas + higienicas,
+                        "Hidratação Vanilla": currentHidratacoes + hidratacoes,
+                        "Corte das unhas": currentUnhas + extraUnhas,
+                        "Escov. dos dentes": currentDentes + extraDentes,
+                        "Carding": currentCarding + extraCarding,
+                        "Desembolo de nós": currentDesembolo + extraDesembolo
+                    };
+
+                    await updateDoc(docRef, {
+                        saldo: newSaldo,
+                        lastUpdated: toLocalISOString(new Date())
+                    });
+
+                } else {
+                    // Create new wallet
+                    const newSaldo = {
+                        "Banho Master": banhos,
+                        "Tosa Higiênica": higienicas,
+                        "Hidratação Vanilla": hidratacoes,
+                        "Corte das unhas": extraUnhas,
+                        "Escov. dos dentes": extraDentes,
+                        "Carding": extraCarding,
+                        "Desembolo de nós": extraDesembolo
+                    };
+
+                    const walletData = {
+                        phone: phoneRaw,
+                        petSize: petSize,
+                        type: walletType,
+                        saldo: newSaldo,
+                        createdAt: toLocalISOString(new Date()),
+                        lastUpdated: toLocalISOString(new Date())
+                    };
+
+                    if (walletType === 'individual') {
+                        walletData.petName = petName;
+                    }
+
+                    await setDoc(docRef, walletData);
+                }
+
+                await showCustomAlert("Pacote cadastrado e créditos atualizados com sucesso!");
+                cadastrarPacoteForm.reset();
+
+            } catch (error) {
+                console.error("Erro ao cadastrar pacote:", error);
+                await showCustomAlert("Erro ao cadastrar pacote.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
+    }
+
     // --- Execution ---
     // --- Global Capacity Settings Logic ---
     window.loadGlobalSettings = async () => {
@@ -2165,6 +2332,87 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         } catch (e) {
             console.error("Error saving prices:", e);
             await showCustomAlert("Erro ao salvar preços.");
+        }
+    };
+
+    // --- Packages Pricing Logic ---
+
+    function renderPackagesPriceTable() {
+        const container = document.getElementById('packages-price-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        Object.keys(planosNames).forEach((planoKey) => {
+            const planoName = planosNames[planoKey];
+
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.gap = '0.5rem';
+            row.style.alignItems = 'flex-end';
+            row.style.marginBottom = '1.5rem';
+            row.style.flexWrap = 'wrap';
+            row.style.borderBottom = '1px solid #eee';
+            row.style.paddingBottom = '1rem';
+
+            row.innerHTML = `
+                <div style="flex: 100%; margin-bottom: 0.5rem;">
+                    <label style="font-weight: bold; font-size: 1.1rem; color: var(--primary);">${planoName}</label>
+                </div>
+                <div style="flex: 1; min-width: 90px;">
+                    <label style="font-size: 0.8rem; color: #666;">Preço P (R$)</label>
+                    <input type="number" id="pkg-price-p-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+                <div style="flex: 1; min-width: 90px;">
+                    <label style="font-size: 0.8rem; color: #666;">Preço M (R$)</label>
+                    <input type="number" id="pkg-price-m-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+                <div style="flex: 1; min-width: 90px;">
+                    <label style="font-size: 0.8rem; color: #666;">Preço G (R$)</label>
+                    <input type="number" id="pkg-price-g-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                </div>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    async function loadPackagesPriceSettings() {
+        try {
+            const docRef = doc(db, "configuracoes", "pacotes_precos");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                Object.keys(planosNames).forEach((planoKey) => {
+                    if (data[planoKey]) {
+                        const elP = document.getElementById(`pkg-price-p-${planoKey}`);
+                        const elM = document.getElementById(`pkg-price-m-${planoKey}`);
+                        const elG = document.getElementById(`pkg-price-g-${planoKey}`);
+                        if (elP) elP.value = data[planoKey].priceP || 0;
+                        if (elM) elM.value = data[planoKey].priceM || 0;
+                        if (elG) elG.value = data[planoKey].priceG || 0;
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Error loading packages prices:", e);
+        }
+    }
+
+    window.savePackagesPriceSettings = async () => {
+        const prices = {};
+
+        Object.keys(planosNames).forEach((planoKey) => {
+            const p = parseFloat(document.getElementById(`pkg-price-p-${planoKey}`).value) || 0;
+            const m = parseFloat(document.getElementById(`pkg-price-m-${planoKey}`).value) || 0;
+            const g = parseFloat(document.getElementById(`pkg-price-g-${planoKey}`).value) || 0;
+            prices[planoKey] = { priceP: p, priceM: m, priceG: g };
+        });
+
+        try {
+            await setDoc(doc(db, "configuracoes", "pacotes_precos"), prices);
+            await showCustomAlert("Preços dos pacotes salvos com sucesso!");
+        } catch (e) {
+            console.error("Error saving packages prices:", e);
+            await showCustomAlert("Erro ao salvar preços dos pacotes.");
         }
     };
 
