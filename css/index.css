@@ -35,6 +35,14 @@
             font-size: 1.5rem;
         }
 
+        h2.screen-subtitle {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-top: -1rem;
+            margin-bottom: 1.2rem;
+            color: #666;
+        }
+
         .form-group {
             margin-bottom: 1rem;
         }
