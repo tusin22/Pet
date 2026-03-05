@@ -675,15 +675,27 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     // Listen to all checkboxes
     document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
-        cb.addEventListener('change', (e) => {
-            // Lógica de exclusão mútua
-            if (e.target.checked) {
-                if (e.target.value === 'Banho e Tosa') {
-                    const masterCb = document.querySelector('input[name="serviceOption"][value="Banho Master"]');
-                    if (masterCb) masterCb.checked = false;
-                } else if (e.target.value === 'Banho Master') {
-                    const tosaCb = document.querySelector('input[name="serviceOption"][value="Banho e Tosa"]');
-                    if (tosaCb) tosaCb.checked = false;
+        cb.addEventListener('change', async (e) => {
+            const isChecked = e.target.checked;
+            const value = e.target.value;
+
+            // Lógica de exclusão mútua e bloqueio de remoção
+            if (value === 'Banho Master' || value === 'Banho e Tosa') {
+                const masterCb = document.querySelector('input[name="serviceOption"][value="Banho Master"]');
+                const tosaCb = document.querySelector('input[name="serviceOption"][value="Banho e Tosa"]');
+
+                if (isChecked) {
+                    if (value === 'Banho e Tosa' && masterCb) masterCb.checked = false;
+                    else if (value === 'Banho Master' && tosaCb) tosaCb.checked = false;
+                } else {
+                    // Impede de desmarcar se o outro não estiver marcado
+                    const otherChecked = (value === 'Banho Master') ? (tosaCb && tosaCb.checked) : (masterCb && masterCb.checked);
+                    if (!otherChecked) {
+                        e.preventDefault();
+                        e.target.checked = true; // Força a manter marcado
+                        await showCustomAlert('Todo agendamento precisa incluir pelo menos um banho base.');
+                        return; // Evita atualizar a UI desnecessariamente
+                    }
                 }
             }
 
