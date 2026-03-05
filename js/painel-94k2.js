@@ -1051,10 +1051,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         let desemboloInputHtml = '';
         if (hasDesembolo && !isHistory) {
+             const displayValorDesembolo = valorDesembolo > 0 ? valorDesembolo : 15;
              desemboloInputHtml = `
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
                     <label style="font-size: 0.9rem; color: #333;">Valor Desembolo:</label>
-                    <input type="number" id="desembolo-${id}" value="${valorDesembolo > 0 ? valorDesembolo : ''}" step="0.01" placeholder="0,00" style="width: 80px; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <input type="number" id="desembolo-${id}" value="${displayValorDesembolo}" step="0.01" placeholder="0,00" style="width: 80px; padding: 0.25rem; border: 1px solid #ddd; border-radius: 4px;">
                     <button onclick="saveDesembolo('${id}')" style="background-color: var(--primary); color: white; border: none; border-radius: 4px; padding: 0.25rem 0.5rem; cursor: pointer;" title="Salvar Valor">💾</button>
                 </div>
              `;
@@ -1343,7 +1344,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             const data = docSnap.data();
             const currentTotal = parseFloat(data.totalValue) || 0;
-            const currentDesembolo = parseFloat(data.valorDesembolo) || 0;
+            // Se o valor do desembolo salvo no banco for 0 ou falsy, o valor atual que estava compondo o total era 15.
+            const currentDesembolo = (parseFloat(data.valorDesembolo) || 0) > 0 ? parseFloat(data.valorDesembolo) : 15;
 
             // Calculate new total: remove old desembolo, add new desembolo
             const newTotal = (currentTotal - currentDesembolo) + newValue;
