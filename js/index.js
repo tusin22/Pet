@@ -704,7 +704,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             if (!label) return;
 
             if (service === 'Desembolo de nós') {
-                label.innerHTML = 'Desembolo de nós - Necessário avaliação';
+                label.innerHTML = 'Desembolo de nós';
                 return;
             }
 
@@ -801,11 +801,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 }
 
                 // Time Logic (Sum of all services)
-                if (serviceTimes[serviceName]) {
-                    totalDuration += parseInt(serviceTimes[serviceName]);
-                } else {
-                    totalDuration += 30; // Default fallback
-                }
+                const serviceDuration = serviceTimes[serviceName] ?? 30;
+                const parsedServiceDuration = Number.parseInt(serviceDuration, 10);
+                totalDuration += Number.isNaN(parsedServiceDuration) ? 30 : parsedServiceDuration;
             });
 
             // Add Size Extra Time
@@ -840,7 +838,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 let timeText = '';
                 if (hours > 0) timeText += `${hours}h `;
                 if (mins > 0) timeText += `${mins}m`;
-                summaryTime.textContent = 'Duração: ' + (hasDesembolo ? 'Tempo indefinido' : (timeText || '--'));
+                summaryTime.textContent = 'Duração: ' + (timeText || '--');
             }
 
         } catch (e) {
