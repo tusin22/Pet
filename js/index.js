@@ -71,7 +71,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     const loginPhoneInput = document.getElementById('loginPhone');
     const loginNameInput = document.getElementById('loginName');
-    const pacoteCheckPhoneInput = document.getElementById('pacoteCheckPhone');
 
     // Phone Mask Logic
     const applyPhoneMask = (value) => {
@@ -85,12 +84,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     loginPhoneInput.addEventListener('input', (e) => {
         e.target.value = applyPhoneMask(e.target.value);
     });
-
-    if (pacoteCheckPhoneInput) {
-        pacoteCheckPhoneInput.addEventListener('input', (e) => {
-            e.target.value = applyPhoneMask(e.target.value);
-        });
-    }
 
     // Check Login State
     const checkLogin = () => {
@@ -294,30 +287,25 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     // --- Event Listeners ---
 
     // --- Pacote Logic ---
-    const pacoteCheckForm = document.getElementById('pacote-check-form');
-    if (pacoteCheckForm) {
-        pacoteCheckForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const rawPhone = pacoteCheckPhoneInput.value.replace(/\D/g, '');
-
-            if (rawPhone.length !== 11) {
-                await showCustomAlert("Número incompleto. Por favor, insira o DDD e o número com o 9 na frente.");
+    const btnMeusPacotes = document.getElementById('btn-meus-pacotes');
+    if (btnMeusPacotes) {
+        btnMeusPacotes.addEventListener('click', async () => {
+            const rawPhone = localStorage.getItem('petshop_owner_phone');
+            if (!rawPhone || rawPhone.length !== 11) {
+                await showCustomAlert("Telefone não encontrado. Por favor, faça login novamente.");
                 return;
             }
 
-            const btn = document.getElementById('pacote-check-btn');
-            const originalText = btn ? btn.textContent : 'Buscar Pacotes';
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = 'Buscando...';
-            }
+            const originalText = btnMeusPacotes.textContent;
+            btnMeusPacotes.disabled = true;
+            btnMeusPacotes.textContent = 'Buscando...';
 
             try {
                 const q = query(collection(db, "carteiras"), where("phone", "==", rawPhone));
                 const querySnapshot = await getDocs(q);
 
                 if (querySnapshot.empty) {
-                    await showCustomAlert("Nenhum pacote ativo encontrado para este número.");
+                    showScreen('pacote-empty-screen');
                 } else {
                     const walletsContainer = document.getElementById('wallets-container');
                     walletsContainer.innerHTML = '';
@@ -351,7 +339,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                             let saldoHtml = '<ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: #555;">';
                             for (const [srvName, qty] of Object.entries(data.saldo)) {
                                 if (qty > 0) {
-                                    saldoHtml += `<li>${escapeHtml(srvName)}: <strong>${qty}</strong> disponíveis</li>`;
+                                    saldoHtml += `<li>${escapeHtml(srvName)}: <strong>${qty}</strong></li>`;
                                 }
                             }
                             saldoHtml += '</ul>';
@@ -359,14 +347,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                             card.innerHTML = `
                                 <div style="margin-bottom: 0.5rem; color: var(--primary); font-size: 1.1rem;">${headerText}</div>
                                 ${saldoHtml}
-                                <button type="button" class="btn-teal" style="margin-top: 1rem; padding: 0.5rem;" onclick="showCustomAlert('Funcionalidade de agendamento por pacote em desenvolvimento. Fase 1 concluída com sucesso.')">Avançar com este pacote</button>
+                                <button type="button" class="btn-teal" style="margin-top: 1rem; padding: 0.5rem;" onclick="showCustomAlert('Em breve você agendará por aqui!')">Agendar usando pacote</button>
                             `;
                             walletsContainer.appendChild(card);
                         }
                     });
 
                     if (!hasCredits) {
-                        await showCustomAlert("Você tem pacotes cadastrados, mas todos os créditos já foram consumidos.");
+                        showScreen('pacote-empty-screen');
                     } else {
                         showScreen('pacote-list-screen');
                     }
@@ -375,10 +363,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 console.error("Erro ao buscar pacotes:", error);
                 await showCustomAlert("Erro ao buscar pacotes. Tente novamente.");
             } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.textContent = originalText;
-                }
+                btnMeusPacotes.disabled = false;
+                btnMeusPacotes.textContent = originalText;
             }
         });
     }
