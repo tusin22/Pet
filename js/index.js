@@ -704,7 +704,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             if (!label) return;
 
             if (service === 'Desembolo de nós') {
-                label.innerHTML = 'Desembolo de nós - Necessário avaliação';
+                label.innerHTML = 'Desembolo de nós';
                 return;
             }
 
@@ -838,7 +838,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 let timeText = '';
                 if (hours > 0) timeText += `${hours}h `;
                 if (mins > 0) timeText += `${mins}m`;
-                summaryTime.textContent = 'Duração: ' + (hasDesembolo ? 'Tempo indefinido' : (timeText || '--'));
+                summaryTime.textContent = 'Duração: ' + (timeText || '--');
             }
 
         } catch (e) {

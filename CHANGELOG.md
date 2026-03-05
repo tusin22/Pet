@@ -5,6 +5,9 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Corrigido
+- `js/index.js`: removido o tratamento de "Tempo indefinido" para `Desembolo de nós` no resumo do agendamento; a duração agora segue a mesma lógica dos demais serviços.
+- `js/index.js`: removido o sufixo `- Necessário avaliação` no rótulo do serviço `Desembolo de nós` na tela do cliente.
+- `index.html`: atualizado versionamento de assets (`?v=`) para forçar recarga das alterações no cliente.
 - `js/index.js`: corrigido o cálculo de duração no agendamento do cliente para respeitar valor `0` vindo do Firebase e aplicar fallback de 30 minutos apenas quando a duração for `null`/`undefined` ou inválida.
 - `index.html`: atualizado versionamento de assets (`?v=`) para forçar recarga da correção de cálculo no navegador.
 - `js/painel-94k2.js`: corrigida a leitura/salvamento das durações na aba de configurações para aceitar valor `0` sem cair em fallback por verificação falsy (`||`/`if (!valor)`), preservando o zero na ida e na volta do Firestore.
