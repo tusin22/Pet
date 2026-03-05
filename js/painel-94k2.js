@@ -214,7 +214,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         "Banho e Tosa",
         "Hidratação Vanilla",
         "Hidratação Ouro 24K",
-        "SPA Premium",
+        "Tosa Higiênica",
         "Corte das unhas",
         "Escov. dos dentes",
         "Carding",
@@ -694,6 +694,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const priceData = priceConfigSnap.exists() ? priceConfigSnap.data() : {};
             if (priceData["Tosa"] && !priceData["Banho e Tosa"]) priceData["Banho e Tosa"] = priceData["Tosa"];
             if (priceData["Banho + Tosa"] && !priceData["Banho e Tosa"]) priceData["Banho e Tosa"] = priceData["Banho + Tosa"];
+            if (priceData["SPA Premium"] && !priceData["Tosa Higiênica"]) priceData["Tosa Higiênica"] = priceData["SPA Premium"];
 
             const validServicesForDiscount = selectedServices.filter(s => s !== 'Desembolo de nós');
             const validCount = validServicesForDiscount.length;
@@ -729,14 +730,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const serviceTimes = timeData.services || {};
             if (serviceTimes["Tosa"] && !serviceTimes["Banho e Tosa"]) serviceTimes["Banho e Tosa"] = serviceTimes["Tosa"];
             if (serviceTimes["Banho + Tosa"] && !serviceTimes["Banho e Tosa"]) serviceTimes["Banho e Tosa"] = serviceTimes["Banho + Tosa"];
+            if (serviceTimes["SPA Premium"] && !serviceTimes["Tosa Higiênica"]) serviceTimes["Tosa Higiênica"] = serviceTimes["SPA Premium"];
             const sizeExtras = timeData.sizes || {};
             const agendaInterval = parseInt(timeData.agendaInterval) || 30;
 
             let totalDuration = 0;
             selectedServices.forEach(srv => {
-                totalDuration += serviceTimes[srv] ? parseInt(serviceTimes[srv]) : 30;
+                const srvTime = serviceTimes[srv];
+                totalDuration += (srvTime !== undefined && srvTime !== null && srvTime !== '') ? parseInt(srvTime) : 30;
             });
-            if (sizeExtras[petSize]) totalDuration += parseInt(sizeExtras[petSize]);
+            const sizeTime = sizeExtras[petSize];
+            if (sizeTime !== undefined && sizeTime !== null && sizeTime !== '') {
+                totalDuration += parseInt(sizeTime);
+            }
             const slotsNeeded = Math.ceil(totalDuration / agendaInterval);
             newAppointmentForm.setAttribute('data-duration', totalDuration);
             newAppointmentForm.setAttribute('data-slots', slotsNeeded);
@@ -1019,6 +1025,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         if (data.services && Array.isArray(data.services)) {
             serviceType = data.services.join(', ');
         }
+        // Migração de compatibilidade de nomes antigos:
+        serviceType = serviceType.replace(/SPA Premium/g, 'Tosa Higiênica');
 
         const petSize = data.petSize || 'Não informado';
         const paymentMethod = data.paymentMethod || 'Não informado';
@@ -1522,14 +1530,19 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const serviceTimes = timeData.services || {};
             if (serviceTimes["Tosa"] && !serviceTimes["Banho e Tosa"]) serviceTimes["Banho e Tosa"] = serviceTimes["Tosa"];
             if (serviceTimes["Banho + Tosa"] && !serviceTimes["Banho e Tosa"]) serviceTimes["Banho e Tosa"] = serviceTimes["Banho + Tosa"];
+            if (serviceTimes["SPA Premium"] && !serviceTimes["Tosa Higiênica"]) serviceTimes["Tosa Higiênica"] = serviceTimes["SPA Premium"];
             const sizeExtras = timeData.sizes || {};
             const agendaInterval = parseInt(timeData.agendaInterval) || 30;
 
             let totalDuration = 0;
             selectedServices.forEach(srv => {
-                totalDuration += serviceTimes[srv] ? parseInt(serviceTimes[srv]) : 30;
+                const srvTime = serviceTimes[srv];
+                totalDuration += (srvTime !== undefined && srvTime !== null && srvTime !== '') ? parseInt(srvTime) : 30;
             });
-            if (sizeExtras[petSize]) totalDuration += parseInt(sizeExtras[petSize]);
+            const sizeTime = sizeExtras[petSize];
+            if (sizeTime !== undefined && sizeTime !== null && sizeTime !== '') {
+                totalDuration += parseInt(sizeTime);
+            }
             const slotsNeeded = Math.ceil(totalDuration / agendaInterval);
 
             let blockedAllDay = false;
@@ -1653,6 +1666,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 else if (d.serviceType) currentServices = [d.serviceType];
                 if (d.petSize) currentSize = d.petSize;
 
+                // Migração de compatibilidade de nomes antigos:
+                currentServices = currentServices.map(s => s === 'SPA Premium' ? 'Tosa Higiênica' : s);
+
                 area.setAttribute('data-size', currentSize);
             }
 
@@ -1771,6 +1787,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             if (priceData["Banho + Tosa"] && !priceData["Banho e Tosa"]) {
                 priceData["Banho e Tosa"] = priceData["Banho + Tosa"];
             }
+            if (priceData["SPA Premium"] && !priceData["Tosa Higiênica"]) {
+                priceData["Tosa Higiênica"] = priceData["SPA Premium"];
+            }
 
             const timeData = timeSnap.exists() ? timeSnap.data() : {};
             const serviceTimes = timeData.services || {};
@@ -1780,6 +1799,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             }
             if (serviceTimes["Banho + Tosa"] && !serviceTimes["Banho e Tosa"]) {
                 serviceTimes["Banho e Tosa"] = serviceTimes["Banho + Tosa"];
+            }
+            if (serviceTimes["SPA Premium"] && !serviceTimes["Tosa Higiênica"]) {
+                serviceTimes["Tosa Higiênica"] = serviceTimes["SPA Premium"];
             }
             const sizeExtras = timeData.sizes || {};
             let agendaInterval = parseInt(timeData.agendaInterval) || 30;
@@ -1803,16 +1825,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     }
                 }
                 // Duration
-                if (serviceTimes[srv]) {
-                    newDuration += parseInt(serviceTimes[srv]);
+                const srvTime = serviceTimes[srv];
+                if (srvTime !== undefined && srvTime !== null && srvTime !== '') {
+                    newDuration += parseInt(srvTime);
                 } else {
                     newDuration += 30;
                 }
             });
 
             // Size Extra Duration
-            if (sizeExtras[petSize]) {
-                newDuration += parseInt(sizeExtras[petSize]);
+            const sizeTime = sizeExtras[petSize];
+            if (sizeTime !== undefined && sizeTime !== null && sizeTime !== '') {
+                newDuration += parseInt(sizeTime);
             }
 
             newSlotsNeeded = Math.ceil(newDuration / agendaInterval);
@@ -2009,6 +2033,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                if (data["SPA Premium"] && !data["Tosa Higiênica"]) {
+                    data["Tosa Higiênica"] = data["SPA Premium"];
+                }
                 servicesList.forEach((service, index) => {
                     const textarea = document.getElementById(`desc-${index}`);
                     if (textarea && data[service]) {
@@ -2099,6 +2126,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 if (data["Banho + Tosa"] && !data["Banho e Tosa"]) {
                     data["Banho e Tosa"] = data["Banho + Tosa"];
                 }
+                if (data["SPA Premium"] && !data["Tosa Higiênica"]) {
+                    data["Tosa Higiênica"] = data["SPA Premium"];
+                }
 
                 // Services
                 servicesList.forEach((service, index) => {
@@ -2169,6 +2199,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     if (data.services["Banho + Tosa"] && !data.services["Banho e Tosa"]) {
                         data.services["Banho e Tosa"] = data.services["Banho + Tosa"];
                     }
+                    if (data.services["SPA Premium"] && !data.services["Tosa Higiênica"]) {
+                        data.services["Tosa Higiênica"] = data.services["SPA Premium"];
+                    }
                     servicesList.forEach((service, index) => {
                         if (data.services[service]) {
                             document.getElementById(`time-dur-${index}`).value = data.services[service];
@@ -2192,13 +2225,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         const services = {};
         servicesList.forEach((service, index) => {
-             services[service] = parseInt(document.getElementById(`time-dur-${index}`).value) || 30;
+             const val = document.getElementById(`time-dur-${index}`).value;
+             services[service] = (val !== undefined && val !== null && val !== '') ? parseInt(val) : 30;
         });
 
+        const valP = document.getElementById('extraP').value;
+        const valM = document.getElementById('extraM').value;
+        const valG = document.getElementById('extraG').value;
         const sizes = {
-            'P': parseInt(document.getElementById('extraP').value) || 0,
-            'M': parseInt(document.getElementById('extraM').value) || 15,
-            'G': parseInt(document.getElementById('extraG').value) || 30
+            'P': (valP !== undefined && valP !== null && valP !== '') ? parseInt(valP) : 0,
+            'M': (valM !== undefined && valM !== null && valM !== '') ? parseInt(valM) : 15,
+            'G': (valG !== undefined && valG !== null && valG !== '') ? parseInt(valG) : 30
         };
 
         try {

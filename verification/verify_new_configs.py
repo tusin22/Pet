@@ -27,7 +27,7 @@ def test_configs():
 
             const servicesList = [
                 "Banho Master", "Banho e Tosa", "Hidratação Vanilla", "Hidratação Ouro 24K",
-                "SPA Premium", "Corte das unhas", "Escov. dos dentes", "Carding", "Desembolo de nós"
+                "Tosa Higiênica", "Corte das unhas", "Escov. dos dentes", "Carding", "Desembolo de nós"
             ];
             const container = document.getElementById('service-descriptions-container');
             if (container) {
