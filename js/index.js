@@ -187,7 +187,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     // --- Stepper Logic ---
     let currentStep = 1;
-    const totalSteps = 3;
+    const totalSteps = 2;
 
     function goToStep(step) {
         currentStep = step;
@@ -376,7 +376,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         document.getElementById('price-display').textContent = 'Total Estimado: R$ 0,00';
 
         document.getElementById('petSize').value = '';
-        document.getElementById('paymentMethod').value = '';
         document.getElementById('appointmentDate').value = '';
         document.getElementById('slots-container').innerHTML = '<p class="empty-slots-msg">Selecione o porte, os serviços e a data para ver os horários disponíveis.</p>';
         selectedSlot = null;
@@ -625,8 +624,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     const cb = document.querySelector(`input[name="serviceOption"][value="${data.serviceType}"]`);
                     if (cb) cb.checked = true;
                 }
-
-                document.getElementById('paymentMethod').value = data.paymentMethod || '';
 
                 // Update UI Texts and Totals
                 updateServiceUI();
@@ -1139,7 +1136,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             document.querySelectorAll('input[name="serviceOption"]:checked').forEach(cb => selectedServices.push(cb.value));
 
             const petSize = document.getElementById('petSize').value;
-            const paymentMethod = document.getElementById('paymentMethod').value;
             const ownerPhone = localStorage.getItem('petshop_owner_phone'); // Get from storage
             const ownerName = localStorage.getItem('petshop_owner_name');
 
@@ -1267,7 +1263,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     serviceType: selectedServices[0],
                     totalValue: currentTotalValue,
                     petSize: petSize,
-                    paymentMethod: paymentMethod,
                     appointmentTime: appointmentTime,
                     status: 'Agendado',
                     durationMinutes: duration,
@@ -1304,7 +1299,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 if (summaryTime) summaryTime.textContent = 'Duração: --';
 
                 document.getElementById('petSize').value = '';
-                document.getElementById('paymentMethod').value = '';
                 appointmentDateInput.value = '';
                 slotsContainer.innerHTML = '<p class="empty-slots-msg">Selecione o porte, os serviços e a data para ver os horários disponíveis.</p>';
                 selectedSlot = null;
