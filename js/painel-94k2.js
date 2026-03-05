@@ -2189,7 +2189,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                if (data.agendaInterval) document.getElementById('agendaInterval').value = data.agendaInterval;
+                if (data.agendaInterval !== undefined && data.agendaInterval !== null) {
+                    document.getElementById('agendaInterval').value = data.agendaInterval;
+                }
 
                 if (data.services) {
                     // Migração de compatibilidade de nomes antigos:
@@ -2203,16 +2205,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                         data.services["Tosa Higiênica"] = data.services["SPA Premium"];
                     }
                     servicesList.forEach((service, index) => {
-                        if (data.services[service]) {
+                        if (data.services[service] !== undefined && data.services[service] !== null) {
                             document.getElementById(`time-dur-${index}`).value = data.services[service];
                         }
                     });
                 }
 
                 if (data.sizes) {
-                    if (data.sizes['P']) document.getElementById('extraP').value = data.sizes['P'];
-                    if (data.sizes['M']) document.getElementById('extraM').value = data.sizes['M'];
-                    if (data.sizes['G']) document.getElementById('extraG').value = data.sizes['G'];
+                    if (data.sizes['P'] !== undefined && data.sizes['P'] !== null) document.getElementById('extraP').value = data.sizes['P'];
+                    if (data.sizes['M'] !== undefined && data.sizes['M'] !== null) document.getElementById('extraM').value = data.sizes['M'];
+                    if (data.sizes['G'] !== undefined && data.sizes['G'] !== null) document.getElementById('extraG').value = data.sizes['G'];
                 }
             }
         } catch (e) {
@@ -2221,7 +2223,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     }
 
     window.saveTimeSettings = async () => {
-        const agendaInterval = parseInt(document.getElementById('agendaInterval').value) || 30;
+        const agendaIntervalInput = document.getElementById('agendaInterval').value;
+        const agendaInterval = (agendaIntervalInput !== undefined && agendaIntervalInput !== null && agendaIntervalInput !== '')
+            ? parseInt(agendaIntervalInput)
+            : 30;
 
         const services = {};
         servicesList.forEach((service, index) => {
