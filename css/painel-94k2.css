@@ -69,57 +69,6 @@
             text-align: center;
         }
 
-        @media (max-width: 600px) {
-            body { padding: 10px; }
-
-            h1 {
-                font-size: 2.1rem;
-                margin: 0.4rem 0 1rem;
-            }
-
-            .tabs {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 0.55rem;
-                border-bottom: none;
-                margin-bottom: 1.2rem;
-            }
-
-            .tab-btn {
-                margin-bottom: 0;
-                border-bottom: none;
-                border: 1px solid var(--border);
-                border-radius: 10px;
-                background-color: #f5f5f5;
-                padding: 0.75rem 0.45rem;
-                font-size: 1rem;
-                line-height: 1.2;
-                white-space: normal;
-                min-height: 58px;
-            }
-
-            .tab-btn.active {
-                background-color: #e7efef;
-                border-color: var(--primary);
-                color: var(--primary);
-            }
-
-            .date-control {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 0.5rem;
-            }
-
-            .date-control input,
-            .date-control select,
-            .search-input,
-            .status-select {
-                width: 100%;
-                box-sizing: border-box;
-            }
-        }
-
-
         /* Tabs Navigation */
         .tabs {
             display: flex;
@@ -838,6 +787,67 @@
 
         .logout-btn:hover {
             background-color: #e3f2fd;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+
+            .panel-header-top {
+                flex-direction: column;
+                align-items: center;
+                gap: 0.55rem;
+            }
+
+            .panel-header-top h1 {
+                font-size: 2.1rem;
+                margin: 0.4rem 0 0;
+            }
+
+            .logout-btn {
+                position: static;
+                align-self: center;
+            }
+
+            .tabs {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.55rem;
+                border-bottom: none;
+                margin-bottom: 1.2rem;
+            }
+
+            .tab-btn {
+                margin-bottom: 0;
+                border-bottom: none;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+                background-color: #f5f5f5;
+                padding: 0.75rem 0.45rem;
+                font-size: 1rem;
+                line-height: 1.2;
+                white-space: normal;
+                min-height: 58px;
+            }
+
+            .tab-btn.active {
+                background-color: #e7efef;
+                border-color: var(--primary);
+                color: var(--primary);
+            }
+
+            .date-control {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .date-control input,
+            .date-control select,
+            .search-input,
+            .status-select {
+                width: 100%;
+                box-sizing: border-box;
+            }
         }
 
 
