@@ -34,11 +34,21 @@
         </div>
     </div>
 
-    <!-- Tela Login -->
-    <div id="login-screen" class="screen">
+    <!-- Tela Escolha de Fluxo -->
+    <div id="welcome-screen" class="screen active">
         <h1>Bem-vindo à Mellu Estética Animal 🐾</h1>
-        <h2 class="screen-subtitle">Agende o banho e tosa do seu pet no Barreiro - BH.</h2>
-        <p class="screen-description">De forma rápida e prática.<br>Por favor, informe seus dados para começarmos.</p>
+        <p class="screen-description" style="text-align: center; margin-bottom: 2rem;">Como deseja agendar hoje?</p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
+            <button class="primary" onclick="showScreen('login-screen')" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem;">Agendamento Avulso</button>
+            <button class="secondary" onclick="showScreen('pacote-check-screen')" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem; border-color: var(--primary); color: var(--primary);">Agendar pelo Pacote</button>
+        </div>
+    </div>
+
+    <!-- Tela Login Avulso -->
+    <div id="login-screen" class="screen">
+        <h2>Acesso do Cliente</h2>
+        <p class="screen-description">Por favor, informe seus dados para começarmos.</p>
         <form id="login-form">
             <div class="form-group">
                 <label for="loginName">Seu Nome</label>
@@ -48,8 +58,33 @@
                 <label for="loginPhone">Seu WhatsApp</label>
                 <input type="tel" id="loginPhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15">
             </div>
-            <button type="submit">Entrar</button>
+            <button type="submit" class="primary">Entrar</button>
+            <button type="button" class="secondary" onclick="showScreen('welcome-screen')" style="margin-top: 1rem;">Voltar</button>
         </form>
+    </div>
+
+    <!-- Tela Consultar Pacote -->
+    <div id="pacote-check-screen" class="screen">
+        <h2>Meus Pacotes</h2>
+        <p class="screen-description">Informe seu WhatsApp para consultar seus créditos.</p>
+        <form id="pacote-check-form">
+            <div class="form-group">
+                <label for="pacoteCheckPhone">Seu WhatsApp</label>
+                <input type="tel" id="pacoteCheckPhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15">
+            </div>
+            <button type="submit" class="primary">Buscar Pacotes</button>
+            <button type="button" class="secondary" onclick="showScreen('welcome-screen')" style="margin-top: 1rem;">Voltar</button>
+        </form>
+    </div>
+
+    <!-- Tela Lista de Pacotes (Carteiras) -->
+    <div id="pacote-list-screen" class="screen">
+        <button class="secondary" onclick="showScreen('pacote-check-screen')" style="margin-bottom: 1rem; width: auto; padding: 0.5rem 1rem;">&larr; Voltar</button>
+        <h2>Seus Pacotes Ativos</h2>
+        <p class="screen-description">Escolha o pacote que deseja utilizar para o agendamento.</p>
+        <div id="wallets-container" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
+            <!-- Carregado via JS -->
+        </div>
     </div>
 
     <!-- Tela Menu -->

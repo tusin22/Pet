@@ -1,22 +1,53 @@
-
 from playwright.sync_api import sync_playwright
 
 def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context()
 
-        # Handle the prompt
-        def handle_dialog(dialog):
-            dialog.accept("admin123")
+        # Route mocks for Firebase ES modules to bypass auth
+        def mock_firebase(route):
+            response_body = """
+                export function initializeApp() {};
+                export function getFirestore() {};
+                export function collection() {};
+                export function getDocs() {};
+                export function query() {};
+                export function where() {};
+                export function addDoc() {};
+                export function onSnapshot() {};
+                export function doc() {};
+                export function getDoc() {};
+                export function setDoc() {};
+                export function updateDoc() {};
+                export function deleteDoc() {};
+                export function orderBy() {};
+                export function limit() {};
+                export function writeBatch() {};
+                export function getAuth() {};
+                export function signInWithEmailAndPassword() {};
+                export function onAuthStateChanged(auth, cb) {
+                   // mock user to allow load
+                   setTimeout(() => cb({ uid: 'mockuser' }), 100);
+                };
+                export function signOut() {};
+                export function sendPasswordResetEmail() {};
+            """
+            route.fulfill(content_type="application/javascript", body=response_body)
 
-        page.on("dialog", handle_dialog)
+        context.route("**/*.js*", lambda route: mock_firebase(route) if "firebase" in route.request.url else route.continue_())
 
-        # Navigate
+        page = context.new_page()
         page.goto("http://localhost:8080/painel-94k2.html")
 
-        # Wait for page to load (checking for a known element)
-        page.wait_for_selector("h1")
+        # Force UI to display main panel as if logged in
+        page.evaluate("""
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-panel').style.display = 'block';
+        """)
+
+        # Wait for page to load
+        page.wait_for_selector("h1", state="visible")
 
         # Inject a mock appointment into the modal to test rendering of Desembolo input
         mock_data = {
@@ -35,8 +66,6 @@ def run():
             "observations": "Cuidado com a pata"
         }
 
-        # Use page.evaluate to call the global function exposed in the module (if any)
-        # Note: In the code, window.openModal IS defined and attached to window.
         page.evaluate("data => window.openModal(data)", mock_data)
 
         # Wait for modal content

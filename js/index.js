@@ -71,6 +71,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     const loginPhoneInput = document.getElementById('loginPhone');
     const loginNameInput = document.getElementById('loginName');
+    const pacoteCheckPhoneInput = document.getElementById('pacoteCheckPhone');
 
     // Phone Mask Logic
     const applyPhoneMask = (value) => {
@@ -85,6 +86,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         e.target.value = applyPhoneMask(e.target.value);
     });
 
+    if (pacoteCheckPhoneInput) {
+        pacoteCheckPhoneInput.addEventListener('input', (e) => {
+            e.target.value = applyPhoneMask(e.target.value);
+        });
+    }
+
     // Check Login State
     const checkLogin = () => {
         const phone = localStorage.getItem('petshop_owner_phone');
@@ -94,7 +101,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             updateGreeting(name);
             showScreen('menu-screen');
         } else {
-            showScreen('login-screen');
+            showScreen('welcome-screen');
         }
     };
 
@@ -286,6 +293,96 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     // --- Event Listeners ---
 
+    // --- Pacote Logic ---
+    const pacoteCheckForm = document.getElementById('pacote-check-form');
+    if (pacoteCheckForm) {
+        pacoteCheckForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rawPhone = pacoteCheckPhoneInput.value.replace(/\D/g, '');
+
+            if (rawPhone.length !== 11) {
+                await showCustomAlert("Número incompleto. Por favor, insira o DDD e o número com o 9 na frente.");
+                return;
+            }
+
+            const btn = document.getElementById('pacote-check-btn');
+            const originalText = btn ? btn.textContent : 'Buscar Pacotes';
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Buscando...';
+            }
+
+            try {
+                const q = query(collection(db, "carteiras"), where("phone", "==", rawPhone));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    await showCustomAlert("Nenhum pacote ativo encontrado para este número.");
+                } else {
+                    const walletsContainer = document.getElementById('wallets-container');
+                    walletsContainer.innerHTML = '';
+
+                    let hasCredits = false;
+
+                    querySnapshot.forEach((docSnap) => {
+                        const data = docSnap.data();
+
+                        // Checar se tem algum crédito (total > 0)
+                        let totalCredits = 0;
+                        if (data.saldo) {
+                            Object.values(data.saldo).forEach(v => totalCredits += v);
+                        }
+
+                        if (totalCredits > 0) {
+                            hasCredits = true;
+                            const card = document.createElement('div');
+                            card.style.border = '1px solid var(--primary)';
+                            card.style.borderRadius = '8px';
+                            card.style.padding = '1rem';
+                            card.style.backgroundColor = '#fff';
+
+                            let headerText = '';
+                            if (data.type === 'individual') {
+                                headerText = `Pacote - Pet: <strong>${escapeHtml(data.petName)}</strong> (Individual)`;
+                            } else {
+                                headerText = `Pacote - Porte: <strong>${escapeHtml(data.petSize)}</strong> (Compartilhado)`;
+                            }
+
+                            let saldoHtml = '<ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: #555;">';
+                            for (const [srvName, qty] of Object.entries(data.saldo)) {
+                                if (qty > 0) {
+                                    saldoHtml += `<li>${escapeHtml(srvName)}: <strong>${qty}</strong> disponíveis</li>`;
+                                }
+                            }
+                            saldoHtml += '</ul>';
+
+                            card.innerHTML = `
+                                <div style="margin-bottom: 0.5rem; color: var(--primary); font-size: 1.1rem;">${headerText}</div>
+                                ${saldoHtml}
+                                <button type="button" class="btn-teal" style="margin-top: 1rem; padding: 0.5rem;" onclick="showCustomAlert('Funcionalidade de agendamento por pacote em desenvolvimento. Fase 1 concluída com sucesso.')">Avançar com este pacote</button>
+                            `;
+                            walletsContainer.appendChild(card);
+                        }
+                    });
+
+                    if (!hasCredits) {
+                        await showCustomAlert("Você tem pacotes cadastrados, mas todos os créditos já foram consumidos.");
+                    } else {
+                        showScreen('pacote-list-screen');
+                    }
+                }
+            } catch (error) {
+                console.error("Erro ao buscar pacotes:", error);
+                await showCustomAlert("Erro ao buscar pacotes. Tente novamente.");
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                }
+            }
+        });
+    }
+
     // 1. Login Form
     document.getElementById('login-form').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -399,7 +496,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             localStorage.removeItem('petshop_owner_phone');
             localStorage.removeItem('petshop_appointment_id'); // Clear legacy item if exists
             loginPhoneInput.value = '';
-            showScreen('login-screen');
+            showScreen('welcome-screen');
         }
     });
 

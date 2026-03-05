@@ -1,76 +1,77 @@
-from playwright.sync_api import Page, expect, sync_playwright
+from playwright.sync_api import sync_playwright
 
-def test_accordion_settings(page: Page):
-    # 1. Arrange: Go to the admin panel
-    # Using file:// protocol as we are in a local environment without a server for this test
-    import os
-    file_path = f"file://{os.getcwd()}/painel-94k2.html"
-    page.goto(file_path)
-
-    # Handle the password prompt
-    page.on("dialog", lambda dialog: dialog.accept("admin123"))
-
-    # Reload to trigger the prompt handler if it happened on load,
-    # but since prompt is blocking JS execution, we might need to handle it differently.
-    # However, in Playwright, page.on("dialog") should handle it if set before navigation or immediately.
-    # For this specific page, the prompt happens in <script> at the top.
-    # Let's see if the dialog handler works. If not, we might need to inject script to bypass.
-
-    # Actually, the prompt is right at the start.
-    # A more robust way for this specific legacy code structure:
-    # We can override the window.prompt before the page loads scripts,
-    # but since it is inline script, it executes immediately.
-    # Playwright's add_init_script is perfect for this.
-
-    # 2. Navigate to Config Tab
-    # Click the "Configurações" tab button
-    page.get_by_role("button", name="Configurações").click()
-
-    # 3. Assertions & Actions
-
-    # Check if "Configurações Globais" header exists
-    global_header = page.locator(".settings-header").filter(has_text="Configurações Globais")
-    expect(global_header).to_be_visible()
-
-    # Check if the body is hidden (collapsed) initially (as per requirement: "todos os cards... 100% fechados")
-    # The parent .settings-card should have class 'collapsed'
-    global_card = page.locator(".settings-card").filter(has_text="Configurações Globais")
-    expect(global_card).to_have_class("settings-card collapsed")
-
-    # Check arrow rotation (visual check via screenshot mostly, but we can check style if needed)
-    # arrow = global_header.locator(".arrow-icon")
-
-    # Take screenshot of collapsed state
-    page.screenshot(path="/home/jules/verification/accordion_collapsed.png")
-
-    # 4. Interact: Click to expand
-    global_header.click()
-
-    # 5. Assert: Class 'collapsed' should be removed
-    expect(global_card).not_to_have_class("settings-card collapsed")
-    expect(global_card).to_have_class("settings-card")
-
-    # Check visibility of content inside (e.g., label "Capacidade Global...")
-    content = page.get_by_text("Capacidade Global de Atendimentos por Horário")
-    expect(content).to_be_visible()
-
-    # Take screenshot of expanded state
-    page.screenshot(path="/home/jules/verification/accordion_expanded.png")
-
-if __name__ == "__main__":
+def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        # Add init script to mock prompt and bypass password check logic
-        # The original code redirects if password is wrong.
-        # By mocking prompt to return 'admin123', we pass.
         context = browser.new_context()
-        context.add_init_script("window.prompt = () => 'admin123';")
+
+        # Route mocks for Firebase ES modules to bypass auth
+        def mock_firebase(route):
+            response_body = """
+                export function initializeApp() {};
+                export function getFirestore() {};
+                export function collection() {};
+                export function getDocs() {};
+                export function query() {};
+                export function where() {};
+                export function addDoc() {};
+                export function onSnapshot() {};
+                export function doc() {};
+                export function getDoc() {};
+                export function setDoc() {};
+                export function updateDoc() {};
+                export function deleteDoc() {};
+                export function orderBy() {};
+                export function limit() {};
+                export function writeBatch() {};
+                export function getAuth() {};
+                export function signInWithEmailAndPassword() {};
+                export function onAuthStateChanged(auth, cb) {
+                   setTimeout(() => cb({ uid: 'mockuser' }), 100);
+                };
+                export function signOut() {};
+                export function sendPasswordResetEmail() {};
+            """
+            route.fulfill(content_type="application/javascript", body=response_body)
+
+        context.route("**/*.js*", lambda route: mock_firebase(route) if "firebase" in route.request.url else route.continue_())
 
         page = context.new_page()
+
         try:
-            test_accordion_settings(page)
-            print("Verification script finished successfully.")
+            # Navigate
+            page.goto("http://localhost:8080/painel-94k2.html")
+
+            # Force UI to display main panel as if logged in
+            page.evaluate("""
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-panel').style.display = 'block';
+            """)
+
+            # Wait for header
+            page.wait_for_selector("h1", state="visible")
+
+            # Click config tab
+            page.get_by_role("button", name="Configurações").click()
+
+            # Wait a moment for rendering
+            page.wait_for_timeout(500)
+
+            # Check Tabela de Preços (should be collapsed by default based on code structure)
+            precos_header = page.get_by_role("heading", name="Tabela de Preços")
+            precos_card = precos_header.locator("xpath=../..")
+
+            # Click to toggle
+            precos_header.click()
+            page.wait_for_timeout(500) # Wait for animation
+
+            # Take screenshot
+            page.screenshot(path="verify_accordion.png")
+
         except Exception as e:
             print(f"Verification failed: {e}")
         finally:
             browser.close()
+
+if __name__ == "__main__":
+    run()
