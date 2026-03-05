@@ -330,10 +330,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         div.style.gap = '0.5rem';
 
         const isChecked = service === 'Banho Master' ? 'checked' : '';
-        div.innerHTML = `
-            <input type="checkbox" name="serviceOption" value="${service}" id="srv-${service.replace(/\s+/g, '')}" disabled ${isChecked} style="width: auto; transform: scale(1.2);">
-            <label for="srv-${service.replace(/\s+/g, '')}" style="margin: 0; font-weight: normal; cursor: pointer;">${service}</label>
-        `;
+
+        if (service === 'Desembolo de nós') {
+            div.innerHTML = `
+                <input type="checkbox" name="serviceOption" value="${service}" data-price="15" id="srv-${service.replace(/\s+/g, '')}" disabled ${isChecked} style="width: auto; transform: scale(1.2);">
+                <label for="srv-${service.replace(/\s+/g, '')}" style="margin: 0; font-weight: normal; cursor: pointer;">Desembolo de nós - a partir de R$ 15,00 (necessário avaliação)</label>
+            `;
+        } else {
+            div.innerHTML = `
+                <input type="checkbox" name="serviceOption" value="${service}" id="srv-${service.replace(/\s+/g, '')}" disabled ${isChecked} style="width: auto; transform: scale(1.2);">
+                <label for="srv-${service.replace(/\s+/g, '')}" style="margin: 0; font-weight: normal; cursor: pointer;">${service}</label>
+            `;
+        }
         servicesContainer.appendChild(div);
     });
 
@@ -356,7 +364,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         // Reset labels to default text
         servicesList.forEach(service => {
             const label = document.querySelector(`label[for="srv-${service.replace(/\s+/g, '')}"]`);
-            if (label) label.innerHTML = service;
+            if (label) {
+                if (service === 'Desembolo de nós') {
+                    label.innerHTML = 'Desembolo de nós - a partir de R$ 15,00 (necessário avaliação)';
+                } else {
+                    label.innerHTML = service;
+                }
+            }
         });
 
         document.getElementById('price-display').textContent = 'Total Estimado: R$ 0,00';
@@ -704,7 +718,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             if (!label) return;
 
             if (service === 'Desembolo de nós') {
-                label.innerHTML = 'Desembolo de nós';
+                label.innerHTML = 'Desembolo de nós - a partir de R$ 15,00 (necessário avaliação)';
                 return;
             }
 
@@ -777,6 +791,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 if (serviceName === 'Desembolo de nós') {
                     hasDesembolo = true;
                     // Desembolo adds 0 price, but adds time
+                }
+
+                // Check for hardcoded data-price
+                if (cb.hasAttribute('data-price')) {
+                    totalPrice += parseFloat(cb.getAttribute('data-price')) || 0;
                 }
 
                 // Price Logic (Use Cached Config)
