@@ -18,7 +18,7 @@
     <link rel="icon" href="assets/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="css/index.css?v=13">
+    <link rel="stylesheet" href="css/index.css?v=14">
 </head>
 <body>
 
@@ -40,8 +40,7 @@
         <p class="screen-description" style="text-align: center; margin-bottom: 2rem;">Como deseja agendar hoje?</p>
 
         <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
-            <button class="primary" onclick="showScreen('login-screen')" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem;">Agendamento Avulso</button>
-            <button class="secondary" onclick="showScreen('pacote-check-screen')" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem; border-color: var(--primary); color: var(--primary);">Agendar pelo Pacote</button>
+            <button class="primary" onclick="showScreen('login-screen')" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem;">Acessar Agendamento</button>
         </div>
     </div>
 
@@ -63,27 +62,25 @@
         </form>
     </div>
 
-    <!-- Tela Consultar Pacote -->
-    <div id="pacote-check-screen" class="screen">
-        <h2>Meus Pacotes</h2>
-        <p class="screen-description">Informe seu WhatsApp para consultar seus créditos.</p>
-        <form id="pacote-check-form">
-            <div class="form-group">
-                <label for="pacoteCheckPhone">Seu WhatsApp</label>
-                <input type="tel" id="pacoteCheckPhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15">
-            </div>
-            <button type="submit" class="primary">Buscar Pacotes</button>
-            <button type="button" class="secondary" onclick="showScreen('welcome-screen')" style="margin-top: 1rem;">Voltar</button>
-        </form>
-    </div>
-
     <!-- Tela Lista de Pacotes (Carteiras) -->
     <div id="pacote-list-screen" class="screen">
-        <button class="secondary" onclick="showScreen('pacote-check-screen')" style="margin-bottom: 1rem; width: auto; padding: 0.5rem 1rem;">&larr; Voltar</button>
+        <button class="secondary" onclick="showScreen('menu-screen')" style="margin-bottom: 1rem; width: auto; padding: 0.5rem 1rem;">&larr; Voltar</button>
         <h2>Seus Pacotes Ativos</h2>
-        <p class="screen-description">Escolha o pacote que deseja utilizar para o agendamento.</p>
+        <p class="screen-description">Confira seus créditos disponíveis.</p>
         <div id="wallets-container" style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
             <!-- Carregado via JS -->
+        </div>
+    </div>
+
+    <!-- Tela Sem Pacotes -->
+    <div id="pacote-empty-screen" class="screen">
+        <h2>Meus Pacotes</h2>
+        <p class="screen-description" style="text-align: center; margin-top: 2rem;">Você ainda não possui um pacote de banhos ativo.</p>
+        <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; margin-top: 2rem;">
+            <a href="https://wa.me/5531982637569?text=Olá! Gostaria de saber mais sobre os pacotes de banho para o meu pet." target="_blank" style="text-decoration: none; width: 100%; max-width: 300px;">
+                <button class="primary" style="width: 100%; padding: 1rem; font-size: 1.1rem; background-color: #25D366; border-color: #25D366; color: white;">Quero comprar um pacote</button>
+            </a>
+            <button type="button" class="secondary" onclick="showScreen('menu-screen')" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem; margin-top: 1rem;">Voltar ao Menu</button>
         </div>
     </div>
 
@@ -93,6 +90,7 @@
         <p class="screen-description" style="text-align: center; margin-bottom: 2rem;">O que você deseja fazer hoje?</p>
         <button id="btn-agendar" class="menu-btn">Novo Agendamento 🛁</button>
         <button id="btn-meus-pets" class="menu-btn">Meus Agendamentos 🐶</button>
+        <button id="btn-meus-pacotes" class="menu-btn">Meus Pacotes 🎁</button>
         <button id="btn-descricoes" class="menu-btn">Tabela de Preços e Serviços 📑</button>
         <div style="margin-top: 2rem; text-align: center;">
             <a href="#" id="logout-link" style="color: #999; text-decoration: none; font-size: 0.9rem;">Sair / Trocar Telefone</a>
@@ -224,8 +222,8 @@
     </div>
 </div>
 
-<script src="config/runtime-config.js?v=13" defer></script>
-<script type="module" src="js/index.js?v=13"></script>
+<script src="config/runtime-config.js?v=14" defer></script>
+<script type="module" src="js/index.js?v=14"></script>
 
 
 </body>
