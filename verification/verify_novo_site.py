@@ -1,49 +1,40 @@
-from playwright.sync_api import sync_playwright
-import time
-import os
+from playwright.sync_api import Page, expect, sync_playwright
 
-def run():
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        # Emulate a typical desktop screen
-        context = browser.new_context(viewport={'width': 1280, 'height': 800})
-        page = context.new_page()
+def test_novo_site_layout(page: Page):
+    # 1. Arrange: Go to the novo-site.html local page
+    page.goto("http://localhost:8080/novo-site.html")
+    page.wait_for_load_state("networkidle")
 
-        # We need to serve the files locally. Let's start a quick python server
-        server_port = 8081
-        import subprocess
-        server_process = subprocess.Popen(["python3", "-m", "http.server", str(server_port)])
+    # 2. Take screenshots of different sections
 
-        try:
-            time.sleep(1) # wait for server to start
-            page.goto(f"http://localhost:{server_port}/novo-site.html")
+    # Hero Section
+    page.screenshot(path="verification/hero.png")
 
-            # Wait for content to load
-            page.wait_for_selector('.hero')
+    # Scroll to Sobre
+    sobre_section = page.locator("#sobre")
+    sobre_section.scroll_into_view_if_needed()
+    page.wait_for_timeout(1000) # wait for animation
+    page.screenshot(path="verification/sobre.png")
 
-            # Take screenshot of the top
-            page.screenshot(path="verification/novo-site-top.png", full_page=False)
+    # Scroll to Diferenciais
+    diferenciais_section = page.locator("#diferenciais")
+    diferenciais_section.scroll_into_view_if_needed()
+    page.wait_for_timeout(1000)
+    page.screenshot(path="verification/diferenciais.png")
 
-            # Scroll down to trigger animations and take a full page screenshot
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            time.sleep(1) # wait for animations
-            page.screenshot(path="verification/novo-site-full.png", full_page=True)
-
-            # Emulate mobile screen
-            mobile_context = browser.new_context(viewport={'width': 375, 'height': 667})
-            mobile_page = mobile_context.new_page()
-            mobile_page.goto(f"http://localhost:{server_port}/novo-site.html")
-            mobile_page.wait_for_selector('.hamburger')
-            mobile_page.screenshot(path="verification/novo-site-mobile.png")
-
-            # Click hamburger menu
-            mobile_page.click('.hamburger')
-            time.sleep(0.5)
-            mobile_page.screenshot(path="verification/novo-site-mobile-menu.png")
-
-        finally:
-            server_process.terminate()
-            browser.close()
+    # Scroll to Footer/Contato
+    footer_section = page.locator(".footer")
+    footer_section.scroll_into_view_if_needed()
+    page.wait_for_timeout(1000)
+    page.screenshot(path="verification/footer.png", full_page=False)
 
 if __name__ == "__main__":
-    run()
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        # Set viewport to desktop size
+        context = browser.new_context(viewport={'width': 1280, 'height': 800})
+        page = context.new_page()
+        try:
+            test_novo_site_layout(page)
+        finally:
+            browser.close()
