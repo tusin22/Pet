@@ -801,11 +801,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 }
 
                 // Time Logic (Sum of all services)
-                if (serviceTimes[serviceName]) {
-                    totalDuration += parseInt(serviceTimes[serviceName]);
-                } else {
-                    totalDuration += 30; // Default fallback
-                }
+                const serviceDuration = serviceTimes[serviceName] ?? 30;
+                const parsedServiceDuration = Number.parseInt(serviceDuration, 10);
+                totalDuration += Number.isNaN(parsedServiceDuration) ? 30 : parsedServiceDuration;
             });
 
             // Add Size Extra Time
