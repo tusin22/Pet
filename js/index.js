@@ -292,8 +292,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         const rawValue = loginPhoneInput.value.replace(/\D/g, '');
         const nameValue = loginNameInput.value.trim();
 
-        if (rawValue.length < 10) {
-            await showCustomAlert("Por favor, digite um telefone válido com DDD.");
+        if (rawValue.length !== 11) {
+            await showCustomAlert("Número incompleto. Por favor, insira o DDD e o número com o 9 na frente (ex: 31 99999-9999).");
             return;
         }
 
