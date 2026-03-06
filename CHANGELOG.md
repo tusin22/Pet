@@ -4,6 +4,10 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 
 ## [Não lançado]
 
+### Alterado
+- Preparado bloco de código das regras de segurança do Firestore (`firestore.rules`) para ser fornecido ao usuário, permitindo leitura e atualização da coleção `carteiras` e criação na coleção `appointments` por clientes (sem autenticação) para resolver o erro de permissão no agendamento de pacotes.
+
+
 ### Adicionado
 - Criado o arquivo `agendamento-pacote.html` e `js/agendamento-pacote.js` com o fluxo exclusivo para agendamento via pacotes, onde os serviços com saldo aparecem com valor R$ 0,00 e os extras são cobrados a parte, impedindo a duplicidade.
 - Adicionada trava de duplicidade no Javascript do pacote: itens que existem no pacote não aparecem na lista de extras disponíveis para o cliente adicionar por fora.
