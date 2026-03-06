@@ -34,20 +34,10 @@
         </div>
     </div>
 
-    <!-- Tela Escolha de Fluxo -->
-    <div id="welcome-screen" class="screen active">
-        <h1>Bem-vindo à Mellu Estética Animal 🐾</h1>
-        <p class="screen-description" style="text-align: center; margin-bottom: 2rem;">Como deseja agendar hoje?</p>
-
-        <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center;">
-            <button class="primary" onclick="showScreen('login-screen')" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem;">Acessar Agendamento</button>
-        </div>
-    </div>
-
     <!-- Tela Login Avulso -->
-    <div id="login-screen" class="screen">
-        <h2>Acesso do Cliente</h2>
-        <p class="screen-description">Por favor, informe seus dados para começarmos.</p>
+    <div id="login-screen" class="screen active">
+        <h1>Bem-vindo à Mellu Estética Animal 🐾</h1>
+        <p class="screen-description" style="text-align: center; margin-bottom: 2rem;">Por favor, informe seus dados para acessar a agenda.</p>
         <form id="login-form">
             <div class="form-group">
                 <label for="loginName">Seu Nome</label>
@@ -58,7 +48,6 @@
                 <input type="tel" id="loginPhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15">
             </div>
             <button type="submit" class="primary">Entrar</button>
-            <button type="button" class="secondary" onclick="showScreen('welcome-screen')" style="margin-top: 1rem;">Voltar</button>
         </form>
     </div>
 
