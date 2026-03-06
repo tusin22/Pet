@@ -1,77 +1,60 @@
 from playwright.sync_api import sync_playwright
 
-def verify_vitrine():
+def test_vitrine():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        # Mobile view
-        context = browser.new_context(viewport={'width': 414, 'height': 896})
-        page = context.new_page()
+        page = browser.new_page()
 
-        # Config mock
-        page.add_init_script("""
-            window.__MELLUPET_CONFIG = {
-                firebase: {},
-                apiKeys: {}
+        # intercept firebase modules
+        page.route("https://www.gstatic.com/firebasejs/**/*", lambda route: route.fulfill(status=200, body="""
+            export function initializeApp() {};
+            export function getFirestore() {};
+            export function collection() {};
+            export function doc() {};
+            export function getDoc() {
+                return new Promise((resolve) => {
+                    resolve({
+                        exists: () => true,
+                        data: () => ({
+                            plano1: {priceP: 100, priceM: 120, priceG: 140},
+                            plano2: {priceP: 200, priceM: 220, priceG: 240},
+                            plano3: {priceP: 300, priceM: 320, priceG: 340},
+                            extras: {
+                                unhas: 15.50,
+                                dentes: 20.00,
+                                carding: 35.00,
+                                desembolo: 15.00
+                            }
+                        })
+                    });
+                });
             };
-        """)
+            export function addDoc() {};
+            export function onSnapshot() {};
+            export function query() {};
+            export function where() {};
+            export function getDocs() {};
+            export function orderBy() {};
+            export function deleteDoc() {};
+            export function updateDoc() {};
+        """, content_type="application/javascript"))
 
-        # Route intercepts for Firebase
-        def handle_firebase_route(route):
-            route.fulfill(status=200, content_type="application/javascript", body="""
-                export function initializeApp() {};
-                export function getFirestore() {};
-                export function doc() {};
-                export function getDoc() {};
-                export function collection() {};
-                export function getDocs() {};
-                export function getAuth() {};
-                export function onAuthStateChanged() {};
-            """)
+        # mock runtime-config.js
+        page.route("**/config/runtime-config.js*", lambda route: route.fulfill(status=200, body="window.__MELLUPET_CONFIG = { firebase: { apiKey: 'mock' } };", content_type="application/javascript"))
 
-        page.route("**/*firebase*", handle_firebase_route)
+        page.goto("http://localhost:8080/index.html")
+        page.wait_for_timeout(2000)
 
-        try:
-            page.goto("http://localhost:8080/index.html")
+        # Click the btn-conheca-pacotes to trigger the UI update function that sets the text contents
+        page.evaluate("document.getElementById('btn-conheca-pacotes').click()")
+        page.wait_for_timeout(2000)
 
-            # Go directly to menu using window eval
-            page.evaluate("document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));")
-            page.evaluate("document.getElementById('menu-screen').classList.add('active');")
+        # Scroll to bottom to see extras
+        page.evaluate("window.scrollBy(0, 1000)")
+        page.wait_for_timeout(500)
 
-            page.wait_for_timeout(500)
-
-            # Screenshot of menu
-            page.screenshot(path="verification/menu_btn_fixed.png")
-
-            # Go to Vitrine
-            page.evaluate("document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));")
-            page.evaluate("document.getElementById('pacote-info-screen').classList.add('active');")
-            page.evaluate("if(typeof window.selectPorteTab === 'function') window.selectPorteTab('P');")
-
-            # Wait for images and vitrine
-            page.wait_for_timeout(1000)
-
-            page.screenshot(path="verification/vitrine_planos.png")
-
-            # Scroll to extras
-            page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-            page.wait_for_timeout(500)
-
-            page.screenshot(path="verification/vitrine_extras.png")
-
-            # Click M Tab to see animation
-            page.evaluate("window.scrollTo(0, 0)")
-            page.evaluate("if(typeof window.selectPorteTab === 'function') window.selectPorteTab('M');")
-            page.wait_for_timeout(200) # Mid-animation screenshot
-            page.screenshot(path="verification/vitrine_planos_m_anim.png")
-
-            print("Successfully took screenshots")
-
-        except Exception as e:
-            print(f"Error: {e}")
-            page.screenshot(path="verification/error.png")
-
-        finally:
-            browser.close()
+        page.screenshot(path="verification/vitrine_success.png")
+        browser.close()
 
 if __name__ == "__main__":
-    verify_vitrine()
+    test_vitrine()
