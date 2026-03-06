@@ -240,7 +240,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     function updateGreeting(name) {
         const greetingEl = document.getElementById('menu-greeting');
         if (greetingEl) {
-             greetingEl.textContent = `Olá, ${name}! Bem-vindo ao MelluPet`;
+             greetingEl.textContent = `Olá, ${name}! Bem-vindo à Mellu Estética Animal`;
         }
     }
 
