@@ -414,6 +414,12 @@
             transform: scale(1.02);
             border-width: 2px;
         }
+        .pacote-card.premium-card {
+            border-color: #d4af37;
+            box-shadow: 0 12px 24px rgba(212, 175, 55, 0.25);
+            transform: scale(1.02);
+            border-width: 2px;
+        }
         .pacote-card-header {
             font-size: 1.25rem;
             font-weight: bold;
@@ -432,8 +438,8 @@
             background-color: var(--sage);
         }
 
-        .pacote-card-header.plano-24 {
-            background-color: #2a4d50; /* Darker Teal */
+        .pacote-card.premium-card .pacote-card-header {
+            background-color: #2a4d50; /* Darker Teal / Verde Petróleo Escuro */
             border-bottom: 2px solid #d4af37; /* Subtle gold border */
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }

@@ -1,28 +1,38 @@
-127.0.0.1 - - [06/Mar/2026 00:18:05] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:18:05] code 404, message File not found
-127.0.0.1 - - [06/Mar/2026 00:18:05] "GET /assets/logo-mellupet.png HTTP/1.1" 404 -
-127.0.0.1 - - [06/Mar/2026 00:18:05] "GET /js/index.js?v=16 HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:18:05] "GET /css/index.css?v=16 HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:18:05] code 404, message File not found
-127.0.0.1 - - [06/Mar/2026 00:18:05] "GET /config/runtime-config.js?v=16 HTTP/1.1" 404 -
-127.0.0.1 - - [06/Mar/2026 00:18:26] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:18:26] "GET /css/index.css?v=16 HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:18:26] code 404, message File not found
-127.0.0.1 - - [06/Mar/2026 00:18:26] "GET /assets/logo-mellupet.png HTTP/1.1" 404 -
-127.0.0.1 - - [06/Mar/2026 00:18:26] code 404, message File not found
-127.0.0.1 - - [06/Mar/2026 00:18:26] "GET /config/runtime-config.js?v=16 HTTP/1.1" 404 -
-127.0.0.1 - - [06/Mar/2026 00:18:26] "GET /js/index.js?v=16 HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:19:18] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:19:18] code 404, message File not found
-127.0.0.1 - - [06/Mar/2026 00:19:18] "GET /config/runtime-config.js?v=16 HTTP/1.1" 404 -
-127.0.0.1 - - [06/Mar/2026 00:19:18] code 404, message File not found
-127.0.0.1 - - [06/Mar/2026 00:19:18] "GET /assets/logo-mellupet.png HTTP/1.1" 404 -
-127.0.0.1 - - [06/Mar/2026 00:19:18] "GET /js/index.js?v=16 HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:19:18] "GET /css/index.css?v=16 HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:20:27] "GET /index.html HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:20:27] "GET /js/index.js?v=16 HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:20:27] code 404, message File not found
-127.0.0.1 - - [06/Mar/2026 00:20:27] code 404, message File not found
-127.0.0.1 - - [06/Mar/2026 00:20:27] "GET /assets/logo-mellupet.png HTTP/1.1" 404 -
-127.0.0.1 - - [06/Mar/2026 00:20:27] "GET /css/index.css?v=16 HTTP/1.1" 200 -
-127.0.0.1 - - [06/Mar/2026 00:20:27] "GET /config/runtime-config.js?v=16 HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /js/index.js?v=18 HTTP/1.1" 200 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /css/index.css?v=18 HTTP/1.1" 200 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /assets/logo-mellupet.png HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /assets/cachorros/pequeno1.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /assets/cachorros/pequeno3.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /assets/cachorros/pequeno2.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /config/runtime-config.js?v=18 HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /assets/cachorros/pequeno2.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /assets/cachorros/pequeno3.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:56:20] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:56:20] "GET /assets/cachorros/pequeno1.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /assets/logo-mellupet.png HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /css/index.css?v=18 HTTP/1.1" 200 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /js/index.js?v=18 HTTP/1.1" 200 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /assets/cachorros/pequeno2.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /assets/cachorros/pequeno1.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /assets/cachorros/pequeno3.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /config/runtime-config.js?v=18 HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /assets/cachorros/pequeno1.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /assets/cachorros/pequeno2.jpg HTTP/1.1" 404 -
+127.0.0.1 - - [06/Mar/2026 00:57:50] code 404, message File not found
+127.0.0.1 - - [06/Mar/2026 00:57:50] "GET /assets/cachorros/pequeno3.jpg HTTP/1.1" 404 -
