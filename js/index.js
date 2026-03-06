@@ -197,19 +197,31 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         const container = document.getElementById('pacote-cards-container');
         if (container) {
             const imagensPorPorte = {
-                'P': 'https://images.unsplash.com/photo-1591160690555-5debfba289f0?q=80&w=256&auto=format&fit=crop', // Spitz / Cão Pequeno
-                'M': 'https://images.unsplash.com/photo-1537151608804-ea6fac25d409?q=80&w=256&auto=format&fit=crop', // Beagle / Cão Médio
-                'G': 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=256&auto=format&fit=crop' // Golden / Cão Grande
+                'P': [
+                    'https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=256&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=256&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?q=80&w=256&auto=format&fit=crop'
+                ],
+                'M': [
+                    'https://images.unsplash.com/photo-1537151608804-ea6fac25d409?q=80&w=256&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1554224311-beee415c201f?q=80&w=256&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=256&auto=format&fit=crop'
+                ],
+                'G': [
+                    'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=256&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1601758177266-bc599de87707?q=80&w=256&auto=format&fit=crop',
+                    'https://images.unsplash.com/photo-1534361960057-19889db9621e?q=80&w=256&auto=format&fit=crop'
+                ]
             };
 
-            const imageUrl = imagensPorPorte[porte];
+            const images = imagensPorPorte[porte];
             const imgPlano1 = document.getElementById('img-plano1');
             const imgPlano2 = document.getElementById('img-plano2');
             const imgPlano3 = document.getElementById('img-plano3');
 
-            if (imgPlano1) imgPlano1.src = imageUrl;
-            if (imgPlano2) imgPlano2.src = imageUrl;
-            if (imgPlano3) imgPlano3.src = imageUrl;
+            if (imgPlano1) imgPlano1.src = images[0];
+            if (imgPlano2) imgPlano2.src = images[1];
+            if (imgPlano3) imgPlano3.src = images[2];
 
             container.classList.remove('animate-fade-up');
             void container.offsetWidth; // Trigger reflow para reiniciar a animação
