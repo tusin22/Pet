@@ -1051,10 +1051,26 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         // Owner Name Display
         const ownerName = data.ownerName ? ` (${data.ownerName})` : '';
 
+        let badgePacoteHtml = '';
+        if (data.isPackage) {
+            badgePacoteHtml = `<div style="background-color: var(--primary); color: white; display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.5rem; letter-spacing: 0.5px;">[AGENDAMENTO DE PACOTE]</div>`;
+        }
+
         // Extra Fields
         let serviceType = data.serviceType || 'Não informado';
         if (data.services && Array.isArray(data.services)) {
-            serviceType = data.services.join(', ');
+            if (data.isPackage) {
+                const packageItems = data.packageItems || [];
+                const extraItems = data.extraItems || [];
+
+                const formattedPackageItems = packageItems.map(item => `${item} <span style="color:#888; font-size:0.85rem;">(Pago pelo Pacote)</span>`);
+                const formattedExtraItems = extraItems.map(item => `${item}`);
+
+                serviceType = [...formattedPackageItems, ...formattedExtraItems].join('<br> &bull; ');
+                serviceType = `&bull; ${serviceType}`;
+            } else {
+                serviceType = data.services.join(', ');
+            }
         }
         // Migração de compatibilidade de nomes antigos:
         serviceType = serviceType.replace(/SPA Premium/g, 'Tosa Higiênica');
@@ -1064,7 +1080,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         let totalValue = data.totalValue
             ? data.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-            : '';
+            : 'R$ 0,00';
+
+        if (data.isPackage) {
+            totalValue = `<span style="color:var(--primary); font-weight:bold;">${totalValue}</span> <span style="color:#666; font-size:0.85rem;">(Apenas Extras)</span>`;
+        }
 
         // Add Avaliação text if Desembolo is present in services array or serviceType string
         let hasDesembolo = false;
@@ -1177,9 +1197,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         card.innerHTML = `
             <div class="card-header">
                 <span class="status-badge ${statusClass}">${data.status}</span>
+                ${badgePacoteHtml}
                 <h3 class="pet-name">${escapeHtml(data.petName)}${escapeHtml(ownerName)}</h3>
                 <div class="pet-info" style="margin-top: 0.5rem; color: #333;">
-                     <strong>Serviços:</strong> ${escapeHtml(serviceType)}
+                     <strong>Serviços:</strong><br> ${serviceType}
                 </div>
                 <div class="pet-info" style="color: #333;">
                      <strong>Porte:</strong> ${escapeHtml(petSize)} | <strong>Total:</strong> ${escapeHtml(totalValue)}
@@ -1432,9 +1453,59 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             }
             try {
                 const docRef = doc(db, "appointments", id);
-                await updateDoc(docRef, {
-                    status: 'Cancelado'
-                });
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+
+                    if (data.isPackage && data.walletId) {
+                        const apptDate = new Date(data.appointmentTime);
+                        const now = new Date();
+                        const hoursDiff = (apptDate - now) / (1000 * 60 * 60);
+
+                        let shouldRefund = false;
+
+                        if (hoursDiff >= 24) {
+                            shouldRefund = true;
+                        } else {
+                            if (await showCustomConfirm(`Este agendamento de pacote está sendo cancelado com menos de 24h de antecedência. O sistema NÃO devolveria os créditos. Deseja forçar a devolução dos créditos para o cliente (Override do Admin)?`, false)) {
+                                shouldRefund = true;
+                            }
+                        }
+
+                        if (shouldRefund) {
+                            const walletRef = doc(db, "carteiras", data.walletId);
+                            const walletSnap = await getDoc(walletRef);
+
+                            if (walletSnap.exists() && data.packageItems && Array.isArray(data.packageItems)) {
+                                const currentSaldo = walletSnap.data().saldo || {};
+                                const newSaldo = { ...currentSaldo };
+
+                                data.packageItems.forEach(srv => {
+                                    if (newSaldo[srv] !== undefined) {
+                                        newSaldo[srv] += 1;
+                                    } else {
+                                        newSaldo[srv] = 1;
+                                    }
+                                });
+
+                                await updateDoc(walletRef, {
+                                    saldo: newSaldo,
+                                    lastUpdated: toLocalISOString(new Date())
+                                });
+                                await showCustomAlert("Agendamento cancelado. Créditos estornados para o pacote do cliente com sucesso.");
+                            } else {
+                                await showCustomAlert("Agendamento cancelado. Não foi possível localizar a carteira para estorno.");
+                            }
+                        } else {
+                            await showCustomAlert("Agendamento cancelado. Os créditos do pacote NÃO foram devolvidos ao cliente.");
+                        }
+                    }
+
+                    await updateDoc(docRef, {
+                        status: 'Cancelado'
+                    });
+                }
                 closeModal(null, true);
             } catch (e) {
                 console.error("Error canceling document: ", e);
