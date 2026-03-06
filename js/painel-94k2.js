@@ -2391,6 +2391,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                         if (elG) elG.value = data[planoKey].priceG || 0;
                     }
                 });
+
+                if (data.extras) {
+                    const elUnhas = document.getElementById('pkg-extra-unhas');
+                    const elDentes = document.getElementById('pkg-extra-dentes');
+                    const elCarding = document.getElementById('pkg-extra-carding');
+                    const elDesembolo = document.getElementById('pkg-extra-desembolo');
+
+                    if (elUnhas) elUnhas.value = data.extras.unhas || 0;
+                    if (elDentes) elDentes.value = data.extras.dentes || 0;
+                    if (elCarding) elCarding.value = data.extras.carding || 0;
+                    if (elDesembolo) elDesembolo.value = data.extras.desembolo || 0;
+                }
             }
         } catch (e) {
             console.error("Error loading packages prices:", e);
@@ -2407,9 +2419,21 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             prices[planoKey] = { priceP: p, priceM: m, priceG: g };
         });
 
+        const unhas = parseFloat(document.getElementById('pkg-extra-unhas').value) || 0;
+        const dentes = parseFloat(document.getElementById('pkg-extra-dentes').value) || 0;
+        const carding = parseFloat(document.getElementById('pkg-extra-carding').value) || 0;
+        const desembolo = parseFloat(document.getElementById('pkg-extra-desembolo').value) || 0;
+
+        prices.extras = {
+            unhas: unhas,
+            dentes: dentes,
+            carding: carding,
+            desembolo: desembolo
+        };
+
         try {
             await setDoc(doc(db, "configuracoes", "pacotes_precos"), prices);
-            await showCustomAlert("Preços dos pacotes salvos com sucesso!");
+            await showCustomAlert("Preços dos pacotes e extras salvos com sucesso!");
         } catch (e) {
             console.error("Error saving packages prices:", e);
             await showCustomAlert("Erro ao salvar preços dos pacotes.");

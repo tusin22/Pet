@@ -104,6 +104,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     let serviceDescriptions = {}; // Global variable for descriptions
 
+    let packagesPricingConfig = {}; // Global variable for packages pricing
+    window.packagesPricingConfig = packagesPricingConfig;
+
     // Fetch pricing on load
     async function loadPricingConfig() {
         try {
@@ -150,12 +153,46 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     }
 
+    // Fetch packages pricing on load
+    async function loadPackagesPricingConfig() {
+        try {
+            const snap = await getDoc(doc(db, "configuracoes", "pacotes_precos"));
+            if (snap.exists()) {
+                packagesPricingConfig = snap.data();
+                window.packagesPricingConfig = packagesPricingConfig;
+            }
+        } catch (e) {
+            console.error("Error loading packages pricing config:", e);
+        }
+    }
+
     loadPricingConfig();
     loadDescriptionsConfig();
+    loadPackagesPricingConfig();
     checkLogin();
 
     // Expose showScreen globally for inline onclicks
     window.showScreen = showScreen;
+
+    // Vitrine de Pacotes Logic
+    window.selectPorteTab = (porte) => {
+        // Atualiza abas visuais
+        document.querySelectorAll('.btn-tab-porte').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`tab-porte-${porte.toLowerCase()}`).classList.add('active');
+
+        // Atualiza preços dos planos
+        if (packagesPricingConfig) {
+            const planos = ['plano1', 'plano2', 'plano3'];
+            planos.forEach(plano => {
+                const el = document.getElementById(`vitrine-price-${plano}`);
+                if (el && packagesPricingConfig[plano]) {
+                    const priceField = `price${porte}`;
+                    const preco = parseFloat(packagesPricingConfig[plano][priceField]) || 0;
+                    el.textContent = preco > 0 ? preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Sob consulta';
+                }
+            });
+        }
+    };
 
     function toLocalISOString(date) {
         const pad = (n) => n < 10 ? '0' + n : n;
@@ -469,6 +506,37 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     document.getElementById('btn-meus-pets').addEventListener('click', () => {
         showScreen('my-pets-screen');
         loadMyPets(); // We will implement this function later
+    });
+
+    document.getElementById('btn-conheca-pacotes').addEventListener('click', async () => {
+        showScreen('pacote-info-screen');
+
+        // Se ainda não carregou as configs, aguarda o carregamento
+        if (Object.keys(packagesPricingConfig).length === 0) {
+            await loadPackagesPricingConfig();
+        }
+
+        // Inicializa com o porte P selecionado
+        window.selectPorteTab('P');
+
+        // Carrega os extras no rodapé
+        if (packagesPricingConfig && packagesPricingConfig.extras) {
+            const { unhas = 0, dentes = 0, carding = 0, desembolo = 0 } = packagesPricingConfig.extras;
+
+            const formatPreco = (val) => val > 0 ? parseFloat(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Grátis';
+
+            document.getElementById('vitrine-extra-unhas').textContent = formatPreco(unhas);
+            document.getElementById('vitrine-extra-dentes').textContent = formatPreco(dentes);
+            document.getElementById('vitrine-extra-carding').textContent = formatPreco(carding);
+
+            // Regra especial para desembolo
+            document.getElementById('vitrine-extra-desembolo').textContent = `a partir de ${formatPreco(desembolo)}`;
+        } else {
+             document.getElementById('vitrine-extra-unhas').textContent = '...';
+             document.getElementById('vitrine-extra-dentes').textContent = '...';
+             document.getElementById('vitrine-extra-carding').textContent = '...';
+             document.getElementById('vitrine-extra-desembolo').textContent = '...';
+        }
     });
 
     document.getElementById('btn-descricoes').addEventListener('click', () => {
