@@ -1,6 +1,6 @@
-# MelluPet — Plataforma de Agendamento Petshop
+# Mellu Estética Animal — Plataforma de Agendamento Petshop
 
-Projeto web da MelluPet em evolução de MVP para produto digital profissional, com foco em conversão, organização de agenda e operação estável na Hostinger.
+Projeto web da Mellu Estética Animal em evolução de MVP para produto digital profissional, com foco em conversão, organização de agenda e operação estável na Hostinger.
 
 ## Objetivo atual
 
@@ -83,7 +83,7 @@ Para evitar retrabalho, seguir nesta ordem:
 ## Estrutura do repositório
 
 - `index.html` — fluxo do cliente (login, agendamento, meus agendamentos).
-- `novo-site.html` — landing page/apresentação da MelluPet.
+- `novo-site.html` — landing page/apresentação da Mellu Estética Animal.
 - `painel-94k2.html` — painel administrativo.
 - `css/index.css` — estilos do fluxo do cliente.
 - `css/novo-site.css` — estilos da landing page.
