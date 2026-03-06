@@ -1,0 +1,79 @@
+from playwright.sync_api import sync_playwright
+
+def run(playwright):
+    browser = playwright.chromium.launch(headless=True)
+    page = browser.new_page()
+
+    # We will mock the auth and firestore data to render a package card
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+        <meta charset="UTF-8">
+        <title>Painel</title>
+        <style>
+            .card { border: 1px solid #ccc; padding: 10px; margin: 10px; }
+            .status-badge { background: #eee; padding: 2px 5px; }
+        </style>
+    </head>
+    <body>
+        <div id="appointments-container"></div>
+        <script>
+            // We'll define a mock function similar to the one in painel-94k2.js
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                     .toString()
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
+            function renderMockCard() {
+                const data = {
+                    status: 'Agendado',
+                    petName: 'Rex',
+                    isPackage: true,
+                    petSize: 'M',
+                    totalValue: 30.5
+                };
+
+                let totalValue = data.totalValue
+                    ? data.totalValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                    : 'R$ 0,00';
+
+                if (data.isPackage) {
+                    totalValue = `<span style="color:blue; font-weight:bold;">${totalValue}</span> <span style="color:#666; font-size:0.85rem;">(Apenas Extras)</span>`;
+                }
+
+                // SIMULATING THE BUG FIX: using ${totalValue} instead of ${escapeHtml(totalValue)}
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="pet-info" style="color: #333;">
+                         <strong>Porte:</strong> ${escapeHtml(data.petSize)} | <strong>Total:</strong> ${totalValue}
+                    </div>
+                `;
+                document.getElementById('appointments-container').appendChild(card);
+            }
+
+            renderMockCard();
+        </script>
+    </body>
+    </html>
+    """
+
+    # Save the HTML temporarily
+    with open("verification/mock_panel.html", "w") as f:
+        f.write(html_content)
+
+    page.goto(f"file://{page.evaluate('window.location.href', '')}verification/mock_panel.html" if False else f"file:///app/verification/mock_panel.html")
+    page.wait_for_selector('.card')
+    page.screenshot(path="verification/panel_fixed.png")
+
+    browser.close()
+
+with sync_playwright() as playwright:
+    run(playwright)

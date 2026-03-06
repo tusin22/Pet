@@ -1203,7 +1203,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                      <strong>Serviços:</strong><br> ${serviceType}
                 </div>
                 <div class="pet-info" style="color: #333;">
-                     <strong>Porte:</strong> ${escapeHtml(petSize)} | <strong>Total:</strong> ${escapeHtml(totalValue)}
+                     <strong>Porte:</strong> ${escapeHtml(petSize)} | <strong>Total:</strong> ${totalValue}
                 </div>
                 ${desemboloInputHtml}
                 <div class="pet-info" style="color: #333;">

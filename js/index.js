@@ -1352,10 +1352,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
 
         const submitBtn = scheduleForm.querySelector('button[type="submit"]');
+        if (submitBtn.disabled) return;
+
         const originalText = submitBtn.textContent;
 
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Aguardando...';
+        submitBtn.textContent = 'Processando...';
 
         try {
             const petName = document.getElementById('petName').value;
@@ -1540,9 +1542,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             } catch (e) {
                 console.error("Error saving document: ", e);
                 await showCustomAlert("Erro ao salvar. Tente novamente.");
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
             }
         } finally {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalText;
+            // We do not re-enable the button on success, because we are redirecting/resetting
         }
     });
