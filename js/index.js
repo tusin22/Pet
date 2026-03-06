@@ -94,7 +94,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             updateGreeting(name);
             showScreen('menu-screen');
         } else {
-            showScreen('welcome-screen');
+            showScreen('login-screen');
         }
     };
 
@@ -573,7 +573,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             localStorage.removeItem('petshop_owner_phone');
             localStorage.removeItem('petshop_appointment_id'); // Clear legacy item if exists
             loginPhoneInput.value = '';
-            showScreen('welcome-screen');
+            showScreen('login-screen');
         }
     });
 
