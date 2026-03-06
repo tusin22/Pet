@@ -468,12 +468,32 @@
             border-style: solid;
             border-color: #a3862b transparent transparent transparent;
         }
+        .pacote-discount-badge {
+            background-color: rgba(196, 149, 149, 0.1);
+            color: #C49595;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            text-align: center;
+            align-self: center;
+            margin-bottom: 0.5rem;
+        }
+
         .pacote-card-price {
             font-size: 1.5rem;
             font-weight: 800;
             color: var(--primary);
             text-align: center;
             margin-bottom: 1.5rem;
+        }
+
+        .pacote-validity-text {
+            font-size: 0.8em;
+            text-decoration: underline;
+            color: #888;
+            text-align: center;
+            margin-top: 1rem;
         }
         .pacote-card-list {
             list-style: none;

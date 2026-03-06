@@ -4,6 +4,10 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 
 ## [Não lançado]
 
+### Adicionado
+- `index.html` e `css/index.css`: adicionadas tags de desconto (`5%`, `10%` e `15% de desconto`) nos cards da vitrine de pacotes, estilizadas em formato de pílula com cor Old Rose e fundo translúcido.
+- `index.html` e `css/index.css`: adicionados textos com a regra de validade (`2 meses`, `4 meses` e `6 meses`) no rodapé dos cards da vitrine de pacotes, formatados como texto menor e sublinhado.
+
 ### Corrigido
 - `index.html` e `js/index.js`: alterada a origem das imagens da vitrine de pacotes de Unsplash para caminhos locais na pasta `assets/cachorros/` conforme o porte (pequeno, medio, grande).
 - `index.html` e `css/index.css`: adicionada a classe `premium-card` ao card de 24 banhos para corrigir a cor da borda (dourada) e aplicar os mesmos efeitos de animação e sombra dos outros cards.
