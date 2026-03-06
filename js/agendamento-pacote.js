@@ -296,16 +296,12 @@ function renderServicesList() {
         div.style.gap = '0.5rem';
 
         const isBanhoMaster = item.name === 'Banho Master';
-        // Se for Banho Master e tiver saldo, trava selecionado
+        // Se for Banho Master e tiver saldo, trava selecionado e impede desmarcação
         const isChecked = isBanhoMaster ? 'checked' : '';
-        const isDisabled = isBanhoMaster ? 'disabled' : ''; // Prevent unchecking base
-
-        // Note: we use "disabled" but we must submit its value, so we handle it on submit or use readonly.
-        // Alternatively, let them click but preventDefault if it's the only bath.
-        // We will just let the standard logic handle mutual exclusion and locking "Banho Master" if no other bath.
+        const onClickLogic = isBanhoMaster ? 'onclick="return false;"' : '';
 
         div.innerHTML = `
-            <input type="checkbox" name="serviceOption" value="${item.name}" data-is-package="true" id="srv-${item.name.replace(/\s+/g, '')}" ${isChecked} style="width: auto; transform: scale(1.2);">
+            <input type="checkbox" name="serviceOption" value="${item.name}" data-is-package="true" id="srv-${item.name.replace(/\s+/g, '')}" ${isChecked} ${onClickLogic} style="width: auto; transform: scale(1.2);">
             <label for="srv-${item.name.replace(/\s+/g, '')}" style="margin: 0; font-weight: normal; cursor: pointer; flex: 1;">
                 ${item.name} <span style="color:#666; font-size:0.85rem;">(Saldo: ${item.count})</span>
             </label>
@@ -344,32 +340,6 @@ function renderServicesList() {
     // Reattach listeners
     document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
         cb.addEventListener('change', async (e) => {
-            const isChecked = e.target.checked;
-            const value = e.target.value;
-
-            // Mutual exclusion for baths
-            if (value === 'Banho Master' || value === 'Banho e Tosa' || value === 'Tosa') {
-                const masterCb = document.querySelector('input[name="serviceOption"][value="Banho Master"]');
-                const tosaBaseCb = document.querySelector('input[name="serviceOption"][value="Banho e Tosa"]'); // if any
-                const tosaExtraCb = document.querySelector('input[name="serviceOption"][value="Tosa"]'); // new extra Tosa
-
-                if (isChecked) {
-                    if ((value === 'Banho e Tosa' || value === 'Tosa') && masterCb) masterCb.checked = false;
-                    else if (value === 'Banho Master') {
-                        if (tosaBaseCb) tosaBaseCb.checked = false;
-                        if (tosaExtraCb) tosaExtraCb.checked = false;
-                    }
-                } else {
-                    const otherChecked = (value === 'Banho Master') ? ((tosaBaseCb && tosaBaseCb.checked) || (tosaExtraCb && tosaExtraCb.checked)) : (masterCb && masterCb.checked);
-                    if (!otherChecked) {
-                        e.preventDefault();
-                        e.target.checked = true;
-                        await showCustomAlert('Todo agendamento precisa incluir pelo menos um banho base.');
-                        return;
-                    }
-                }
-            }
-
             updateServiceUI();
             calculateTotalAndDuration();
             checkAndGenerateSlots();
