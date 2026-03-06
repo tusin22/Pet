@@ -729,9 +729,11 @@ scheduleForm.addEventListener('submit', async (e) => {
     }
 
     const submitBtn = scheduleForm.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Aguardando...';
+    submitBtn.textContent = 'Processando...';
 
     try {
         const petName = document.getElementById('petName').value.trim();
