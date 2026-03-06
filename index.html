@@ -18,7 +18,7 @@
     <link rel="icon" href="assets/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="css/index.css?v=26">
+    <link rel="stylesheet" href="css/index.css?v=27">
 </head>
 <body>
 
@@ -66,9 +66,7 @@
         <h2>Meus Pacotes</h2>
         <p class="screen-description" style="text-align: center; margin-top: 2rem;">Você ainda não possui um pacote de banhos ativo.</p>
         <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; margin-top: 2rem;">
-            <a href="https://wa.me/5531982637569?text=Olá! Gostaria de saber mais sobre os pacotes de banho para o meu pet." target="_blank" style="text-decoration: none; width: 100%; max-width: 300px;">
-                <button class="primary" style="width: 100%; padding: 1rem; font-size: 1.1rem; background-color: #25D366; border-color: #25D366; color: white;">Quero comprar um pacote</button>
-            </a>
+            <button id="btn-empty-conheca-pacotes" class="primary" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem;">Conheça nossos Pacotes</button>
             <button type="button" class="secondary" onclick="showScreen('menu-screen')" style="width: 100%; max-width: 300px; padding: 1rem; font-size: 1.1rem; margin-top: 1rem;">Voltar ao Menu</button>
         </div>
     </div>
@@ -79,7 +77,7 @@
         <p class="screen-description" style="text-align: center; margin-bottom: 2rem;">O que você deseja fazer hoje?</p>
         <button id="btn-agendar" class="menu-btn">Novo Agendamento 🛁</button>
         <button id="btn-meus-pets" class="menu-btn">Meus Agendamentos 🐶</button>
-        <button id="btn-conheca-pacotes" class="menu-btn">Conheça nossos Pacotes 💎</button>
+        <button id="btn-conheca-pacotes" class="menu-btn btn-accent">Conheça nossos Pacotes 💎</button>
         <button id="btn-meus-pacotes" class="menu-btn">Meus Pacotes 🎁</button>
         <button id="btn-descricoes" class="menu-btn">Tabela de Preços e Serviços 📑</button>
         <div style="margin-top: 2rem; text-align: center;">
@@ -329,8 +327,8 @@
     </div>
 </div>
 
-<script src="config/runtime-config.js?v=26" defer></script>
-<script type="module" src="js/index.js?v=26"></script>
+<script src="config/runtime-config.js?v=27" defer></script>
+<script type="module" src="js/index.js?v=27"></script>
 
 
 </body>
