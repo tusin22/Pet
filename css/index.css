@@ -4,6 +4,7 @@
             --surface: #ffffff;
             --text: #333333;
             --border: #ddd;
+            --sage: #C4C4A3;
         }
 
         body {
@@ -411,13 +412,11 @@
         .pacote-card.featured {
             border-color: var(--primary);
             box-shadow: 0 12px 24px rgba(78, 121, 124, 0.25);
-            transform: scale(1.02);
             border-width: 2px;
         }
         .pacote-card.premium-card {
             border-color: #d4af37;
             box-shadow: 0 12px 24px rgba(212, 175, 55, 0.25);
-            transform: scale(1.02);
             border-width: 2px;
         }
         .pacote-card-header {
