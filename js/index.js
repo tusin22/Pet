@@ -421,7 +421,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                             let saldoHtml = '<ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: #555;">';
                             for (const [srvName, qty] of Object.entries(data.saldo)) {
                                 if (qty > 0) {
-                                    saldoHtml += `<li>${escapeHtml(srvName)}: <strong>${qty}</strong></li>`;
+                                    let displayName = srvName;
+                                    if (srvName === 'Tosa Adicional') {
+                                        displayName = 'Tosa';
+                                    }
+                                    saldoHtml += `<li>${escapeHtml(displayName)}: <strong>${qty}</strong></li>`;
                                 }
                             }
                             saldoHtml += '</ul>';

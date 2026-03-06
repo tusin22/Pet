@@ -13,8 +13,8 @@
     <link rel="icon" href="assets/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="css/painel-94k2.css?v=13">
-    <script src="config/runtime-config.js?v=13" defer></script>
+    <link rel="stylesheet" href="css/painel-94k2.css?v=14">
+    <script src="config/runtime-config.js?v=14" defer></script>
 </head>
 <body>
 
@@ -168,6 +168,10 @@
                     <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Adicione a quantidade de serviços avulsos que farão parte do pacote.</p>
 
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="number" id="pacoteExtraTosa" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                            <label for="pacoteExtraTosa">Tosa</label>
+                        </div>
                         <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
                             <input type="number" id="pacoteExtraUnhas" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
                             <label for="pacoteExtraUnhas">Corte das unhas</label>
@@ -474,7 +478,7 @@
     </div>
 </div>
 
-<script type="module" src="js/painel-94k2.js?v=13"></script>
+<script type="module" src="js/painel-94k2.js?v=14"></script>
 
 
 </body>

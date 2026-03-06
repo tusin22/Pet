@@ -2101,6 +2101,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const petSize = document.getElementById('pacotePetSize').value;
             const plano = document.getElementById('pacotePlano').value;
 
+            const extraTosa = parseInt(document.getElementById('pacoteExtraTosa').value) || 0;
             const extraUnhas = parseInt(document.getElementById('pacoteExtraUnhas').value) || 0;
             const extraDentes = parseInt(document.getElementById('pacoteExtraDentes').value) || 0;
             const extraCarding = parseInt(document.getElementById('pacoteExtraCarding').value) || 0;
@@ -2159,6 +2160,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     const currentBanhos = (data.saldo && data.saldo["Banho Master"]) || 0;
                     const currentHigienicas = (data.saldo && data.saldo["Tosa Higiênica"]) || 0;
                     const currentHidratacoes = (data.saldo && data.saldo["Hidratação Vanilla"]) || 0;
+                    const currentTosa = (data.saldo && data.saldo["Tosa Adicional"]) || 0;
                     const currentUnhas = (data.saldo && data.saldo["Corte das unhas"]) || 0;
                     const currentDentes = (data.saldo && data.saldo["Escov. dos dentes"]) || 0;
                     const currentCarding = (data.saldo && data.saldo["Carding"]) || 0;
@@ -2168,6 +2170,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                         "Banho Master": currentBanhos + banhos,
                         "Tosa Higiênica": currentHigienicas + higienicas,
                         "Hidratação Vanilla": currentHidratacoes + hidratacoes,
+                        "Tosa Adicional": currentTosa + extraTosa,
                         "Corte das unhas": currentUnhas + extraUnhas,
                         "Escov. dos dentes": currentDentes + extraDentes,
                         "Carding": currentCarding + extraCarding,
@@ -2185,6 +2188,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                         "Banho Master": banhos,
                         "Tosa Higiênica": higienicas,
                         "Hidratação Vanilla": hidratacoes,
+                        "Tosa Adicional": extraTosa,
                         "Corte das unhas": extraUnhas,
                         "Escov. dos dentes": extraDentes,
                         "Carding": extraCarding,
