@@ -268,11 +268,19 @@ function renderServicesList() {
              return; // Pula o Banho e Tosa, ele não pode ser extra
         }
 
-        if (saldo[service] && saldo[service] > 0) {
-            packageItems.push({ name: service, count: saldo[service] });
+        // Mapeamento específico para a Tosa
+        if (service === 'Tosa') {
+            if (saldo['Tosa Adicional'] && saldo['Tosa Adicional'] > 0) {
+                packageItems.push({ name: service, count: saldo['Tosa Adicional'] });
+            } else {
+                extraItems.push(service);
+            }
         } else {
-            // Se for Tosa, só deve aparecer se for listado como extra
-            extraItems.push(service);
+            if (saldo[service] && saldo[service] > 0) {
+                packageItems.push({ name: service, count: saldo[service] });
+            } else {
+                extraItems.push(service);
+            }
         }
     });
 
@@ -776,6 +784,17 @@ scheduleForm.addEventListener('submit', async (e) => {
             }
         });
 
+        // Garantir que Banho Master entre nos arrays caso esteja desabilitado e não seja capturado pelo :checked
+        const banhoMasterCb = document.querySelector('input[name="serviceOption"][value="Banho Master"]');
+        if (banhoMasterCb && banhoMasterCb.checked && !allServicesUsed.includes('Banho Master')) {
+            allServicesUsed.push('Banho Master');
+            if (banhoMasterCb.getAttribute('data-is-package') === 'true') {
+                packageServicesUsed.push('Banho Master');
+            } else {
+                extraServicesUsed.push('Banho Master');
+            }
+        }
+
         const appointmentTime = selectedSlot;
         const { duration, slotsNeeded } = currentSelectionData;
 
@@ -819,8 +838,13 @@ scheduleForm.addEventListener('submit', async (e) => {
             const newSaldo = { ...currentSaldo };
 
             packageServicesUsed.forEach(srv => {
-                if (newSaldo[srv] && newSaldo[srv] > 0) {
-                    newSaldo[srv] -= 1;
+                let saldoKey = srv;
+                if (srv === 'Tosa') {
+                    saldoKey = 'Tosa Adicional';
+                }
+
+                if (newSaldo[saldoKey] && newSaldo[saldoKey] > 0) {
+                    newSaldo[saldoKey] -= 1;
                 }
             });
 
