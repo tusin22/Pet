@@ -81,6 +81,7 @@ let walletData = null;
 const servicesListAll = [
     "Banho Master",
     "Banho e Tosa",
+    "Tosa", // Substituirá Banho e Tosa se não houver saldo
     "Hidratação Vanilla",
     "Hidratação Ouro 24K",
     "Tosa Higiênica",
@@ -225,20 +226,16 @@ function renderFormBasedOnWallet() {
     if (walletData.type === 'individual') {
         titleEl.textContent = `Pacote Individual - Pet: ${walletData.petName}`;
         petNameInput.value = walletData.petName;
-        // petNameInput.disabled = true; // Kept editable but pre-filled if needed, though better locked to avoid mistakes
         petNameInput.readOnly = true;
         petNameInput.style.backgroundColor = '#f0f0f0';
         petSizeInput.value = walletData.petSize || '';
     } else {
         titleEl.textContent = `Pacote Compartilhado - Porte: ${walletData.petSize}`;
         petSizeInput.value = walletData.petSize;
-        // petSizeInput.disabled = true;
-
-        // We actually want the user to not change the size if it's tied to size, but the select field looks ugly if disabled.
-        // Let's use pointer-events none
-        petSizeInput.style.pointerEvents = 'none';
-        petSizeInput.style.backgroundColor = '#f0f0f0';
     }
+
+    // O porte vem sempre 100% travado
+    petSizeInput.disabled = true;
 
     renderServicesList();
 
@@ -263,9 +260,18 @@ function renderServicesList() {
         // Exceção: Banho e Tosa nunca está no pacote por padrão na regra, mas pode estar se adicionarem depois.
         // A regra diz: "APENAS o 'Banho' (Master) deve vir marcado por padrão se houver saldo"
 
+        // Impede que 'Banho e Tosa' vá para a lista de extras (será substituído visualmente e logicamente por 'Tosa' nos extras)
+        if (service === 'Banho e Tosa') {
+             if (saldo[service] && saldo[service] > 0) {
+                 packageItems.push({ name: service, count: saldo[service] });
+             }
+             return; // Pula o Banho e Tosa, ele não pode ser extra
+        }
+
         if (saldo[service] && saldo[service] > 0) {
             packageItems.push({ name: service, count: saldo[service] });
         } else {
+            // Se for Tosa, só deve aparecer se for listado como extra
             extraItems.push(service);
         }
     });
@@ -301,6 +307,8 @@ function renderServicesList() {
     });
 
     extraItems.forEach(service => {
+        // Tosa é extra, não deve aparecer se for do pacote (o saldo vem como 'Banho e Tosa')
+        // Então deixamos passar apenas os que estão em extraItems
         const div = document.createElement('div');
         div.className = 'service-item-extra';
         div.style.display = 'flex';
@@ -332,15 +340,19 @@ function renderServicesList() {
             const value = e.target.value;
 
             // Mutual exclusion for baths
-            if (value === 'Banho Master' || value === 'Banho e Tosa') {
+            if (value === 'Banho Master' || value === 'Banho e Tosa' || value === 'Tosa') {
                 const masterCb = document.querySelector('input[name="serviceOption"][value="Banho Master"]');
-                const tosaCb = document.querySelector('input[name="serviceOption"][value="Banho e Tosa"]');
+                const tosaBaseCb = document.querySelector('input[name="serviceOption"][value="Banho e Tosa"]'); // if any
+                const tosaExtraCb = document.querySelector('input[name="serviceOption"][value="Tosa"]'); // new extra Tosa
 
                 if (isChecked) {
-                    if (value === 'Banho e Tosa' && masterCb) masterCb.checked = false;
-                    else if (value === 'Banho Master' && tosaCb) tosaCb.checked = false;
+                    if ((value === 'Banho e Tosa' || value === 'Tosa') && masterCb) masterCb.checked = false;
+                    else if (value === 'Banho Master') {
+                        if (tosaBaseCb) tosaBaseCb.checked = false;
+                        if (tosaExtraCb) tosaExtraCb.checked = false;
+                    }
                 } else {
-                    const otherChecked = (value === 'Banho Master') ? (tosaCb && tosaCb.checked) : (masterCb && masterCb.checked);
+                    const otherChecked = (value === 'Banho Master') ? ((tosaBaseCb && tosaBaseCb.checked) || (tosaExtraCb && tosaExtraCb.checked)) : (masterCb && masterCb.checked);
                     if (!otherChecked) {
                         e.preventDefault();
                         e.target.checked = true;
@@ -390,7 +402,12 @@ function updateServiceUI() {
             return;
         }
 
-        const data = pricingConfig[service];
+        let lookupService = service;
+        if (service === 'Tosa' && pricingConfig['Tosa']) {
+             lookupService = 'Tosa';
+        }
+
+        const data = pricingConfig[lookupService];
         if (!data) return;
 
         let basePrice = 0;
@@ -462,13 +479,19 @@ async function calculateTotalAndDuration() {
                 if (cb.hasAttribute('data-price')) {
                     totalPrice += parseFloat(cb.getAttribute('data-price')) || 0;
                 }
-                if (pricingConfig[serviceName] && serviceName !== 'Desembolo de nós') {
-                    let base = 0;
-                    if (size === 'P') base = parseFloat(pricingConfig[serviceName].priceP) || 0;
-                    else if (size === 'M') base = parseFloat(pricingConfig[serviceName].priceM) || 0;
-                    else if (size === 'G') base = parseFloat(pricingConfig[serviceName].priceG) || 0;
+                let lookupName = serviceName;
+                // A Tosa que aparece como extra para pacotes vai usar o valor da aba geral configurada como "Tosa"
+                if (serviceName === 'Tosa' && pricingConfig['Tosa']) {
+                     lookupName = 'Tosa';
+                }
 
-                    const discount = parseFloat(pricingConfig[serviceName].discount) || 0;
+                if (pricingConfig[lookupName] && serviceName !== 'Desembolo de nós') {
+                    let base = 0;
+                    if (size === 'P') base = parseFloat(pricingConfig[lookupName].priceP) || 0;
+                    else if (size === 'M') base = parseFloat(pricingConfig[lookupName].priceM) || 0;
+                    else if (size === 'G') base = parseFloat(pricingConfig[lookupName].priceG) || 0;
+
+                    const discount = parseFloat(pricingConfig[lookupName].discount) || 0;
 
                     if (discountActive) {
                         totalPrice += base * (1 - (discount / 100));

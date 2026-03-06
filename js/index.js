@@ -191,6 +191,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     el.textContent = preco > 0 ? preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Sob consulta';
                 }
             });
+
+            // Atualiza preço da Tosa Extra
+            if (packagesPricingConfig.extras) {
+                const elTosa = document.getElementById('vitrine-extra-tosa');
+                if (elTosa) {
+                    const tosaField = `tosa${porte}`;
+                    const precoTosa = parseFloat(packagesPricingConfig.extras[tosaField]) || 0;
+                    elTosa.textContent = precoTosa > 0 ? precoTosa.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'R$ 0,00';
+                }
+            }
         }
 
         // Atualizar imagens conforme o porte e disparar animação
@@ -479,6 +489,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     // Generate Checkboxes
     const servicesContainer = document.getElementById('services-container');
     servicesList.forEach(service => {
+        // Tosa avulsa é apenas para pacotes, agendamento normal usa apenas "Banho e Tosa"
+        if (service === "Tosa") return;
+
         const div = document.createElement('div');
         div.style.display = 'flex';
         div.style.alignItems = 'center';

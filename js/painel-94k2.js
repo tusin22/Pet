@@ -2464,11 +2464,17 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 });
 
                 if (data.extras) {
+                    const elTosaP = document.getElementById('pkg-extra-tosa-p');
+                    const elTosaM = document.getElementById('pkg-extra-tosa-m');
+                    const elTosaG = document.getElementById('pkg-extra-tosa-g');
                     const elUnhas = document.getElementById('pkg-extra-unhas');
                     const elDentes = document.getElementById('pkg-extra-dentes');
                     const elCarding = document.getElementById('pkg-extra-carding');
                     const elDesembolo = document.getElementById('pkg-extra-desembolo');
 
+                    if (elTosaP) elTosaP.value = data.extras.tosaP || 0;
+                    if (elTosaM) elTosaM.value = data.extras.tosaM || 0;
+                    if (elTosaG) elTosaG.value = data.extras.tosaG || 0;
                     if (elUnhas) elUnhas.value = data.extras.unhas || 0;
                     if (elDentes) elDentes.value = data.extras.dentes || 0;
                     if (elCarding) elCarding.value = data.extras.carding || 0;
@@ -2490,12 +2496,18 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             prices[planoKey] = { priceP: p, priceM: m, priceG: g };
         });
 
+        const tosaP = parseFloat(document.getElementById('pkg-extra-tosa-p').value) || 0;
+        const tosaM = parseFloat(document.getElementById('pkg-extra-tosa-m').value) || 0;
+        const tosaG = parseFloat(document.getElementById('pkg-extra-tosa-g').value) || 0;
         const unhas = parseFloat(document.getElementById('pkg-extra-unhas').value) || 0;
         const dentes = parseFloat(document.getElementById('pkg-extra-dentes').value) || 0;
         const carding = parseFloat(document.getElementById('pkg-extra-carding').value) || 0;
         const desembolo = parseFloat(document.getElementById('pkg-extra-desembolo').value) || 0;
 
         prices.extras = {
+            tosaP: tosaP,
+            tosaM: tosaM,
+            tosaG: tosaG,
             unhas: unhas,
             dentes: dentes,
             carding: carding,
