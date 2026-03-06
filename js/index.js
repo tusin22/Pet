@@ -160,9 +160,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             if (snap.exists()) {
                 packagesPricingConfig = snap.data();
                 window.packagesPricingConfig = packagesPricingConfig;
+            } else {
+                console.error("Documento 'pacotes_precos' não encontrado na coleção 'configuracoes'. Verifique se ele foi criado no painel.");
             }
         } catch (e) {
-            console.error("Error loading packages pricing config:", e);
+            console.error("Error loading packages pricing config (possível erro de permissão do Firestore ou falha na rede):", e);
         }
     }
 
