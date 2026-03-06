@@ -18,7 +18,7 @@
     <link rel="icon" href="assets/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="css/index.css?v=15">
+    <link rel="stylesheet" href="css/index.css?v=16">
 </head>
 <body>
 
@@ -90,7 +90,7 @@
         <p class="screen-description" style="text-align: center; margin-bottom: 2rem;">O que você deseja fazer hoje?</p>
         <button id="btn-agendar" class="menu-btn">Novo Agendamento 🛁</button>
         <button id="btn-meus-pets" class="menu-btn">Meus Agendamentos 🐶</button>
-        <button id="btn-conheca-pacotes" class="menu-btn" style="background-color: var(--secondary); color: white; border-color: var(--secondary);">Conheça nossos Pacotes 💎</button>
+        <button id="btn-conheca-pacotes" class="menu-btn">Conheça nossos Pacotes 💎</button>
         <button id="btn-meus-pacotes" class="menu-btn">Meus Pacotes 🎁</button>
         <button id="btn-descricoes" class="menu-btn">Tabela de Preços e Serviços 📑</button>
         <div style="margin-top: 2rem; text-align: center;">
@@ -206,10 +206,11 @@
         </div>
 
         <!-- Cards dos Planos -->
-        <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: 2rem;">
+        <div id="pacote-cards-container" style="display: flex; flex-wrap: wrap; gap: 2rem; justify-content: center; margin-bottom: 2rem; margin-top: 3rem;">
 
             <!-- Plano 1 (4 Banhos) -->
             <div class="pacote-card">
+                <img src="https://images.unsplash.com/photo-1591160690555-5debfba289f0?q=80&w=256&auto=format&fit=crop" alt="Cão pequeno" class="pacote-card-img" id="img-plano1">
                 <div class="pacote-card-header">Pacote 4 Banhos</div>
                 <div class="pacote-card-price" id="vitrine-price-plano1">Carregando...</div>
                 <ul class="pacote-card-list">
@@ -222,6 +223,7 @@
 
             <!-- Plano 2 (12 Banhos) -->
             <div class="pacote-card featured">
+                <img src="https://images.unsplash.com/photo-1591160690555-5debfba289f0?q=80&w=256&auto=format&fit=crop" alt="Cão pequeno" class="pacote-card-img" id="img-plano2">
                 <div class="pacote-card-header">Pacote 12 Banhos</div>
                 <div class="pacote-card-price" id="vitrine-price-plano2">Carregando...</div>
                 <ul class="pacote-card-list">
@@ -234,6 +236,7 @@
 
             <!-- Plano 3 (24 Banhos) -->
             <div class="pacote-card">
+                <img src="https://images.unsplash.com/photo-1591160690555-5debfba289f0?q=80&w=256&auto=format&fit=crop" alt="Cão pequeno" class="pacote-card-img" id="img-plano3">
                 <div class="pacote-card-header">Pacote 24 Banhos</div>
                 <div class="pacote-card-price" id="vitrine-price-plano3">Carregando...</div>
                 <ul class="pacote-card-list">
@@ -247,27 +250,27 @@
         </div>
 
         <!-- Rodapé da Vitrine (Adicionais) -->
-        <div style="background-color: var(--cream); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
-            <h3 style="margin-top: 0; color: var(--primary); text-align: center; margin-bottom: 1rem;">Adicione ao seu pacote:</h3>
+        <div style="background-color: transparent; padding: 0; margin-bottom: 2.5rem;">
+            <h3 style="margin-top: 0; color: var(--primary); text-align: center; margin-bottom: 1.5rem;">Adicione ao seu pacote:</h3>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 0.5rem;">
-                    <span>Corte de unhas</span>
-                    <strong id="vitrine-extra-unhas">...</strong>
+                <div class="extra-chip">
+                    <span>✂️ Corte de unhas</span>
+                    <strong id="vitrine-extra-unhas" style="color: var(--primary);">...</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 0.5rem;">
-                    <span>Escovação dos dentes</span>
-                    <strong id="vitrine-extra-dentes">...</strong>
+                <div class="extra-chip">
+                    <span>🪥 Escovação dos dentes</span>
+                    <strong id="vitrine-extra-dentes" style="color: var(--primary);">...</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 0.5rem;">
-                    <span>Carding</span>
-                    <strong id="vitrine-extra-carding">...</strong>
+                <div class="extra-chip">
+                    <span>🪮 Carding</span>
+                    <strong id="vitrine-extra-carding" style="color: var(--primary);">...</strong>
                 </div>
-                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed #ccc; padding-bottom: 0.5rem;">
-                    <span>Desembolo de nós</span>
-                    <strong id="vitrine-extra-desembolo">...</strong>
+                <div class="extra-chip">
+                    <span>✨ Desembolo de nós</span>
+                    <strong id="vitrine-extra-desembolo" style="color: var(--primary);">...</strong>
                 </div>
             </div>
-            <p style="font-size: 0.85rem; color: #666; text-align: center; margin-top: 1rem; margin-bottom: 0;">* Valores fixos por sessão adicionada ao pacote, independente do porte.</p>
+            <p style="font-size: 0.85rem; color: #666; text-align: center; margin-top: 1.5rem; margin-bottom: 0;">* Valores fixos por sessão adicionada ao pacote, independente do porte.</p>
         </div>
 
         <!-- Botão de Compra -->
@@ -311,8 +314,8 @@
     </div>
 </div>
 
-<script src="config/runtime-config.js?v=15" defer></script>
-<script type="module" src="js/index.js?v=15"></script>
+<script src="config/runtime-config.js?v=16" defer></script>
+<script type="module" src="js/index.js?v=16"></script>
 
 
 </body>

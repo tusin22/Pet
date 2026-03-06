@@ -192,6 +192,29 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 }
             });
         }
+
+        // Atualizar imagens conforme o porte e disparar animação
+        const container = document.getElementById('pacote-cards-container');
+        if (container) {
+            const imagensPorPorte = {
+                'P': 'https://images.unsplash.com/photo-1591160690555-5debfba289f0?q=80&w=256&auto=format&fit=crop', // Spitz / Cão Pequeno
+                'M': 'https://images.unsplash.com/photo-1537151608804-ea6fac25d409?q=80&w=256&auto=format&fit=crop', // Beagle / Cão Médio
+                'G': 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=256&auto=format&fit=crop' // Golden / Cão Grande
+            };
+
+            const imageUrl = imagensPorPorte[porte];
+            const imgPlano1 = document.getElementById('img-plano1');
+            const imgPlano2 = document.getElementById('img-plano2');
+            const imgPlano3 = document.getElementById('img-plano3');
+
+            if (imgPlano1) imgPlano1.src = imageUrl;
+            if (imgPlano2) imgPlano2.src = imageUrl;
+            if (imgPlano3) imgPlano3.src = imageUrl;
+
+            container.classList.remove('animate-fade-up');
+            void container.offsetWidth; // Trigger reflow para reiniciar a animação
+            container.classList.add('animate-fade-up');
+        }
     };
 
     function toLocalISOString(date) {
