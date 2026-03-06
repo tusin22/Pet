@@ -242,7 +242,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         "Corte das unhas",
         "Escov. dos dentes",
         "Carding",
-        "Desembolo de nós"
+        "Desembolo de nós",
+        "Tosa Adicional"
     ];
 
     function toLocalDateString(date) {
@@ -2256,11 +2257,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         container.innerHTML = '';
 
         servicesList.forEach((service, index) => {
+            let displayName = service;
+            if (service === 'Tosa Adicional') displayName = 'Tosa (Adicional)';
+
             const div = document.createElement('div');
             div.className = 'form-group';
             div.style.marginBottom = '1rem';
             div.innerHTML = `
-                <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">${service}</label>
+                <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">${displayName}</label>
                 <textarea id="desc-${index}" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; resize: vertical;"></textarea>
             `;
             container.appendChild(div);
@@ -2318,6 +2322,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const bgStyle = isDesembolo ? 'background-color: #f0f0f0; color: #aaa;' : '';
             const val = isDesembolo ? '0' : '';
 
+            let displayName = service;
+            if (service === 'Tosa Adicional') displayName = 'Tosa (Adicional)';
+
             const row = document.createElement('div');
             row.style.display = 'flex';
             row.style.gap = '0.5rem';
@@ -2329,7 +2336,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             row.innerHTML = `
                 <div style="flex: 100%; margin-bottom: 0.5rem;">
-                    <label style="font-weight: bold; font-size: 1.1rem; color: var(--primary);">${service}</label>
+                    <label style="font-weight: bold; font-size: 1.1rem; color: var(--primary);">${displayName}</label>
                 </div>
                 <div style="flex: 1; min-width: 90px;">
                     <label style="font-size: 0.8rem; color: #666;">Preço P (R$)</label>
@@ -2530,10 +2537,13 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         container.innerHTML = '';
 
         servicesList.forEach((service, index) => {
+            let displayName = service;
+            if (service === 'Tosa Adicional') displayName = 'Tosa (Adicional)';
+
             const div = document.createElement('div');
             div.className = 'form-group';
             div.innerHTML = `
-                <label>${service}</label>
+                <label>${displayName}</label>
                 <input type="number" id="time-dur-${index}" class="time-input" value="30">
             `;
             container.appendChild(div);
