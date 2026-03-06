@@ -403,8 +403,8 @@ function updateServiceUI() {
         }
 
         let lookupService = service;
-        if (service === 'Tosa' && pricingConfig['Tosa']) {
-             lookupService = 'Tosa';
+        if (service === 'Tosa' && pricingConfig['Tosa Adicional']) {
+             lookupService = 'Tosa Adicional';
         }
 
         const data = pricingConfig[lookupService];
@@ -480,9 +480,9 @@ async function calculateTotalAndDuration() {
                     totalPrice += parseFloat(cb.getAttribute('data-price')) || 0;
                 }
                 let lookupName = serviceName;
-                // A Tosa que aparece como extra para pacotes vai usar o valor da aba geral configurada como "Tosa"
-                if (serviceName === 'Tosa' && pricingConfig['Tosa']) {
-                     lookupName = 'Tosa';
+                // A Tosa que aparece como extra para pacotes vai usar o valor da aba geral configurada como "Tosa Adicional"
+                if (serviceName === 'Tosa' && pricingConfig['Tosa Adicional']) {
+                     lookupName = 'Tosa Adicional';
                 }
 
                 if (pricingConfig[lookupName] && serviceName !== 'Desembolo de nós') {
