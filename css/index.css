@@ -5,6 +5,7 @@
             --text: #333333;
             --border: #ddd;
             --sage: #C4C4A3;
+            --accent: #A96D6D;
         }
 
         body {
@@ -224,6 +225,15 @@
             margin-bottom: 1rem;
             font-size: 1.2rem;
             text-align: center;
+        }
+
+        .menu-btn.btn-accent {
+            background-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .menu-btn.btn-accent:hover {
+            background-color: #8E5A5A;
         }
 
         /* Status Badge */

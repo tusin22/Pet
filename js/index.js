@@ -560,7 +560,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         loadMyPets(); // We will implement this function later
     });
 
-    document.getElementById('btn-conheca-pacotes').addEventListener('click', async () => {
+    const openPacotesVitrine = async () => {
         showScreen('pacote-info-screen');
 
         // Se ainda não carregou as configs, aguarda o carregamento
@@ -589,7 +589,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
              document.getElementById('vitrine-extra-carding').textContent = '...';
              document.getElementById('vitrine-extra-desembolo').textContent = '...';
         }
-    });
+    };
+
+    document.getElementById('btn-conheca-pacotes').addEventListener('click', openPacotesVitrine);
+    document.getElementById('btn-empty-conheca-pacotes').addEventListener('click', openPacotesVitrine);
 
     document.getElementById('btn-descricoes').addEventListener('click', () => {
         loadServicesDescription();
