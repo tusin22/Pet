@@ -419,7 +419,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                             card.innerHTML = `
                                 <div style="margin-bottom: 0.5rem; color: var(--primary); font-size: 1.1rem;">${headerText}</div>
                                 ${saldoHtml}
-                                <button type="button" class="btn-teal" style="margin-top: 1rem; padding: 0.5rem;" onclick="showCustomAlert('Em breve você agendará por aqui!')">Agendar usando pacote</button>
+                                <button type="button" class="btn-teal" style="margin-top: 1rem; padding: 0.5rem;" onclick="window.location.href='agendamento-pacote.html?walletId=${docSnap.id}'">Agendar usando pacote</button>
                             `;
                             walletsContainer.appendChild(card);
                         }
@@ -759,10 +759,54 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         if (!(await showCustomConfirm("Tem certeza que deseja cancelar este agendamento?", true))) return;
         try {
             const docRef = doc(db, "appointments", id);
-            await updateDoc(docRef, {
-                status: 'Cancelado'
-            });
-            await showCustomAlert("Agendamento cancelado. O horário foi liberado.");
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+
+                // Tratar devolução de saldo de pacote
+                if (data.isPackage && data.walletId) {
+                    const apptDate = new Date(data.appointmentTime);
+                    const now = new Date();
+                    const hoursDiff = (apptDate - now) / (1000 * 60 * 60);
+
+                    if (hoursDiff >= 24) {
+                        // Estornar
+                        const walletRef = doc(db, "carteiras", data.walletId);
+                        const walletSnap = await getDoc(walletRef);
+
+                        if (walletSnap.exists() && data.packageItems && Array.isArray(data.packageItems)) {
+                            const currentSaldo = walletSnap.data().saldo || {};
+                            const newSaldo = { ...currentSaldo };
+
+                            data.packageItems.forEach(srv => {
+                                if (newSaldo[srv] !== undefined) {
+                                    newSaldo[srv] += 1;
+                                } else {
+                                    newSaldo[srv] = 1;
+                                }
+                            });
+
+                            await updateDoc(walletRef, {
+                                saldo: newSaldo,
+                                lastUpdated: toLocalISOString(new Date())
+                            });
+                            await showCustomAlert("Agendamento cancelado com sucesso. Como foi feito com mais de 24h de antecedência, os créditos foram devolvidos ao seu pacote.");
+                        } else {
+                            await showCustomAlert("Agendamento cancelado. Não foi possível localizar a carteira para estorno.");
+                        }
+                    } else {
+                        // Não estornar
+                        await showCustomAlert("Agendamento cancelado. Como o cancelamento foi feito com menos de 24h de antecedência, os créditos do pacote foram debitados conforme a política.");
+                    }
+                } else {
+                    await showCustomAlert("Agendamento cancelado. O horário foi liberado.");
+                }
+
+                await updateDoc(docRef, {
+                    status: 'Cancelado'
+                });
+            }
         } catch (e) {
             console.error("Error canceling: ", e);
             await showCustomAlert("Erro ao cancelar. Tente novamente.");

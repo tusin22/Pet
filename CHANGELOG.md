@@ -5,6 +5,13 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Adicionado
+- Criado o arquivo `agendamento-pacote.html` e `js/agendamento-pacote.js` com o fluxo exclusivo para agendamento via pacotes, onde os serviços com saldo aparecem com valor R$ 0,00 e os extras são cobrados a parte, impedindo a duplicidade.
+- Adicionada trava de duplicidade no Javascript do pacote: itens que existem no pacote não aparecem na lista de extras disponíveis para o cliente adicionar por fora.
+- Lógica de estorno condicional (24h) integrada tanto para cliente (`js/index.js`) quanto para Admin (`js/painel-94k2.js`) para evitar devolução indevida de crédito para o cliente em cancelamentos tardios.
+- Nova exibição para administradores (`painel-94k2.js`) que mostra a tag chamativa `[AGENDAMENTO DE PACOTE]`, a divisão clara entre serviços do pacote e extras faturáveis, e recalcula o total a pagar daquele atendimento apenas sobre o valor do extra.
+- Botão "Agendar usando pacote" da tela Meus Pacotes em `index.html` agora redireciona com o ID específico da carteira `?walletId=...` para o agendamento dedicado.
+
+### Adicionado
 - `index.html` e `css/index.css`: adicionadas tags de desconto (`5%`, `10%` e `15% de desconto`) nos cards da vitrine de pacotes, estilizadas em formato de pílula com cor Old Rose e fundo translúcido.
 - `index.html` e `css/index.css`: adicionados textos com a regra de validade (`2 meses`, `4 meses` e `6 meses`) no rodapé dos cards da vitrine de pacotes, formatados como texto menor e sublinhado.
 
