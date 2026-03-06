@@ -4,6 +4,7 @@
             --surface: #ffffff;
             --text: #333333;
             --border: #ddd;
+            --sage: #C4C4A3;
         }
 
         body {
@@ -388,6 +389,12 @@
             position: relative;
             box-sizing: border-box;
             margin-top: 40px; /* Space for the image */
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .pacote-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
         }
 
         .pacote-card-img {
@@ -405,7 +412,11 @@
         .pacote-card.featured {
             border-color: var(--primary);
             box-shadow: 0 12px 24px rgba(78, 121, 124, 0.25);
-            transform: scale(1.02);
+            border-width: 2px;
+        }
+        .pacote-card.premium-card {
+            border-color: #d4af37;
+            box-shadow: 0 12px 24px rgba(212, 175, 55, 0.25);
             border-width: 2px;
         }
         .pacote-card-header {
@@ -420,6 +431,42 @@
             z-index: 1;
             border-top-left-radius: 14px;
             border-top-right-radius: 14px;
+        }
+
+        .pacote-card-header.plano-12 {
+            background-color: var(--sage);
+        }
+
+        .pacote-card.premium-card .pacote-card-header {
+            background-color: #2a4d50; /* Darker Teal / Verde Petróleo Escuro */
+            border-bottom: 2px solid #d4af37; /* Subtle gold border */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .badge-premium {
+            position: absolute;
+            top: 10px;
+            right: -10px;
+            background-color: #d4af37;
+            color: #fff;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 3;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-premium::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            right: 0;
+            border-width: 5px 5px 0 0;
+            border-style: solid;
+            border-color: #a3862b transparent transparent transparent;
         }
         .pacote-card-price {
             font-size: 1.5rem;

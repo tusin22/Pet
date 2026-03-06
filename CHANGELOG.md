@@ -5,6 +5,10 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Corrigido
+- `index.html` e `js/index.js`: alterada a origem das imagens da vitrine de pacotes de Unsplash para caminhos locais na pasta `assets/cachorros/` conforme o porte (pequeno, medio, grande).
+- `index.html` e `css/index.css`: adicionada a classe `premium-card` ao card de 24 banhos para corrigir a cor da borda (dourada) e aplicar os mesmos efeitos de animação e sombra dos outros cards.
+
+### Corrigido
 - `css/painel-94k2.css`: reorganizado o cabeçalho no mobile para impedir sobreposição do botão `Sair` com o título e padronizar a grade dos botões/abas do painel.
 - `painel-94k2.html`: atualizado versionamento do CSS do painel (`?v=7`) para forçar recarga do ajuste de layout em celular.
 - `js/index.js`: removido o tratamento de "Tempo indefinido" para `Desembolo de nós` no resumo do agendamento; a duração agora segue a mesma lógica dos demais serviços.

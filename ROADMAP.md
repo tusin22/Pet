@@ -1,4 +1,4 @@
-# Roadmap — MelluPet (MVP → Produto Profissional)
+# Roadmap — Mellu Estética Animal (MVP → Produto Profissional)
 
 Este roadmap prioriza a evolução do MVP atual para uma operação profissional de agendamento petshop, considerando o ambiente Hostinger e stack permitida (HTML/CSS/JS/PHP/MySQL, sem Node.js).
 

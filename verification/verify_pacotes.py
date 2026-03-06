@@ -1,46 +1,45 @@
-from playwright.sync_api import sync_playwright
-import time
+from playwright.sync_api import sync_playwright, expect
 
-def run(playwright):
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context()
-    page = context.new_page()
+def verify_pacote_cards():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
 
-    # Route intercept to mock Firebase and simulate EMPTY snapshot
-    page.route("**/*.js", lambda route: route.fulfill(content_type="application/javascript", body="""
-    export function initializeApp() {};
-    export function getFirestore() {};
-    export function collection() {};
-    export function addDoc() {};
-    export function onSnapshot() {};
-    export function doc() {};
-    export function query() {};
-    export function where() {};
-    export async function getDocs() { return { empty: true, forEach: () => {} } };
-    export function getDoc() {};
-    export function orderBy() {};
-    export function deleteDoc() {};
-    export function updateDoc() {};
-    """) if "firebase" in route.request.url else route.continue_())
+        # Mock window.__MELLUPET_CONFIG to avoid Firebase initialization errors
+        page.add_init_script("""
+            window.__MELLUPET_CONFIG = {
+                firebase: {
+                    apiKey: "fake",
+                    authDomain: "fake",
+                    projectId: "fake",
+                    storageBucket: "fake",
+                    messagingSenderId: "fake",
+                    appId: "fake"
+                }
+            };
+        """)
 
-    page.goto("http://localhost:8080/index.html")
+        # Mock Firebase imports to avoid strict MIME type errors
+        page.route("**/*.js", lambda route: route.fulfill(
+            content_type="application/javascript",
+            body="export function initializeApp() {}; export function getFirestore() {}; export function doc() {}; export function getDoc() {}; export function collection() {}; export function addDoc() {}; export function onSnapshot() {}; export function query() {}; export function where() {}; export function getDocs() {}; export function orderBy() {}; export function deleteDoc() {}; export function updateDoc() {};"
+        ) if "firebase" in route.request.url else route.continue_())
 
-    # Mocar o localstorage
-    page.evaluate("localStorage.setItem('petshop_owner_phone', '31999999999'); localStorage.setItem('petshop_owner_name', 'Teste');")
+        page.goto("http://localhost:8080/index.html")
 
-    # Recarregar para pegar o login
-    page.reload()
-    time.sleep(1)
+        # Navigate to the package storefront by executing the showScreen function
+        page.evaluate("showScreen('pacote-info-screen')")
 
-    # Clicar em meus pacotes
-    page.click("id=btn-meus-pacotes")
-    time.sleep(1)
+        # Initialize the 'Pequeno' tab content
+        page.evaluate("window.selectPorteTab('P')")
 
-    # Screenshot da tela vazia
-    page.screenshot(path="verification/pacote_empty_success.png")
+        # Wait for the cards to be visible
+        expect(page.locator("#pacote-cards-container")).to_be_visible()
 
-    context.close()
-    browser.close()
+        # Capture a screenshot
+        page.screenshot(path="verification_pacotes.png", full_page=True)
 
-with sync_playwright() as playwright:
-    run(playwright)
+        browser.close()
+
+if __name__ == "__main__":
+    verify_pacote_cards()
