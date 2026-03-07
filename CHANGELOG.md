@@ -82,3 +82,6 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 - `README.md` reestruturado para refletir prioridade de agendamento 100% funcional e próximos módulos do produto.
 - `index.html` com melhorias de layout/responsividade (breakpoints, grid no formulário e adaptação de slots).
 - `painel-94k2.html` com ajuste visual de cabeçalho e comportamento em telas pequenas.
+- Adicionado campo 'Valor R$ OFF' e '% de desconto' na configuração de pacotes no painel administrativo, separados por plano e porte (P, M, G).
+- Atualizada a renderização da vitrine de pacotes no aplicativo (`index.js`) para exibir dinamicamente o badge de desconto concatenando a porcentagem e o valor em reais economizado (ex: "5% de desconto | - R$ 20 OFF").
+- Implementada regra condicional na vitrine: caso o desconto não esteja preenchido ou seja zero, o badge é ocultado para manter o layout limpo.

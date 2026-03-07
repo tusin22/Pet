@@ -185,10 +185,33 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const planos = ['plano1', 'plano2', 'plano3'];
             planos.forEach(plano => {
                 const el = document.getElementById(`vitrine-price-${plano}`);
-                if (el && packagesPricingConfig[plano]) {
-                    const priceField = `price${porte}`;
-                    const preco = parseFloat(packagesPricingConfig[plano][priceField]) || 0;
-                    el.textContent = preco > 0 ? preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Sob consulta';
+                const discountEl = document.getElementById(`vitrine-discount-${plano}`);
+
+                if (packagesPricingConfig[plano]) {
+                    if (el) {
+                        const priceField = `price${porte}`;
+                        const preco = parseFloat(packagesPricingConfig[plano][priceField]) || 0;
+                        el.textContent = preco > 0 ? preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'Sob consulta';
+                    }
+
+                    if (discountEl) {
+                        const pctField = `pct${porte}`;
+                        const offField = `off${porte}`;
+
+                        const pct = parseFloat(packagesPricingConfig[plano][pctField]) || 0;
+                        const off = parseFloat(packagesPricingConfig[plano][offField]) || 0;
+
+                        if (pct > 0 || off > 0) {
+                            let badgeText = '';
+                            if (pct > 0) badgeText += `${pct}% de desconto`;
+                            if (off > 0) badgeText += (badgeText ? ' | ' : '') + `- R$ ${off} OFF`;
+
+                            discountEl.textContent = badgeText;
+                            discountEl.style.display = 'block';
+                        } else {
+                            discountEl.style.display = 'none';
+                        }
+                    }
                 }
             });
 
