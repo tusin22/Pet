@@ -2440,17 +2440,47 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 <div style="flex: 100%; margin-bottom: 0.5rem;">
                     <label style="font-weight: bold; font-size: 1.1rem; color: var(--primary);">${planoName}</label>
                 </div>
-                <div style="flex: 1; min-width: 90px;">
-                    <label style="font-size: 0.8rem; color: #666;">Preço P (R$)</label>
-                    <input type="number" id="pkg-price-p-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                <div style="flex: 100%; display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Preço P (R$)</label>
+                        <input type="number" id="pkg-price-p-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Preço M (R$)</label>
+                        <input type="number" id="pkg-price-m-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Preço G (R$)</label>
+                        <input type="number" id="pkg-price-g-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
                 </div>
-                <div style="flex: 1; min-width: 90px;">
-                    <label style="font-size: 0.8rem; color: #666;">Preço M (R$)</label>
-                    <input type="number" id="pkg-price-m-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                <div style="flex: 100%; display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Desc. P (%)</label>
+                        <input type="number" id="pkg-pct-p-${planoKey}" class="price-input" min="0" step="1" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Desc. M (%)</label>
+                        <input type="number" id="pkg-pct-m-${planoKey}" class="price-input" min="0" step="1" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Desc. G (%)</label>
+                        <input type="number" id="pkg-pct-g-${planoKey}" class="price-input" min="0" step="1" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
                 </div>
-                <div style="flex: 1; min-width: 90px;">
-                    <label style="font-size: 0.8rem; color: #666;">Preço G (R$)</label>
-                    <input type="number" id="pkg-price-g-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                <div style="flex: 100%; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Off P (R$)</label>
+                        <input type="number" id="pkg-off-p-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Off M (R$)</label>
+                        <input type="number" id="pkg-off-m-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
+                    <div style="flex: 1; min-width: 90px;">
+                        <label style="font-size: 0.8rem; color: #666;">Off G (R$)</label>
+                        <input type="number" id="pkg-off-g-${planoKey}" class="price-input" min="0" step="0.01" value="" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    </div>
                 </div>
             `;
             container.appendChild(row);
@@ -2471,6 +2501,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                         if (elP) elP.value = data[planoKey].priceP || 0;
                         if (elM) elM.value = data[planoKey].priceM || 0;
                         if (elG) elG.value = data[planoKey].priceG || 0;
+
+                        const elPctP = document.getElementById(`pkg-pct-p-${planoKey}`);
+                        const elPctM = document.getElementById(`pkg-pct-m-${planoKey}`);
+                        const elPctG = document.getElementById(`pkg-pct-g-${planoKey}`);
+                        if (elPctP) elPctP.value = data[planoKey].pctP || 0;
+                        if (elPctM) elPctM.value = data[planoKey].pctM || 0;
+                        if (elPctG) elPctG.value = data[planoKey].pctG || 0;
+
+                        const elOffP = document.getElementById(`pkg-off-p-${planoKey}`);
+                        const elOffM = document.getElementById(`pkg-off-m-${planoKey}`);
+                        const elOffG = document.getElementById(`pkg-off-g-${planoKey}`);
+                        if (elOffP) elOffP.value = data[planoKey].offP || 0;
+                        if (elOffM) elOffM.value = data[planoKey].offM || 0;
+                        if (elOffG) elOffG.value = data[planoKey].offG || 0;
                     }
                 });
 
@@ -2504,7 +2548,20 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             const p = parseFloat(document.getElementById(`pkg-price-p-${planoKey}`).value) || 0;
             const m = parseFloat(document.getElementById(`pkg-price-m-${planoKey}`).value) || 0;
             const g = parseFloat(document.getElementById(`pkg-price-g-${planoKey}`).value) || 0;
-            prices[planoKey] = { priceP: p, priceM: m, priceG: g };
+
+            const pctP = parseFloat(document.getElementById(`pkg-pct-p-${planoKey}`).value) || 0;
+            const pctM = parseFloat(document.getElementById(`pkg-pct-m-${planoKey}`).value) || 0;
+            const pctG = parseFloat(document.getElementById(`pkg-pct-g-${planoKey}`).value) || 0;
+
+            const offP = parseFloat(document.getElementById(`pkg-off-p-${planoKey}`).value) || 0;
+            const offM = parseFloat(document.getElementById(`pkg-off-m-${planoKey}`).value) || 0;
+            const offG = parseFloat(document.getElementById(`pkg-off-g-${planoKey}`).value) || 0;
+
+            prices[planoKey] = {
+                priceP: p, priceM: m, priceG: g,
+                pctP: pctP, pctM: pctM, pctG: pctG,
+                offP: offP, offM: offM, offG: offG
+            };
         });
 
         const tosaP = parseFloat(document.getElementById('pkg-extra-tosa-p').value) || 0;
