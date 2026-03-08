@@ -29,3 +29,4 @@ yarn-error.log*
 
 # Runtime config with credentials (do not commit)
 /config/runtime-config.js
+node_modules/
