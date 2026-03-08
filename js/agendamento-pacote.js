@@ -151,6 +151,7 @@ function goToStep(step) {
         btnPrev.style.display = 'block';
         btnNext.style.display = 'none';
         btnSubmit.style.display = 'block';
+        updateSubmitButtonState();
     } else {
         btnPrev.style.display = 'block';
         btnNext.style.display = 'block';
@@ -525,6 +526,14 @@ async function calculateTotalAndDuration() {
 let selectedSlot = null;
 let currentSelectionData = {};
 
+
+function updateSubmitButtonState() {
+    const submitBtn = document.getElementById('btn-submit');
+    if (submitBtn) {
+        submitBtn.disabled = !selectedSlot;
+    }
+}
+
 async function checkAndGenerateSlots() {
     const dateVal = appointmentDateInput.value;
     const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
@@ -532,6 +541,8 @@ async function checkAndGenerateSlots() {
 
     if (!dateVal || selectedCheckboxes.length === 0 || !size) {
         slotsContainer.innerHTML = '<p class="empty-slots-msg">Selecione os serviços e a data para ver os horários disponíveis.</p>';
+        selectedSlot = null;
+        updateSubmitButtonState();
         return;
     }
 
@@ -540,9 +551,9 @@ async function checkAndGenerateSlots() {
     today.setHours(0,0,0,0);
 
     if (selectedDate.getDay() === 0) {
-        await showCustomAlert("Não funcionamos aos domingos.");
-        appointmentDateInput.value = '';
-        slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione os serviços e a data para ver os horários disponíveis.</p>';
+        slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; padding: 20px;">Não funcionamos aos domingos. Por favor, escolha outra data.</p>';
+        selectedSlot = null;
+        updateSubmitButtonState();
         return;
     }
 
@@ -550,6 +561,8 @@ async function checkAndGenerateSlots() {
         await showCustomAlert("Por favor, selecione uma data futura.");
         appointmentDateInput.value = '';
         slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione os serviços e a data para ver os horários disponíveis.</p>';
+        selectedSlot = null;
+        updateSubmitButtonState();
         return;
     }
 
@@ -560,6 +573,7 @@ async function checkAndGenerateSlots() {
 async function generateSlots(dateString) {
     slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Calculando disponibilidade...</p>';
     selectedSlot = null;
+    updateSubmitButtonState();
 
     try {
         if (currentTotalDuration === 0) await calculateTotalAndDuration();
@@ -592,6 +606,7 @@ async function generateSlots(dateString) {
 
         if (blockedAllDay) {
              slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d32f2f; font-weight: bold;">Fechado neste dia.</p>';
+             updateSubmitButtonState();
              return;
         }
 
@@ -642,6 +657,7 @@ async function generateSlots(dateString) {
 
         if (allSlots.length === 0) {
              slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Não há horários configurados.</p>';
+             updateSubmitButtonState();
              return;
         }
 
@@ -697,6 +713,7 @@ async function generateSlots(dateString) {
                     btn.classList.add('selected');
                     selectedSlot = fullIso;
                     currentSelectionData = { duration: totalDuration, slotsNeeded };
+                    updateSubmitButtonState();
                 };
             }
 
@@ -706,6 +723,7 @@ async function generateSlots(dateString) {
     } catch (error) {
         console.error("Erro ao carregar horários:", error);
         slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Erro ao carregar horários. Tente novamente.</p>';
+        updateSubmitButtonState();
     }
 }
 

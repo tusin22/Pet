@@ -323,6 +323,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             btnPrev.style.display = 'block';
             btnNext.style.display = 'none';
             btnSubmit.style.display = 'block';
+            updateSubmitButtonState();
         } else {
             btnPrev.style.display = 'block';
             btnNext.style.display = 'block';
@@ -1148,6 +1149,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     }
 
+
+    function updateSubmitButtonState() {
+        const submitBtn = document.getElementById('btn-submit');
+        if (submitBtn) {
+            submitBtn.disabled = !selectedSlot;
+        }
+    }
+
     async function checkAndGenerateSlots() {
         const dateVal = appointmentDateInput.value;
         const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
@@ -1155,6 +1164,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         if (!dateVal || selectedCheckboxes.length === 0 || !size) {
             slotsContainer.innerHTML = '<p class="empty-slots-msg">Selecione o porte, os serviços e a data para ver os horários disponíveis.</p>';
+            selectedSlot = null;
+            updateSubmitButtonState();
             return;
         }
 
@@ -1164,9 +1175,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         // Check if Sunday (0)
         if (selectedDate.getDay() === 0) {
-            await showCustomAlert("Não funcionamos aos domingos.");
-            appointmentDateInput.value = '';
-            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
+            slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; padding: 20px;">Não funcionamos aos domingos. Por favor, escolha outra data.</p>';
+            selectedSlot = null;
+            updateSubmitButtonState();
             return;
         }
 
@@ -1174,6 +1185,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             await showCustomAlert("Por favor, selecione uma data futura.");
             appointmentDateInput.value = '';
             slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione Serviço, Porte e Data para ver os horários.</p>';
+            selectedSlot = null;
+            updateSubmitButtonState();
             return;
         }
 
@@ -1183,6 +1196,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     async function generateSlots(dateString) {
         slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Calculando disponibilidade...</p>';
         selectedSlot = null;
+        updateSubmitButtonState();
 
         try {
             // Ensure duration is calculated
@@ -1229,6 +1243,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (blockedAllDay) {
                  slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #d32f2f; font-weight: bold;">Fechado neste dia.</p>';
+                 updateSubmitButtonState();
                  return;
             }
 
@@ -1296,6 +1311,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (allSlots.length === 0) {
                  slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666;">Não há horários configurados.</p>';
+                 updateSubmitButtonState();
                  return;
             }
 
@@ -1374,6 +1390,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         } catch (error) {
             console.error("Erro ao carregar horários:", error);
             slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Erro ao carregar horários. Tente novamente.</p>';
+            updateSubmitButtonState();
         }
     }
 
@@ -1385,6 +1402,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         btn.classList.add('selected');
         selectedSlot = fullIso;
         currentSelectionData = { duration, slotsNeeded };
+        updateSubmitButtonState();
     }
 
     scheduleForm.addEventListener('submit', async (e) => {
