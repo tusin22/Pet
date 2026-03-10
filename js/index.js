@@ -333,11 +333,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     function validateStep1() {
         const petName = document.getElementById('petName').value.trim();
+        const petBreed = document.getElementById('petBreed').value.trim();
         const petSize = document.getElementById('petSize').value;
         const checkedServices = document.querySelectorAll('input[name="serviceOption"]:checked').length;
 
         if (!petName) {
             showFeedback('Por favor, informe o nome do pet.', 'error');
+            return false;
+        }
+        if (!petBreed) {
+            showFeedback('Por favor, informe a raça do pet.', 'error');
             return false;
         }
         if (!petSize) {
@@ -545,7 +550,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     document.getElementById('btn-agendar').addEventListener('click', () => {
         editingAppointmentId = null;
         document.getElementById('petName').value = '';
+        document.getElementById('petBreed').value = '';
         document.getElementById('observations').value = '';
+        if (document.getElementById('summary-breed')) document.getElementById('summary-breed').textContent = 'Raça: --';
 
         // Reset and disable checkboxes, but pre-select Banho Master
         document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
@@ -775,10 +782,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             // For petName in onclick, we escape backslashes and single quotes
             const petNameSafe = (appt.petName || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const petBreedSafe = (appt.raca || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
             buttonsHtml = `
                 <div class="card-actions">
-                    <button class="btn-small btn-edit" data-obs="${obsAttr}" onclick="prepareEdit('${appt.id}', '${petNameSafe}', this.getAttribute('data-obs'))">Alterar</button>
+                    <button class="btn-small btn-edit" data-obs="${obsAttr}" onclick="prepareEdit('${appt.id}', '${petNameSafe}', '${petBreedSafe}', this.getAttribute('data-obs'))">Alterar</button>
                     <button class="btn-small btn-cancel" onclick="cancelAppointment('${appt.id}')">Cancelar</button>
                 </div>
             `;
@@ -790,7 +798,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
 
         card.innerHTML = `
-            <h3>${escapeHtml(appt.petName)}</h3>
+            <h3>${escapeHtml(appt.petName)} <span style="font-size: 0.9rem; color: #666; font-weight: normal;">- ${escapeHtml(appt.raca || 'Raça não informada')}</span></h3>
             <p><strong>Data:</strong> ${dateStr} às ${timeStr}</p>
             <div class="status-badge ${statusClass}">${appt.status}</div>
             ${obsHtml}
@@ -861,10 +869,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     let editingAppointmentId = null;
 
-    window.prepareEdit = async (id, petName, observations) => {
+    window.prepareEdit = async (id, petName, petBreed, observations) => {
         editingAppointmentId = id;
         document.getElementById('petName').value = petName;
+        document.getElementById('petBreed').value = petBreed || '';
         document.getElementById('observations').value = observations || '';
+
+        const summaryBreed = document.getElementById('summary-breed');
+        if (summaryBreed) {
+            summaryBreed.textContent = 'Raça: ' + (petBreed || '--');
+        }
 
         // Reset checkboxes
         document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
@@ -933,6 +947,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     let currentTotalDuration = 0;
 
     // Listen to changes
+    const petBreedInput = document.getElementById('petBreed');
+    petBreedInput.addEventListener('input', () => {
+        const summaryBreed = document.getElementById('summary-breed');
+        if (summaryBreed) {
+            summaryBreed.textContent = 'Raça: ' + (petBreedInput.value.trim() || '--');
+        }
+    });
+
     petSizeInput.addEventListener('change', () => {
         // Enable checkboxes when size is selected
         document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.disabled = false);
@@ -1548,8 +1570,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     return;
                 }
 
+                const petBreed = document.getElementById('petBreed').value.trim();
                 const dataToSave = {
                     petName: petName,
+                    raca: petBreed,
                     observations: observations,
                     services: selectedServices,
                     // Legacy field fallback (first service)
@@ -1581,7 +1605,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
                 // Clear form
                 document.getElementById('petName').value = '';
+                document.getElementById('petBreed').value = '';
                 document.getElementById('observations').value = '';
+                if (document.getElementById('summary-breed')) document.getElementById('summary-breed').textContent = 'Raça: --';
                 document.querySelectorAll('input[name="serviceOption"]').forEach(cb => cb.checked = false);
                 document.getElementById('price-display').textContent = 'Total Estimado: R$ 0,00';
                 const summaryPrice = document.querySelector('#order-summary .summary-price');

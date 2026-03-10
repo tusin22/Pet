@@ -13,8 +13,8 @@
     <link rel="icon" href="assets/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="css/painel-94k2.css?v=14">
-    <script src="config/runtime-config.js?v=14" defer></script>
+    <link rel="stylesheet" href="css/painel-94k2.css?v=15">
+    <script src="config/runtime-config.js?v=15" defer></script>
 </head>
 <body>
 
@@ -139,8 +139,13 @@
                         </div>
 
                         <div class="form-group" style="margin-bottom: 0;">
-                            <label for="pacotePetName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Pet (Obrigatório para Plano 1)</label>
+                            <label for="pacotePetName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Pet (Obrigatório p/ Plano 1)</label>
                             <input type="text" id="pacotePetName" required placeholder="Ex: Rex" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="pacotePetBreed" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Raça do Pet (Obrigatório p/ Plano 1)</label>
+                            <input type="text" id="pacotePetBreed" required placeholder="Ex: Poodle" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
                         </div>
 
                         <div class="form-group" style="margin-bottom: 0;">
@@ -392,9 +397,15 @@
                 <input type="tel" id="newApptOwnerPhone" placeholder="(XX) XXXXX-XXXX" maxlength="15" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
             </div>
 
-            <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="newApptPetName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Pet (Obrigatório)</label>
-                <input type="text" id="newApptPetName" required placeholder="Ex: Rex" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+            <div class="form-group" style="margin-bottom: 1rem; display: flex; gap: 1rem;">
+                <div style="flex: 1;">
+                    <label for="newApptPetName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Pet (Obrigatório)</label>
+                    <input type="text" id="newApptPetName" required placeholder="Ex: Rex" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                </div>
+                <div style="flex: 1;">
+                    <label for="newApptPetBreed" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Raça do Pet (Obrigatório)</label>
+                    <input type="text" id="newApptPetBreed" required placeholder="Ex: Poodle, SRD..." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                </div>
             </div>
 
             <div class="form-group" style="margin-bottom: 1rem;">
@@ -478,7 +489,7 @@
     </div>
 </div>
 
-<script type="module" src="js/painel-94k2.js?v=15"></script>
+<script type="module" src="js/painel-94k2.js?v=16"></script>
 
 
 </body>
