@@ -624,7 +624,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
                         cell.innerHTML = `
                             ${badgeHtml}
-                            <div class="pet-mini">${timeLabelHtml}${icon} ${escapeHtml(firstApp.petName)}</div>
+                            <div class="pet-mini">${timeLabelHtml}${icon} ${escapeHtml(firstApp.petName)} <span style="font-size: 0.7rem; opacity: 0.8; font-weight: normal;">- ${escapeHtml(firstApp.raca || 'Raça n/i')}</span></div>
                             <div class="owner-mini">${escapeHtml(firstApp.ownerName || '')}</div>
                         `;
 
@@ -934,10 +934,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 const now = toLocalISOString(new Date());
 
                 const newDocRef = doc(collection(db, "appointments"));
+                const petBreed = document.getElementById('newApptPetBreed').value.trim();
                 await setDoc(newDocRef, {
                     ownerName: ownerName,
                     ownerPhone: ownerPhone,
                     petName: petName,
+                    raca: petBreed,
                     petSize: petSize,
                     services: selectedServices,
                     serviceType: selectedServices.join(', '), // legacy
@@ -1200,6 +1202,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 <span class="status-badge ${statusClass}">${data.status}</span>
                 ${badgePacoteHtml}
                 <h3 class="pet-name">${escapeHtml(data.petName)}${escapeHtml(ownerName)}</h3>
+                <div class="pet-info" style="margin-top: 0.25rem; color: #666; font-size: 0.9rem;">
+                     Raça: <strong>${escapeHtml(data.raca || 'Não informada')}</strong>
+                </div>
                 <div class="pet-info" style="margin-top: 0.5rem; color: #333;">
                      <strong>Serviços:</strong><br> ${serviceType}
                 </div>
@@ -2098,6 +2103,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             }
 
             const petName = document.getElementById('pacotePetName').value.trim();
+            const petBreed = document.getElementById('pacotePetBreed').value.trim();
             const petSize = document.getElementById('pacotePetSize').value;
             const plano = document.getElementById('pacotePlano').value;
 
@@ -2109,6 +2115,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             if (plano === 'plano1' && !petName) {
                 await showCustomAlert("Para o Plano 1 (4 Banhos), o Nome do Pet é obrigatório.");
+                return;
+            }
+            if (plano === 'plano1' && !petBreed) {
+                await showCustomAlert("Para o Plano 1 (4 Banhos), a Raça do Pet é obrigatória.");
                 return;
             }
 
@@ -2206,6 +2216,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
                     if (walletType === 'individual') {
                         walletData.petName = petName;
+                        walletData.raca = petBreed;
                     }
 
                     await setDoc(docRef, walletData);
@@ -2213,6 +2224,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
                 await showCustomAlert("Pacote cadastrado e créditos atualizados com sucesso!");
                 cadastrarPacoteForm.reset();
+                if(document.getElementById('pacotePetBreed')) document.getElementById('pacotePetBreed').value = '';
 
             } catch (error) {
                 console.error("Erro ao cadastrar pacote:", error);

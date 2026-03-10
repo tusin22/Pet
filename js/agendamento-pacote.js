@@ -173,11 +173,16 @@ function hideFeedback() {
 
 function validateStep1() {
     const petName = document.getElementById('petName').value.trim();
+    const petBreed = document.getElementById('petBreed').value.trim();
     const petSize = document.getElementById('petSize').value;
     const checkedServices = document.querySelectorAll('input[name="serviceOption"]:checked').length;
 
     if (!petName) {
         showFeedback('Por favor, informe o nome do pet.', 'error');
+        return false;
+    }
+    if (!petBreed) {
+        showFeedback('Por favor, informe a raça do pet.', 'error');
         return false;
     }
     if (!petSize) {
@@ -221,7 +226,9 @@ document.getElementById('btn-prev').addEventListener('click', () => {
 function renderFormBasedOnWallet() {
     const titleEl = document.getElementById('wallet-info-subtitle');
     const petNameInput = document.getElementById('petName');
+    const petBreedInput = document.getElementById('petBreed');
     const petSizeInput = document.getElementById('petSize');
+    const summaryBreed = document.getElementById('summary-breed');
 
     // Set title and lock fields if individual
     if (walletData.type === 'individual') {
@@ -229,6 +236,10 @@ function renderFormBasedOnWallet() {
         petNameInput.value = walletData.petName;
         petNameInput.readOnly = true;
         petNameInput.style.backgroundColor = '#f0f0f0';
+        petBreedInput.value = walletData.raca || '';
+        petBreedInput.readOnly = true;
+        petBreedInput.style.backgroundColor = '#f0f0f0';
+        if (summaryBreed) summaryBreed.textContent = 'Raça: ' + (walletData.raca || '--');
         petSizeInput.value = walletData.petSize || '';
     } else {
         titleEl.textContent = `Pacote Compartilhado - Porte: ${walletData.petSize}`;
@@ -351,6 +362,14 @@ function renderServicesList() {
 const petSizeInput = document.getElementById('petSize');
 const appointmentDateInput = document.getElementById('appointmentDate');
 const slotsContainer = document.getElementById('slots-container');
+
+const petBreedInput = document.getElementById('petBreed');
+petBreedInput.addEventListener('input', () => {
+    const summaryBreed = document.getElementById('summary-breed');
+    if (summaryBreed) {
+        summaryBreed.textContent = 'Raça: ' + (petBreedInput.value.trim() || '--');
+    }
+});
 
 petSizeInput.addEventListener('change', () => {
     updateServiceUI();
@@ -793,8 +812,10 @@ scheduleForm.addEventListener('submit', async (e) => {
         // Format observations
         const finalObs = `[AGENDAMENTO DE PACOTE]\nPacote: ${packageServicesUsed.join(', ')}\nExtras: ${extraServicesUsed.length > 0 ? extraServicesUsed.join(', ') : 'Nenhum'}\n\n${obsInput}`;
 
+        const petBreed = document.getElementById('petBreed').value.trim();
         const dataToSave = {
             petName: petName,
+            raca: petBreed,
             observations: finalObs,
             services: allServicesUsed,
             serviceType: allServicesUsed[0], // legacy

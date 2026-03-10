@@ -5,6 +5,13 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 ## [Não lançado]
 
 ### Adicionado
+- Adicionado o campo obrigatório 'Raça' em todas as telas de agendamento do cliente (`index.html` e `agendamento-pacote.html`), bem como na visualização de resumo.
+- Adicionado o campo obrigatório 'Raça' no painel admin (`painel-94k2.html`) para criação manual de agendamentos e cadastro de novos pacotes individuais.
+- Adicionada a exibição da raça do pet nos cards da Agenda do Dia e da Semana, além da tela de Histórico.
+- Implementada persistência do campo `raca` no banco de dados Firestore tanto na coleção `appointments` quanto na coleção `carteiras`.
+
+
+### Adicionado
 - Criado o arquivo `agendamento-pacote.html` e `js/agendamento-pacote.js` com o fluxo exclusivo para agendamento via pacotes, onde os serviços com saldo aparecem com valor R$ 0,00 e os extras são cobrados a parte, impedindo a duplicidade.
 - Adicionada trava de duplicidade no Javascript do pacote: itens que existem no pacote não aparecem na lista de extras disponíveis para o cliente adicionar por fora.
 - Lógica de estorno condicional (24h) integrada tanto para cliente (`js/index.js`) quanto para Admin (`js/painel-94k2.js`) para evitar devolução indevida de crédito para o cliente em cancelamentos tardios.
