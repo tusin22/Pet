@@ -4,6 +4,10 @@ Todas as mudanças relevantes deste projeto devem ser registradas aqui.
 
 ## [Não lançado]
 
+### Alterado
+- Preparado bloco de código das regras de segurança do Firestore (`firestore.rules`) para ser fornecido ao usuário, permitindo leitura e atualização da coleção `carteiras` e criação na coleção `appointments` por clientes (sem autenticação) para resolver o erro de permissão no agendamento de pacotes.
+
+
 ### Adicionado
 - Adicionado o campo obrigatório 'Raça' em todas as telas de agendamento do cliente (`index.html` e `agendamento-pacote.html`), bem como na visualização de resumo.
 - Adicionado o campo obrigatório 'Raça' no painel admin (`painel-94k2.html`) para criação manual de agendamentos e cadastro de novos pacotes individuais.
