@@ -95,6 +95,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     const listContainer = document.getElementById('appointments-list');
     const historyContainer = document.getElementById('history-list');
 
+    // Pacotes Ativos Elements
+    const pacotesAtivosContainer = document.getElementById('pacotes-ativos-list');
+    const searchPacotesInput = document.getElementById('searchPacotesInput');
+
     // New Appointment Elements
     const btnNewAppointment = document.getElementById('btn-new-appointment');
     const newAppointmentModal = document.getElementById('new-appointment-modal');
@@ -120,6 +124,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     let unsubscribe = null; // Store listener for Agenda
     let historyUnsubscribe = null; // Store listener for History
     let weekUnsubscribe = null; // Store listener for Week
+    let pacotesAtivosUnsubscribe = null; // Store listener for Pacotes Ativos
+    const phoneToNameCache = {}; // Cache for resolving owner names
 
     // Week State
     let currentWeekStart = new Date();
@@ -285,39 +291,45 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         // Show selected
         document.getElementById(`tab-${tabName}`).classList.add('active');
 
+        // Helper to cleanly clear other tab subscriptions
+        const clearSubscriptions = (except) => {
+            if (except !== 'agenda' && unsubscribe) { unsubscribe(); unsubscribe = null; }
+            if (except !== 'historico' && historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
+            if (except !== 'semana' && weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
+            if (except !== 'pacotes-ativos' && pacotesAtivosUnsubscribe) { pacotesAtivosUnsubscribe(); pacotesAtivosUnsubscribe = null; }
+        };
+
         // Update button state
         const buttons = document.querySelectorAll('.tab-btn');
-        // 0: Agenda, 1: Week, 2: History, 3: Pacote, 4: Config
+        // 0: Agenda, 1: Week, 2: History, 3: Pacotes Ativos, 4: Pacote, 5: Config
         if (tabName === 'agenda') {
             buttons[0].classList.add('active');
-            if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
-            if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
+            clearSubscriptions('agenda');
             loadAppointments();
         }
         else if (tabName === 'semana') {
             buttons[1].classList.add('active');
-            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-            if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
+            clearSubscriptions('semana');
             loadWeekSchedule();
         }
         else if (tabName === 'historico') {
             buttons[2].classList.add('active');
-            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-            if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
+            clearSubscriptions('historico');
             loadHistory();
         }
-        else if (tabName === 'pacote') {
+        else if (tabName === 'pacotes-ativos') {
             buttons[3].classList.add('active');
-            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-            if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
-            if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
+            clearSubscriptions('pacotes-ativos');
+            loadPacotesAtivos();
+        }
+        else if (tabName === 'pacote') {
+            buttons[4].classList.add('active');
+            clearSubscriptions('pacote');
             // loadPacoteForm() could be added later if needed
         }
         else if (tabName === 'config') {
-            buttons[4].classList.add('active');
-            if (unsubscribe) { unsubscribe(); unsubscribe = null; }
-            if (historyUnsubscribe) { historyUnsubscribe(); historyUnsubscribe = null; }
-            if (weekUnsubscribe) { weekUnsubscribe(); weekUnsubscribe = null; }
+            buttons[5].classList.add('active');
+            clearSubscriptions('config');
             loadConfiguration();
         }
     };
@@ -2089,6 +2101,154 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         loadConfiguration();
     });
 
+    // --- Pacotes Ativos Logic ---
+    window.loadPacotesAtivos = () => {
+        if (pacotesAtivosUnsubscribe) {
+            pacotesAtivosUnsubscribe();
+        }
+
+        if (pacotesAtivosContainer) {
+            pacotesAtivosContainer.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Carregando pacotes ativos...</p>';
+        }
+
+        const q = query(collection(db, "carteiras"));
+
+        pacotesAtivosUnsubscribe = onSnapshot(q, async (snapshot) => {
+            const pacotes = [];
+
+            // First pass to collect data
+            snapshot.forEach((docSnap) => {
+                const data = docSnap.data();
+
+                // Check if totally empty (all services 0)
+                let totalCredits = 0;
+                if (data.saldo) {
+                    Object.values(data.saldo).forEach(v => {
+                        totalCredits += (typeof v === 'number' ? v : 0);
+                    });
+                }
+
+                if (totalCredits > 0) {
+                    pacotes.push({ id: docSnap.id, ...data });
+                }
+            });
+
+            // If no active packages
+            if (pacotes.length === 0) {
+                if (pacotesAtivosContainer) {
+                    pacotesAtivosContainer.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Nenhum pacote ativo no momento.</p>';
+                }
+                return;
+            }
+
+            // Resolve missing owner names asynchronously
+            const unresolvedPhones = [...new Set(pacotes.filter(p => !p.ownerName).map(p => p.phone))];
+
+            for (const phone of unresolvedPhones) {
+                if (phoneToNameCache[phone] === undefined) {
+                    phoneToNameCache[phone] = ''; // default empty
+                    try {
+                        // Attempt to find latest appointment for this phone to extract ownerName
+                        const apptQuery = query(
+                            collection(db, "appointments"),
+                            where("ownerPhone", "==", phone),
+                            orderBy("appointmentTime", "desc"),
+                            limit(1)
+                        );
+                        const apptSnap = await getDocs(apptQuery);
+                        if (!apptSnap.empty) {
+                            phoneToNameCache[phone] = apptSnap.docs[0].data().ownerName || '';
+                        }
+                    } catch (e) {
+                        console.warn("Could not fetch name for phone", phone, e);
+                    }
+                }
+            }
+
+            // Render packages
+            if (pacotesAtivosContainer) {
+                pacotesAtivosContainer.innerHTML = '';
+                pacotes.forEach(pacote => {
+                    pacotesAtivosContainer.appendChild(createPacoteCard(pacote));
+                });
+                filterPacotesAtivos(); // apply current filter if any
+            }
+        });
+    };
+
+    function createPacoteCard(data) {
+        const card = document.createElement('div');
+        card.className = 'card pacote-card';
+
+        let clientName = data.ownerName || phoneToNameCache[data.phone] || '';
+        let petNameDisplay = data.petName ? data.petName : `Múltiplos Pets (Porte ${data.petSize || '?'})`;
+        let phoneDisplay = formatPhone(data.phone) || '';
+
+        let planDisplay = data.planName || (data.type === 'individual' ? 'Individual' : 'Compartilhado');
+
+        // Search attributes
+        card.setAttribute('data-search', `${clientName} ${petNameDisplay} ${data.phone}`.toLowerCase());
+
+        let saldoHtml = '';
+        if (data.saldo) {
+            Object.entries(data.saldo).forEach(([servico, qtd]) => {
+                if (qtd > 0) {
+                    saldoHtml += `<div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.25rem; border-bottom: 1px dashed #eee;">
+                        <span>${escapeHtml(servico)}</span>
+                        <strong>${qtd}x</strong>
+                    </div>`;
+                }
+            });
+        }
+
+        const dateStr = data.createdAt ? new Date(data.createdAt).toLocaleDateString('pt-BR') : 'Data desconhecida';
+        const clientNameDisplay = clientName ? escapeHtml(clientName) : `<span style="color:#999;font-style:italic;">Sem Nome</span>`;
+
+        card.innerHTML = `
+            <div class="card-header" style="margin-bottom: 0.5rem; padding-bottom: 0.5rem;">
+                <h3 class="pet-name" style="margin-bottom: 0.25rem; font-size: 1.15rem;">${clientNameDisplay}</h3>
+                <div class="pet-info" style="color: #666; font-size: 0.9rem; margin-top: 0;">
+                    📞 ${phoneDisplay}
+                </div>
+                <div class="pet-info" style="margin-top: 0.5rem; font-size: 1rem; color: #333;">
+                    🐾 Pet: <strong>${escapeHtml(petNameDisplay)}</strong>
+                </div>
+                <div class="pet-info" style="margin-top: 0.25rem;">
+                    📦 Plano: <span style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">${escapeHtml(planDisplay)}</span>
+                </div>
+                <div class="pet-info" style="margin-top: 0.25rem; font-size: 0.8rem; color: #888;">
+                    Adquirido em: ${dateStr}
+                </div>
+            </div>
+            <div style="background: #fafafa; padding: 0.75rem; border-radius: 6px; border: 1px solid #eee;">
+                <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--primary);">Saldo Restante:</h4>
+                ${saldoHtml || '<p style="font-size: 0.85rem; color:#888; margin:0;">Sem saldo disponível</p>'}
+            </div>
+        `;
+        return card;
+    }
+
+    window.filterPacotesAtivos = () => {
+        if (!searchPacotesInput || !pacotesAtivosContainer) return;
+
+        const filterText = searchPacotesInput.value.toLowerCase().trim();
+        const cards = pacotesAtivosContainer.querySelectorAll('.pacote-card');
+
+        cards.forEach(card => {
+            const searchData = card.getAttribute('data-search') || '';
+            if (filterText === '' || searchData.includes(filterText)) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    };
+
+    if (searchPacotesInput) {
+        searchPacotesInput.addEventListener('input', filterPacotesAtivos);
+    }
+
+
     // --- Cadastrar Pacote Logic ---
     const cadastrarPacoteForm = document.getElementById('cadastrar-pacote-form');
 
@@ -2096,6 +2256,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         cadastrarPacoteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            const ownerName = document.getElementById('pacoteOwnerName').value.trim();
             const phoneRaw = document.getElementById('pacotePhone').value.replace(/\D/g, '');
             if (phoneRaw.length !== 11) {
                 await showCustomAlert("Número de telefone incompleto ou inválido.");
@@ -2134,12 +2295,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                 let isShared = false;
                 let walletType = 'individual'; // default
                 let walletId = '';
+                let planName = '';
 
                 if (plano === 'plano1') {
                     banhos = 4;
                     higienicas = 1;
                     hidratacoes = 1;
                     walletType = 'individual';
+                    planName = planosNames.plano1 || 'Pacote 4 Banhos';
                     // unique key: phone_petname (normalized)
                     const normalizedPetName = petName.toLowerCase().replace(/[^a-z0-9]/g, '');
                     walletId = `${phoneRaw}_${normalizedPetName}`;
@@ -2149,6 +2312,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     hidratacoes = 3;
                     walletType = 'shared';
                     isShared = true;
+                    planName = planosNames.plano2 || 'Pacote 12 Banhos';
                     // unique key: phone_size
                     walletId = `${phoneRaw}_${petSize}`;
                 } else if (plano === 'plano3') {
@@ -2157,6 +2321,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     hidratacoes = 5;
                     walletType = 'shared';
                     isShared = true;
+                    planName = planosNames.plano3 || 'Pacote 24 Banhos';
                     // unique key: phone_size
                     walletId = `${phoneRaw}_${petSize}`;
                 }
@@ -2189,6 +2354,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
                     await updateDoc(docRef, {
                         saldo: newSaldo,
+                        ownerName: ownerName, // ensure name is updated/saved
+                        planName: planName, // ensure exact plan name is saved
                         lastUpdated: toLocalISOString(new Date())
                     });
 
@@ -2206,8 +2373,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     };
 
                     const walletData = {
+                        ownerName: ownerName,
                         phone: phoneRaw,
                         petSize: petSize,
+                        planName: planName,
                         type: walletType,
                         saldo: newSaldo,
                         createdAt: toLocalISOString(new Date()),

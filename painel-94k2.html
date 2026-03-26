@@ -13,8 +13,8 @@
     <link rel="icon" href="assets/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="css/painel-94k2.css?v=15">
-    <script src="config/runtime-config.js?v=15" defer></script>
+    <link rel="stylesheet" href="css/painel-94k2.css?v=16">
+    <script src="config/runtime-config.js?v=16" defer></script>
 </head>
 <body>
 
@@ -64,6 +64,7 @@
         <button class="tab-btn active" onclick="switchTab('agenda')">Agenda do Dia</button>
         <button class="tab-btn" onclick="switchTab('semana')">Agenda da Semana</button>
         <button class="tab-btn" onclick="switchTab('historico')">Histórico</button>
+        <button class="tab-btn" onclick="switchTab('pacotes-ativos')">Pacotes Ativos</button>
         <button class="tab-btn" onclick="switchTab('pacote')">Cadastrar Pacote</button>
         <button class="tab-btn" onclick="switchTab('config')">Configurações</button>
     </div>
@@ -124,6 +125,18 @@
         </div>
     </div>
 
+    <!-- Pacotes Ativos Tab -->
+    <div id="tab-pacotes-ativos" class="tab-content">
+        <div class="controls controls-agenda">
+            <div class="filters-row">
+                <input type="text" id="searchPacotesInput" class="search-input" placeholder="Buscar cliente, pet ou telefone...">
+            </div>
+        </div>
+        <div id="pacotes-ativos-list">
+            <p style="text-align: center; color: #666; grid-column: 1/-1;">Carregando pacotes ativos...</p>
+        </div>
+    </div>
+
     <!-- Cadastrar Pacote Tab -->
     <div id="tab-pacote" class="tab-content">
         <div class="settings-card">
@@ -133,6 +146,11 @@
             <div class="settings-body">
                 <form id="cadastrar-pacote-form">
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label for="pacoteOwnerName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Cliente (Obrigatório)</label>
+                            <input type="text" id="pacoteOwnerName" required placeholder="Ex: João da Silva" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                        </div>
+
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="pacotePhone" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Telefone do Cliente (Obrigatório)</label>
                             <input type="tel" id="pacotePhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
@@ -489,7 +507,7 @@
     </div>
 </div>
 
-<script type="module" src="js/painel-94k2.js?v=16"></script>
+<script type="module" src="js/painel-94k2.js?v=17"></script>
 
 
 </body>
