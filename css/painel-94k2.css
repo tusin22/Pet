@@ -384,6 +384,25 @@
             background-color: #ffebee;
         }
 
+        .delete-pacote-btn {
+            background-color: transparent;
+            color: var(--danger);
+            border: none;
+            padding: 0.5rem;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.85rem;
+            text-align: right;
+            margin-top: 0.5rem;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .delete-pacote-btn:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
         .status-concluido { background-color: var(--primary); color: white; }
         .status-cancelado { background-color: #9e9e9e; color: white; }
 
