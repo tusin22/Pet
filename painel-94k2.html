@@ -13,8 +13,8 @@
     <link rel="icon" href="assets/favicon-32x32.png" type="image/png" sizes="32x32">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
-    <link rel="stylesheet" href="css/painel-94k2.css?v=18">
-    <script src="config/runtime-config.js?v=18" defer></script>
+    <link rel="stylesheet" href="css/painel-94k2.css?v=19">
+    <script src="config/runtime-config.js?v=19" defer></script>
 </head>
 <body>
 
@@ -489,6 +489,73 @@
     </div>
 </div>
 
+<!-- Modal Edição Pacote Admin -->
+<div id="edit-pacote-modal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 600px;">
+        <button class="modal-close" onclick="closeEditPacoteModal()">×</button>
+        <h2 style="color: var(--primary); margin-top: 0;">Editar Pacote Ativo</h2>
+        <form id="edit-pacote-form">
+            <input type="hidden" id="editPacoteId">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="editPacoteOwnerName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Cliente (Obrigatório)</label>
+                    <input type="text" id="editPacoteOwnerName" required placeholder="Ex: João da Silva" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="editPacotePhone" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Telefone do Cliente (Obrigatório)</label>
+                    <input type="tel" id="editPacotePhone" required placeholder="(XX) XXXXX-XXXX" maxlength="15" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                    <label for="editPacotePetName" style="font-weight: bold; display: block; margin-bottom: 0.5rem;">Nome do Pet / Identificação</label>
+                    <input type="text" id="editPacotePetName" placeholder="Deixe em branco para Múltiplos Pets" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+                </div>
+            </div>
+
+            <h3 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--primary);">Saldos de Serviços Restantes</h3>
+            <p style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">Altere manualmente as quantidades de serviços disponíveis neste pacote.</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="editPacoteBanho" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <label for="editPacoteBanho">Banho Master</label>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="editPacoteHigienica" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <label for="editPacoteHigienica">Tosa Higiênica</label>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="editPacoteHidratacao" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <label for="editPacoteHidratacao">Hidratação Vanilla</label>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="editPacoteTosaAdicional" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <label for="editPacoteTosaAdicional">Tosa Adicional</label>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="editPacoteUnhas" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <label for="editPacoteUnhas">Corte das unhas</label>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="editPacoteDentes" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <label for="editPacoteDentes">Escov. dos dentes</label>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="editPacoteCarding" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <label for="editPacoteCarding">Carding</label>
+                </div>
+                <div class="form-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <input type="number" id="editPacoteDesembolo" min="0" value="0" style="width: 60px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 6px;">
+                    <label for="editPacoteDesembolo">Desembolo de nós</label>
+                </div>
+            </div>
+
+            <button type="submit" id="btn-submit-edit-pacote" class="btn-save" style="margin-top: 0; width: auto;">Salvar Alterações</button>
+        </form>
+    </div>
+</div>
+
 <!-- Modal -->
 <div id="appointment-modal" class="modal-overlay" onclick="closeModal(event)">
     <div class="modal-content">
@@ -507,7 +574,7 @@
     </div>
 </div>
 
-<script type="module" src="js/painel-94k2.js?v=18"></script>
+<script type="module" src="js/painel-94k2.js?v=19"></script>
 
 
 </body>
