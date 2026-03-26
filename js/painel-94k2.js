@@ -2193,7 +2193,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         if (data.saldo) {
             Object.entries(data.saldo).forEach(([servico, qtd]) => {
                 if (qtd > 0) {
-                    saldoHtml += `<div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.25rem; border-bottom: 1px dashed #eee;">
+                    saldoHtml += `<div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding: 0.25rem 0; border-bottom: 1px dashed #eee;">
                         <span>${escapeHtml(servico)}</span>
                         <strong>${qtd}x</strong>
                     </div>`;
@@ -2220,13 +2220,31 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     Adquirido em: ${dateStr}
                 </div>
             </div>
-            <div style="background: #fafafa; padding: 0.75rem; border-radius: 6px; border: 1px solid #eee;">
-                <h4 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--primary);">Saldo Restante:</h4>
-                ${saldoHtml || '<p style="font-size: 0.85rem; color:#888; margin:0;">Sem saldo disponível</p>'}
+            <div style="background: #fafafa; padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid #eee;">
+                <h4 style="margin-top: 0; margin-bottom: 0.25rem; font-size: 0.9rem; color: var(--primary);">Saldo Restante:</h4>
+                <div style="display: flex; flex-direction: column;">
+                    ${saldoHtml || '<p style="font-size: 0.85rem; color:#888; margin:0;">Sem saldo disponível</p>'}
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <button class="delete-pacote-btn" onclick="deletePacote('${data.id}')">Excluir Pacote</button>
             </div>
         `;
         return card;
     }
+
+    window.deletePacote = async (id) => {
+        if (await showCustomConfirm('Tem certeza que deseja apagar este pacote? Essa ação não pode ser desfeita.', true)) {
+            try {
+                await deleteDoc(doc(db, "carteiras", id));
+                await showCustomAlert('Pacote excluído com sucesso!');
+                // O onSnapshot listener da carteiras irá remover o card da UI automaticamente
+            } catch (error) {
+                console.error("Erro ao apagar pacote:", error);
+                await showCustomAlert("Erro ao excluir o pacote.");
+            }
+        }
+    };
 
     window.filterPacotesAtivos = () => {
         if (!searchPacotesInput || !pacotesAtivosContainer) return;
