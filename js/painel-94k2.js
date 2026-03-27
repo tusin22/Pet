@@ -98,6 +98,15 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     // Pacotes Ativos Elements
     const pacotesAtivosContainer = document.getElementById('pacotes-ativos-list');
     const searchPacotesInput = document.getElementById('searchPacotesInput');
+    const editPacoteModal = document.getElementById('edit-pacote-modal');
+    const editPacoteForm = document.getElementById('edit-pacote-form');
+    const editPacotePhoneInput = document.getElementById('editPacotePhone');
+
+    if (editPacotePhoneInput) {
+        editPacotePhoneInput.addEventListener('input', (e) => {
+            e.target.value = applyPhoneMask(e.target.value);
+        });
+    }
 
     // New Appointment Elements
     const btnNewAppointment = document.getElementById('btn-new-appointment');
@@ -2226,11 +2235,110 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     ${saldoHtml || '<p style="font-size: 0.85rem; color:#888; margin:0;">Sem saldo disponível</p>'}
                 </div>
             </div>
-            <div style="text-align: right;">
+            <div style="text-align: right; margin-top: 0.5rem;">
+                <button class="edit-pacote-btn" onclick="openEditPacoteModal('${data.id}')">✏️ Editar Pacote</button>
                 <button class="delete-pacote-btn" onclick="deletePacote('${data.id}')">Excluir Pacote</button>
             </div>
         `;
         return card;
+    }
+
+    window.openEditPacoteModal = async (id) => {
+        try {
+            const docRef = doc(db, "carteiras", id);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+
+                document.getElementById('editPacoteId').value = id;
+                document.getElementById('editPacoteOwnerName').value = data.ownerName || phoneToNameCache[data.phone] || '';
+                document.getElementById('editPacotePhone').value = applyPhoneMask(data.phone || '');
+                document.getElementById('editPacotePetName').value = data.petName || '';
+
+                const saldo = data.saldo || {};
+                document.getElementById('editPacoteBanho').value = saldo["Banho Master"] || 0;
+                document.getElementById('editPacoteHigienica').value = saldo["Tosa Higiênica"] || 0;
+                document.getElementById('editPacoteHidratacao').value = saldo["Hidratação Vanilla"] || 0;
+                document.getElementById('editPacoteTosaAdicional').value = saldo["Tosa Adicional"] || 0;
+                document.getElementById('editPacoteUnhas').value = saldo["Corte das unhas"] || 0;
+                document.getElementById('editPacoteDentes').value = saldo["Escov. dos dentes"] || 0;
+                document.getElementById('editPacoteCarding').value = saldo["Carding"] || 0;
+                document.getElementById('editPacoteDesembolo').value = saldo["Desembolo de nós"] || 0;
+
+                editPacoteModal.classList.add('active');
+            } else {
+                await showCustomAlert("Pacote não encontrado.");
+            }
+        } catch (error) {
+            console.error("Erro ao abrir modal de edição de pacote:", error);
+            await showCustomAlert("Erro ao carregar os dados do pacote.");
+        }
+    };
+
+    window.closeEditPacoteModal = () => {
+        editPacoteModal.classList.remove('active');
+    };
+
+    if (editPacoteForm) {
+        editPacoteForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('editPacoteId').value;
+            const ownerName = document.getElementById('editPacoteOwnerName').value.trim();
+            const phoneRaw = document.getElementById('editPacotePhone').value.replace(/\D/g, '');
+            const petName = document.getElementById('editPacotePetName').value.trim();
+
+            if (phoneRaw.length !== 11) {
+                await showCustomAlert("Número de telefone incompleto ou inválido.");
+                return;
+            }
+
+            const banhos = parseInt(document.getElementById('editPacoteBanho').value) || 0;
+            const higienicas = parseInt(document.getElementById('editPacoteHigienica').value) || 0;
+            const hidratacoes = parseInt(document.getElementById('editPacoteHidratacao').value) || 0;
+            const tosaAdicional = parseInt(document.getElementById('editPacoteTosaAdicional').value) || 0;
+            const unhas = parseInt(document.getElementById('editPacoteUnhas').value) || 0;
+            const dentes = parseInt(document.getElementById('editPacoteDentes').value) || 0;
+            const carding = parseInt(document.getElementById('editPacoteCarding').value) || 0;
+            const desembolo = parseInt(document.getElementById('editPacoteDesembolo').value) || 0;
+
+            const newSaldo = {
+                "Banho Master": banhos,
+                "Tosa Higiênica": higienicas,
+                "Hidratação Vanilla": hidratacoes,
+                "Tosa Adicional": tosaAdicional,
+                "Corte das unhas": unhas,
+                "Escov. dos dentes": dentes,
+                "Carding": carding,
+                "Desembolo de nós": desembolo
+            };
+
+            const btn = document.getElementById('btn-submit-edit-pacote');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Salvando...';
+
+            try {
+                const docRef = doc(db, "carteiras", id);
+                await updateDoc(docRef, {
+                    ownerName: ownerName,
+                    phone: phoneRaw,
+                    petName: petName,
+                    saldo: newSaldo,
+                    lastUpdated: toLocalISOString(new Date())
+                });
+
+                await showCustomAlert("Pacote atualizado com sucesso!");
+                closeEditPacoteModal();
+            } catch (error) {
+                console.error("Erro ao atualizar pacote:", error);
+                await showCustomAlert("Erro ao salvar as alterações do pacote.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        });
     }
 
     window.deletePacote = async (id) => {
