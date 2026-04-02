@@ -173,6 +173,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             loadPriceSettings();
             loadPackagesPriceSettings();
             loadTimeSettings();
+            loadCachedPacotesPrecos();
         } else {
             loginScreen.style.display = 'flex';
             mainPanel.style.display = 'none';
@@ -2337,6 +2338,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             } finally {
                 btn.disabled = false;
                 btn.textContent = originalText;
+                updatePacoteTotal(); // Reset the price display on submission
             }
         });
     }
@@ -2377,8 +2379,89 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
     // --- Cadastrar Pacote Logic ---
     const cadastrarPacoteForm = document.getElementById('cadastrar-pacote-form');
+    let cachedPacotesPrecos = null;
+
+    // Fetch prices to cache on initial load (called after auth)
+    async function loadCachedPacotesPrecos() {
+        try {
+            const docRef = doc(db, "configuracoes", "pacotes_precos");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                cachedPacotesPrecos = docSnap.data();
+            }
+        } catch (e) {
+            console.error("Error loading cached pacotes_precos:", e);
+        }
+    }
+
+    function updatePacoteTotal() {
+        const pacotePetSize = document.getElementById('pacotePetSize');
+        const pacotePlano = document.getElementById('pacotePlano');
+        const totalDisplay = document.getElementById('pacote-total-display');
+
+        if (!pacotePetSize || !pacotePlano || !totalDisplay) return;
+
+        const size = pacotePetSize.value;
+        const plano = pacotePlano.value;
+
+        // Reset to R$ 0,00 if required fields are missing or price data is not loaded
+        if (!size || !plano || !cachedPacotesPrecos) {
+            totalDisplay.textContent = 'Total: R$ 0,00';
+            return;
+        }
+
+        let total = 0;
+
+        // Base price
+        const planoData = cachedPacotesPrecos[plano];
+        if (planoData) {
+            if (size === 'P') total += parseFloat(planoData.priceP) || 0;
+            else if (size === 'M') total += parseFloat(planoData.priceM) || 0;
+            else if (size === 'G') total += parseFloat(planoData.priceG) || 0;
+        }
+
+        // Extras price
+        const extrasData = cachedPacotesPrecos.extras || {};
+
+        const extraTosa = parseInt(document.getElementById('pacoteExtraTosa').value) || 0;
+        const extraUnhas = parseInt(document.getElementById('pacoteExtraUnhas').value) || 0;
+        const extraDentes = parseInt(document.getElementById('pacoteExtraDentes').value) || 0;
+        const extraCarding = parseInt(document.getElementById('pacoteExtraCarding').value) || 0;
+        const extraDesembolo = parseInt(document.getElementById('pacoteExtraDesembolo').value) || 0;
+
+        let tosaPrice = 0;
+        if (size === 'P') tosaPrice = parseFloat(extrasData.tosaP) || 0;
+        else if (size === 'M') tosaPrice = parseFloat(extrasData.tosaM) || 0;
+        else if (size === 'G') tosaPrice = parseFloat(extrasData.tosaG) || 0;
+
+        total += extraTosa * tosaPrice;
+        total += extraUnhas * (parseFloat(extrasData.unhas) || 0);
+        total += extraDentes * (parseFloat(extrasData.dentes) || 0);
+        total += extraCarding * (parseFloat(extrasData.carding) || 0);
+        total += extraDesembolo * (parseFloat(extrasData.desembolo) || 0);
+
+        totalDisplay.textContent = `Total: ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`;
+    }
 
     if (cadastrarPacoteForm) {
+        // Event listeners for real-time total calculation
+        const pacotePetSize = document.getElementById('pacotePetSize');
+        const pacotePlano = document.getElementById('pacotePlano');
+        const extraInputs = [
+            'pacoteExtraTosa', 'pacoteExtraUnhas', 'pacoteExtraDentes',
+            'pacoteExtraCarding', 'pacoteExtraDesembolo'
+        ];
+
+        if (pacotePetSize) pacotePetSize.addEventListener('change', updatePacoteTotal);
+        if (pacotePlano) pacotePlano.addEventListener('change', updatePacoteTotal);
+        extraInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('change', updatePacoteTotal);
+                el.addEventListener('input', updatePacoteTotal);
+            }
+        });
+
         cadastrarPacoteForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
