@@ -386,6 +386,13 @@
             color: white;
             border-color: var(--primary);
         }
+        .btn-tab-porte:disabled {
+            background-color: #f5f5f5;
+            color: #b0b0b0;
+            border-color: #e0e0e0;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
         .pacote-card {
             background-color: var(--background);
             border: 1px solid var(--border);
