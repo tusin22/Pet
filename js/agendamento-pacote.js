@@ -400,6 +400,7 @@ if (window.flatpickr) {
         locale: "pt",
         dateFormat: "Y-m-d",
         minDate: "today",
+        disableMobile: true,
         disable: [
             function(date) {
                 return (date.getDay() === 0);

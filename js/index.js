@@ -965,6 +965,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         fpInstance = flatpickr(appointmentDateInput, {
             locale: "pt",
             minDate: "today",
+            disableMobile: true,
             disable: [
                 function(date) {
                     return (date.getDay() === 0);
