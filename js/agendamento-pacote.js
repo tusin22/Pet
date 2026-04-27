@@ -462,7 +462,9 @@ function updateServiceUI() {
     let hasTosa = false;
 
     selectedCheckboxes.forEach(cb => {
-        if (cb.value.toLowerCase().includes('tosa')) {
+        const val = cb.value.toLowerCase();
+        // Ativa o bloqueio se tiver 'tosa' mas não for 'higiênica' (com ou sem acento)
+        if (val.includes('tosa') && !val.includes('higiênica') && !val.includes('higienica')) {
             hasTosa = true;
         }
     });
