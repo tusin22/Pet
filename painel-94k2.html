@@ -224,6 +224,24 @@
 
     <!-- Configurações Tab -->
     <div id="tab-config" class="tab-content">
+        <!-- Regras de Agendamento -->
+        <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
+            <div class="settings-header" onclick="toggleCard(this)">
+                <h2>Regras de Agendamento</h2>
+                <span class="arrow-icon">▼</span>
+            </div>
+            <div class="settings-body">
+                <div class="form-group">
+                    <label class="checkbox-item" style="border: none; padding: 0;">
+                        <input type="checkbox" id="tosaApenasTerca">
+                        <span style="font-size: 1.1rem; font-weight: bold;">Tosa apenas às terças-feiras</span>
+                    </label>
+                    <p style="color: #666; font-size: 0.9rem; margin-top: 0.5rem;">Quando ativado, os clientes só poderão agendar serviços que incluem "Tosa" para as terças-feiras.</p>
+                    <button class="btn-save" style="margin-top: 0.5rem; width: auto;" onclick="saveSchedulingRules()">Salvar Regras</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Global Settings -->
         <div class="settings-card collapsed" style="margin-bottom: 1.5rem;">
             <div class="settings-header" onclick="toggleCard(this)">
