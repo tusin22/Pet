@@ -107,6 +107,23 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     let packagesPricingConfig = {}; // Global variable for packages pricing
     window.packagesPricingConfig = packagesPricingConfig;
 
+    let tosaApenasTercaRule = false; // Global rule flag
+
+    // Fetch scheduling rules on load
+    async function loadSchedulingRules() {
+        try {
+            const snap = await getDoc(doc(db, "configuracoes", "regras_agendamento"));
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data.tosa_apenas_terca !== undefined) {
+                    tosaApenasTercaRule = data.tosa_apenas_terca;
+                }
+            }
+        } catch (e) {
+            console.error("Error loading scheduling rules:", e);
+        }
+    }
+
     // Fetch pricing on load
     async function loadPricingConfig() {
         try {
@@ -166,6 +183,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
         }
     }
 
+    loadSchedulingRules();
     loadPricingConfig();
     loadDescriptionsConfig();
     loadPackagesPricingConfig();
@@ -942,6 +960,62 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     const slotsContainer = document.getElementById('slots-container');
     const petSizeInput = document.getElementById('petSize');
 
+    let fpInstance = null;
+    if (window.flatpickr) {
+        fpInstance = flatpickr(appointmentDateInput, {
+            locale: "pt",
+            minDate: "today",
+            disable: [
+                function(date) {
+                    return (date.getDay() === 0);
+                }
+            ],
+            onChange: function(selectedDates, dateStr, instance) {
+                checkAndGenerateSlots();
+            }
+        });
+    }
+
+    async function updateDatePickerRules() {
+        if (!fpInstance) return;
+
+        const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
+        let hasTosa = false;
+
+        selectedCheckboxes.forEach(cb => {
+            if (cb.value.toLowerCase().includes('tosa')) {
+                hasTosa = true;
+            }
+        });
+
+        if (tosaApenasTercaRule && hasTosa) {
+            fpInstance.set('disable', [
+                function(date) {
+                    return (date.getDay() !== 2);
+                }
+            ]);
+
+            const currentSelectedDate = fpInstance.selectedDates[0];
+            if (currentSelectedDate && currentSelectedDate.getDay() !== 2) {
+                fpInstance.clear();
+                await showCustomAlert("Este serviço está disponível apenas às terças-feiras.");
+                checkAndGenerateSlots();
+            }
+        } else {
+            fpInstance.set('disable', [
+                function(date) {
+                    return (date.getDay() === 0);
+                }
+            ]);
+
+            const currentSelectedDate = fpInstance.selectedDates[0];
+            if (currentSelectedDate && currentSelectedDate.getDay() === 0) {
+                fpInstance.clear();
+                checkAndGenerateSlots();
+            }
+        }
+    }
+
     let selectedSlot = null;
     let currentTotalValue = 0;
     let currentTotalDuration = 0;
@@ -961,10 +1035,12 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
         updateServiceUI();
         calculateTotalAndDuration();
+        updateDatePickerRules();
         checkAndGenerateSlots();
     });
 
-    appointmentDateInput.addEventListener('change', checkAndGenerateSlots);
+    // We removed appointmentDateInput.addEventListener('change', checkAndGenerateSlots)
+    // because Flatpickr now handles the onChange event internally.
 
     // Listen to all checkboxes
     document.querySelectorAll('input[name="serviceOption"]').forEach(cb => {
@@ -994,6 +1070,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             updateServiceUI();
             calculateTotalAndDuration();
+            updateDatePickerRules();
             checkAndGenerateSlots();
         });
     });
@@ -1216,6 +1293,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     }
 
     async function generateSlots(dateString) {
+        // If the date is empty because flatpickr cleared it due to a rule, do nothing
+        if (!dateString) {
+            slotsContainer.innerHTML = '<p class="empty-slots-msg">Selecione o porte, os serviços e a data para ver os horários disponíveis.</p>';
+            selectedSlot = null;
+            updateSubmitButtonState();
+            return;
+        }
+
         slotsContainer.innerHTML = '<p class="loading" style="grid-column: 1/-1;">Calculando disponibilidade...</p>';
         selectedSlot = null;
         updateSubmitButtonState();

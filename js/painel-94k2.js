@@ -164,6 +164,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
 
             // Only load data after auth is confirmed
             loadAppointments();
+            loadSchedulingRules();
             loadGlobalSettings();
             renderServiceDescriptions();
             loadServiceDescriptions();
@@ -2615,6 +2616,37 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
     }
 
     // --- Execution ---
+    // --- Scheduling Rules Settings Logic ---
+    window.loadSchedulingRules = async () => {
+        if (!auth.currentUser) return;
+        try {
+            const docRef = doc(db, "configuracoes", "regras_agendamento");
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const checkbox = document.getElementById('tosaApenasTerca');
+                if (checkbox && data.tosa_apenas_terca !== undefined) {
+                    checkbox.checked = data.tosa_apenas_terca;
+                }
+            }
+        } catch (e) {
+            console.error("Error loading scheduling rules:", e);
+        }
+    };
+
+    window.saveSchedulingRules = async () => {
+        if (!auth.currentUser) return;
+        const checkbox = document.getElementById('tosaApenasTerca');
+        const tosaApenasTerca = checkbox ? checkbox.checked : false;
+        try {
+            await setDoc(doc(db, "configuracoes", "regras_agendamento"), { tosa_apenas_terca: tosaApenasTerca }, { merge: true });
+            await showCustomAlert("Regras de agendamento salvas com sucesso!");
+        } catch (e) {
+            console.error("Error saving scheduling rules:", e);
+            await showCustomAlert("Erro ao salvar regras de agendamento.");
+        }
+    };
+
     // --- Global Capacity Settings Logic ---
     window.loadGlobalSettings = async () => {
         if (!auth.currentUser) return;
