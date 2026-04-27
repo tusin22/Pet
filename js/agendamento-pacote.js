@@ -77,6 +77,8 @@ if (!walletId) {
 // Global state
 let pricingConfig = {};
 let walletData = null;
+let tosaApenasTercaRule = false;
+let fpInstance = null;
 
 const servicesListAll = [
     "Banho Master",
@@ -92,8 +94,24 @@ const servicesListAll = [
 ];
 
 // Load configs and wallet
+async function loadSchedulingRules() {
+    try {
+        const snap = await getDoc(doc(db, "configuracoes", "regras_agendamento"));
+        if (snap.exists()) {
+            const data = snap.data();
+            if (data.tosa_apenas_terca !== undefined) {
+                tosaApenasTercaRule = data.tosa_apenas_terca;
+            }
+        }
+    } catch (e) {
+        console.error("Error loading scheduling rules:", e);
+    }
+}
+
 async function init() {
     try {
+        await loadSchedulingRules();
+
         const [priceSnap, walletSnap] = await Promise.all([
             getDoc(doc(db, "configuracoes", "precos")),
             getDoc(doc(db, "carteiras", walletId))
@@ -377,7 +395,21 @@ petSizeInput.addEventListener('change', () => {
     checkAndGenerateSlots();
 });
 
-appointmentDateInput.addEventListener('change', checkAndGenerateSlots);
+if (window.flatpickr) {
+    fpInstance = flatpickr(appointmentDateInput, {
+        locale: "pt",
+        dateFormat: "Y-m-d",
+        minDate: "today",
+        disable: [
+            function(date) {
+                return (date.getDay() === 0);
+            }
+        ],
+        onChange: function(selectedDates, dateStr, instance) {
+            checkAndGenerateSlots();
+        }
+    });
+}
 
 
 function updateServiceUI() {
@@ -425,6 +457,51 @@ function updateServiceUI() {
              label.innerHTML = `${service} - ${baseFmt}`;
         }
     });
+
+    const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
+    let hasTosa = false;
+
+    selectedCheckboxes.forEach(cb => {
+        if (cb.value.toLowerCase().includes('tosa')) {
+            hasTosa = true;
+        }
+    });
+
+    const avisoTosa = document.getElementById('aviso-tosa');
+
+    if (fpInstance) {
+        if (tosaApenasTercaRule && hasTosa) {
+            fpInstance.set('disable', [
+                function(date) {
+                    return (date.getDay() !== 2);
+                }
+            ]);
+
+            if (avisoTosa) avisoTosa.style.display = 'block';
+
+            const currentSelectedDate = fpInstance.selectedDates[0];
+            if (currentSelectedDate && currentSelectedDate.getDay() !== 2) {
+                fpInstance.clear();
+                showCustomAlert("Este serviço está disponível apenas às terças-feiras.").then(() => {
+                    checkAndGenerateSlots();
+                });
+            }
+        } else {
+            fpInstance.set('disable', [
+                function(date) {
+                    return (date.getDay() === 0);
+                }
+            ]);
+
+            if (avisoTosa) avisoTosa.style.display = 'none';
+
+            const currentSelectedDate = fpInstance.selectedDates[0];
+            if (currentSelectedDate && currentSelectedDate.getDay() === 0) {
+                fpInstance.clear();
+                checkAndGenerateSlots();
+            }
+        }
+    }
 }
 
 let currentTotalValue = 0;
@@ -555,10 +632,18 @@ function updateSubmitButtonState() {
 
 async function checkAndGenerateSlots() {
     const dateVal = appointmentDateInput.value;
+    // If the date is empty because flatpickr cleared it due to a rule, do nothing
+    if (!dateVal) {
+        slotsContainer.innerHTML = '<p class="empty-slots-msg">Selecione os serviços e a data para ver os horários disponíveis.</p>';
+        selectedSlot = null;
+        updateSubmitButtonState();
+        return;
+    }
+
     const selectedCheckboxes = document.querySelectorAll('input[name="serviceOption"]:checked');
     const size = petSizeInput.value;
 
-    if (!dateVal || selectedCheckboxes.length === 0 || !size) {
+    if (selectedCheckboxes.length === 0 || !size) {
         slotsContainer.innerHTML = '<p class="empty-slots-msg">Selecione os serviços e a data para ver os horários disponíveis.</p>';
         selectedSlot = null;
         updateSubmitButtonState();
@@ -578,7 +663,11 @@ async function checkAndGenerateSlots() {
 
     if (selectedDate < today) {
         await showCustomAlert("Por favor, selecione uma data futura.");
-        appointmentDateInput.value = '';
+        if (fpInstance) {
+            fpInstance.clear();
+        } else {
+            appointmentDateInput.value = '';
+        }
         slotsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #666; font-size: 0.9rem;">Selecione os serviços e a data para ver os horários disponíveis.</p>';
         selectedSlot = null;
         updateSubmitButtonState();

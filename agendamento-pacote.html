@@ -19,6 +19,7 @@
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 
     <link rel="stylesheet" href="css/index.css?v=30">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .package-area-title {
             color: var(--primary);
@@ -160,7 +161,8 @@
             <div class="form-section section-2">
                 <div class="form-group full-row">
                     <label for="appointmentDate">Escolha a data</label>
-                    <input type="date" id="appointmentDate" required>
+                    <input type="text" id="appointmentDate" required placeholder="Selecione uma data">
+                    <div id="aviso-tosa" style="display: none; color: #e53e3e; font-size: 0.85em; margin-top: 4px;">* Tosas disponíveis apenas às terças-feiras</div>
                 </div>
 
                 <div class="form-group full-row">
@@ -211,7 +213,9 @@
 </div>
 
 <script src="config/runtime-config.js?v=28" defer></script>
-<script type="module" src="js/agendamento-pacote.js?v=30"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://npmcdn.com/flatpickr/dist/l10n/pt.js"></script>
+<script type="module" src="js/agendamento-pacote.js?v=32"></script>
 
 </body>
 </html>

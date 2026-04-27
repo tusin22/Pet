@@ -988,12 +988,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
             }
         });
 
+        const avisoTosa = document.getElementById('aviso-tosa');
+
         if (tosaApenasTercaRule && hasTosa) {
             fpInstance.set('disable', [
                 function(date) {
                     return (date.getDay() !== 2);
                 }
             ]);
+
+            if (avisoTosa) avisoTosa.style.display = 'block';
 
             const currentSelectedDate = fpInstance.selectedDates[0];
             if (currentSelectedDate && currentSelectedDate.getDay() !== 2) {
@@ -1007,6 +1011,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.9.0/firebas
                     return (date.getDay() === 0);
                 }
             ]);
+
+            if (avisoTosa) avisoTosa.style.display = 'none';
 
             const currentSelectedDate = fpInstance.selectedDates[0];
             if (currentSelectedDate && currentSelectedDate.getDay() === 0) {
